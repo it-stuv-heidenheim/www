@@ -8,4 +8,8 @@ docs/not-public/
 wp-plugin/stuv-mensa.zip
 wp-plugin/stuv-theme.zip
 wp-plugin/stuv-dsgvo.zip
+wp-plugin/stuv-seo.zip
 build/
+
+# Session transcripts land in the working directory; they are not repo content.
+/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.txt

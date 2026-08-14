@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 if [ "$#" -eq 0 ]; then
-  set -- stuv-mensa stuv-theme stuv-dsgvo
+  set -- stuv-mensa stuv-theme stuv-dsgvo stuv-seo
 fi
 
 for plugin in "$@"; do

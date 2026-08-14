@@ -13,7 +13,7 @@ debugging round to find.
 German-language website of **StuV DHBW Heidenheim** (student representative
 body). This repo is the **content source** of the live WordPress site (Twenty
 Twenty-Five block theme) at the `WP_SITE` host: Gutenberg block HTML, design
-tokens, component CSS, three WordPress plugins, and the generators for the maps
+tokens, component CSS, four WordPress plugins, and the generators for the maps
 and the icon CSS. Deployment is over the WordPress REST API.
 
 **No runnable WP tooling lives here.** Everything runnable is in the
@@ -58,7 +58,7 @@ every check below is run by hand, locally, before a deploy. Human docs:
 - `tools/` — site-specific utilities with no WP REST access: `gen_icon_css.py`,
   `gen_map.py`, `export_docs_wiki.py`, `build_skill_zip.py`, `export_pdfs.mjs`,
   plus their `test_*.py`.
-- `wp-plugin/` — source of truth for the three plugins; the copies on the host
+- `wp-plugin/` — source of truth for the four plugins; the copies on the host
   are artifacts.
 
 ## Commands
@@ -94,6 +94,9 @@ tools.test_gen_map` fails with an import error.
 # Plugins: no dependencies, no network, no WordPress.
 php wp-plugin/tests/test_normalize.php
 php wp-plugin/tests/test_cache.php
+php wp-plugin/tests/test_seo_tags.php
+php wp-plugin/tests/test_seo_faq.php
+php wp-plugin/tests/test_seo_routes.php
 TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 ```
 
@@ -256,11 +259,11 @@ together or the maps render with the old image under the new geometry.
 
 ## The plugins (`wp-plugin/`)
 
-Three plugins, none deployed by `deploy.py` — plugins do not travel over the
+Four plugins, none deployed by `deploy.py` — plugins do not travel over the
 content REST API.
 
 - Build: `./wp-plugin/build.sh [plugin …]` → `wp-plugin/<plugin>.zip` (no
-  argument builds all three)
+  argument builds all four)
 - Install: wp-admin → Plugins → Installieren → Plugin hochladen → Aktivieren
 
 They are normal plugins rather than `mu-plugins` only because there is no shell
@@ -329,6 +332,62 @@ visitor clicks — plugin off and JS off included. Don't "fix" that back to a re
 
 So a change here is a **four-part deploy**: plugin zip upload, `global-styles`,
 `homepage`, `events`.
+
+**`stuv-seo`** — meta description, Open Graph, Twitter card and JSON-LD in the
+`<head>`, plus the per-page "Von Suchmaschinen ausschließen" flag and a
+fail-closed staging guard. **Deactivating it is content-neutral:** pages render
+identically, only the tags are gone — except two follow-ups: pages flagged
+noindex become indexable again, and the staging host would enter the index
+(there is no second lock yet, see below).
+
+- **Descriptions live in the database, not the repo.** `_stuv_seo_description`
+  (and `_stuv_seo_og_image`, `_stuv_seo_noindex`) are post meta, edited in the
+  SEO metabox under each page. `deploy.py` never writes a `meta` field, so an
+  admin edit can never become `verify_deploy.py` drift. Don't "improve" this by
+  adding a `seo` object to the manifest — that would create two writers and no
+  arbiter. The safety net is the site backup / WordPress export, as for titles.
+- **Staging is decided by a constant, not an option:**
+  `STUV_SEO_PRODUCTION_HOSTS` in `stuv-seo.php`. Any host other than production
+  gets `noindex`, no sitemap and a `robots.txt` with `Disallow: /` — so the
+  fail-closed direction holds on an unknown host.
+- **There is no nginx belt behind that guard — the plugin is the only lock.**
+  Earlier notes here and in `docs/plugins.md` called the `X-Robots-Tag` on
+  `dev.` the second lock; it does not exist. Measured 2026-08-06: no
+  `x-robots-tag` on `/`, `/robots.txt` or `/wp-sitemap.xml`, `robots.txt` is
+  still Core's default including a `Sitemap:` line, and the front page carries
+  no `noindex` — i.e. the plugin is not activated on staging either, and
+  `dev.stuv-heidenheim.de` is fully indexable right now. Adding the header is
+  the open todo item ("`dev.` bis zum Umzug auf `noindex` stellen"); until it
+  is done, deactivating the plugin has nothing behind it.
+- `wp_robots` runs only in production after the host check; the per-page flag
+  sets `noindex` alone (never `wp_robots_no_robots()`, which would add
+  `nofollow` — the audit wants `noindex, follow`). Every host check sits inside
+  a filter callback — a `stuv_seo_is_production()` at file scope would call
+  `home_url()` before `plugins_loaded`, blind to any later filter on it.
+- The 301 map (`inc/redirects.php`) is a `template_redirect` 404 catch, shipped
+  empty and serving 302 until the old slugs are harvested from the Elementor
+  site before the DNS move. **Its targets are root-relative paths.**
+  `wp_validate_redirect()` only passes the host of `home_url()`, so an absolute
+  `https://stuv-heidenheim.de/…` entry — the shape the first draft of the map
+  and its test used — dies on staging and on a `www.` production home. A failed
+  validation keeps the 404 rather than bouncing the visitor to wp-admin, which
+  is what `wp_safe_redirect()` would have done.
+- **Assets are enqueued against `STUV_SEO_FILE`, not `__FILE__`.** The enqueue
+  lives in `inc/admin.php`, and `plugins_url()` derives the plugin folder from
+  the file it is handed — `__FILE__` there resolves to
+  `stuv-seo/inc/assets/admin.js`, a 404 with no error anywhere (the counter and
+  the media picker just stop working).
+- **The FAQ layer reads inner blocks, not `innerHTML`.** `parse_blocks()` puts
+  each inner block's markup in `innerBlocks` with a `null` placeholder in
+  `innerContent`; `innerHTML` is only the string chunks. The answers on
+  `kummer-karsten` are `core/paragraph` inner blocks of the `core/details`
+  block, so reading `innerHTML` yields the `<summary>` and nothing else and
+  every pair is dropped as answerless — the `FAQPage` node then silently never
+  appears. A test fixture that inlines the answer into `innerHTML` is not a
+  shape the parser produces and will not catch this.
+- The pure layer (`inc/pure/`) must stay WordPress-free — it runs under the
+  plain `php` CLI in the test files.
+  Design: `docs/superpowers/plans/2026-08-05-stuv-seo-plugin.md`.
 
 ## Formatting
 

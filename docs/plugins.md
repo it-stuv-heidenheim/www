@@ -1,19 +1,20 @@
 # Plugins
 
-Drei WordPress-Plugins liegen in `wp-plugin/`: `stuv-mensa` (Live-Speiseplan),
-`stuv-theme` (Dark-Mode-Umschalter) und `stuv-dsgvo` (Klick-zum-Laden für die
-Kalender-Embeds). Alle drei existieren, weil sich ihr Zweck nicht mit Block-HTML
-und CSS erreichen lässt.
+Vier WordPress-Plugins liegen in `wp-plugin/`: `stuv-mensa` (Live-Speiseplan),
+`stuv-theme` (Dark-Mode-Umschalter), `stuv-dsgvo` (Klick-zum-Laden für die
+Kalender-Embeds) und `stuv-seo` (Meta-Tags und strukturierte Daten). Alle vier
+existieren, weil sich ihr Zweck nicht mit Block-HTML und CSS erreichen lässt.
 
 `wp-plugin/` ist die Quelle der Wahrheit. Die Kopien auf dem Server sind
 Artefakte — wer sie dort direkt bearbeitet, verliert die Änderung beim nächsten
 Upload.
 
-| Plugin       | Zweck                         | Bei Deaktivierung                                     |
-| ------------ | ----------------------------- | ----------------------------------------------------- |
-| `stuv-mensa` | Live-Speiseplan der Mensa     | Speiseplan verschwindet von der Studentenleben-Seite  |
-| `stuv-theme` | Dark-Mode-Umschalter          | Seite friert im Hellmodus ein, Schalter verschwindet  |
-| `stuv-dsgvo` | Kalender lädt erst nach Klick | Kalender verschwindet, stattdessen ein Link zu Google |
+| Plugin       | Zweck                                 | Bei Deaktivierung                                                                                                                                                             |
+| ------------ | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stuv-mensa` | Live-Speiseplan der Mensa             | Speiseplan verschwindet von der Studentenleben-Seite                                                                                                                          |
+| `stuv-theme` | Dark-Mode-Umschalter                  | Seite friert im Hellmodus ein, Schalter verschwindet                                                                                                                          |
+| `stuv-dsgvo` | Kalender lädt erst nach Klick         | Kalender verschwindet, stattdessen ein Link zu Google                                                                                                                         |
+| `stuv-seo`   | Meta/OG/Twitter + strukturierte Daten | Die Tags fehlen einfach, sonst nichts — außer dass Seiten mit gesetztem „Von Suchmaschinen ausschließen“ wieder indexierbar werden und der Staging-Host in den Index gelangte |
 
 Kein Ausfall hinterlässt einen toten Button oder eine Fehlermeldung, nur die
 Funktion fehlt.
@@ -39,7 +40,7 @@ der Umzug dorthin eine reine Verbesserung und bräuchte keine Code-Änderung.
 ## Builden und installieren
 
 ```bash
-./wp-plugin/build.sh              # alle drei builden
+./wp-plugin/build.sh              # alle vier builden
 ./wp-plugin/build.sh stuv-mensa   # nur eines
 ```
 
@@ -217,6 +218,63 @@ verlinkte AStA-Datenschutzerklärung (`legal.dhbw-asta.de`) nennt Google
 Analytics, Maps, Forms und Fonts, aber **keinen Google Kalender** — wer sie
 pflegt, sollte einen Absatz dazu ergänzen. Diese Seite liegt außerhalb dieses
 Repos.
+
+## `stuv-seo` — Meta-Tags und strukturierte Daten
+
+Das SEO-Plugin ist das einzige, das auf jeder Seite sichtbar nichts ändert: Es
+liefert in den `<head>` eine Meta-Beschreibung, den Open-Graph-Satz,
+`twitter:card` und strukturierte Daten (`Organization` auf der Startseite,
+`FAQPage` auf Kummer Karsten, abgeleitet aus dessen `<details>`-Blöcken).
+Titel und Canonical fasst es nicht an — beides liefert Core bereits korrekt
+(kein zweites Canonical, kein Titel-Override). Damit ist Deaktivieren folgenlos
+für das Layout, und nur zwei Verhalten hängen am Plugin: Das Flag „Von
+Suchmaschinen ausschließen“ je Seite (fällt **auch** aus der Sitemap) und der
+Staging-Riegel.
+
+**Beschreibungen leben in der Datenbank, nicht im Repo.** `_stuv_seo_description`
+ist Post-Meta, im SEO-Kasten unter jeder Seite bearbeitbar. Bewusst kein
+`seo`-Objekt im Manifest: Ein Wert im Repo plus ein Wert in der Datenbank wäre
+ein System mit zwei Schreibern und keinem Schiedsrichter, und `deploy.py`
+schreibt ohnehin kein `meta`-Feld — eine Bearbeitung in wp-admin kann also nie
+zu Drift gegen die committeten Quellen werden. Das Sicherheitsnetz für die
+Beschreibungen ist das Site-Backup und der WordPress-Export, dieselbe
+Absicherung wie für die Seitentitel.
+
+**Der Staging-Riegel ist invertiert.** `STUV_SEO_PRODUCTION_HOSTS` (eine
+Konstante im Code, keine Option) entscheidet, ob die Seite indexiert werden
+darf: Jeder Host außer Produktion bekommt `noindex`, eine abgeschaltete Sitemap
+und eine `robots.txt` mit `Disallow: /`. Deaktiviert man das Plugin, wird
+Staging indexierbar.
+
+**Einen zweiten Riegel gibt es bislang nicht.** Frühere Fassungen dieser Doku
+nannten einen nginx-`X-Robots-Tag` auf `dev.` als Gurt hinter dem Plugin — den
+gibt es nicht. Nachgemessen am 6. August 2026: kein `x-robots-tag` auf `/`,
+`/robots.txt` oder `/wp-sitemap.xml`, die `robots.txt` ist unverändert die von
+WordPress mitgelieferte samt `Sitemap:`-Zeile, und die Startseite trägt kein
+`noindex` — das Plugin ist auf Staging also auch noch nicht aktiviert.
+`dev.stuv-heidenheim.de` ist damit im Moment vollständig crawlbar. Der Header
+steht als offene Aufgabe im Todo; bis dahin hängt alles am Plugin allein.
+
+**Die 301-Karte für alte Slugs** (`inc/redirects.php`) ist ein reiner
+404-Auffang über `template_redirect` und liefert mit 302 aus, solange die
+Slug-Liste nicht aus der alten Site geholt ist. Solange sie leer ist, kostet
+sie auf jedem normalen Request nichts. Die Ziele sind **wurzelrelative Pfade**
+(`/studentenleben/`), keine vollständigen URLs: Geprüft wird jedes Ziel mit
+`wp_validate_redirect()`, und das lässt nur den Host von `home_url()` durch —
+ein `https://stuv-heidenheim.de/…` als Ziel würde auf `dev.` (und auf einer
+`www.`-Produktion) durchfallen. Fällt ein Ziel durch, bleibt es beim 404, statt
+Besucher nach wp-admin zu schicken.
+
+Dazu eine Einstellungsseite unter Einstellungen → StuV SEO (Standard-Vorschaubild,
+Google-Search-Console-Token) und eine **Startcheckliste**, die für alle Seiten
+Titellänge (nur Anzeige — der Titel wird bewusst nicht übersteuert),
+Beschreibungslänge und Vorschaubild anzeigt. Das ist der Ersatz für ein
+SEO-Dashboard, das niemand im Vorstand lesen will.
+
+Beim Ändern beachten: Die Version steht im Plugin-Header und in
+`STUV_SEO_VERSION` und muss übereinstimmen (sie hängt an `assets/admin.js` als
+Cache-Buster). Die puren Helfer in `inc/pure/` dürfen keine WordPress-Funktion
+aufrufen — sie laufen unter `php wp-plugin/tests/test_seo_*.php` ohne WordPress.
 
 ## PHP-Formatierung
 

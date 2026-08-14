@@ -124,6 +124,9 @@ Ohne Abhängigkeiten, ohne Netz, ohne WordPress:
 ```bash
 php wp-plugin/tests/test_normalize.php
 php wp-plugin/tests/test_cache.php
+php wp-plugin/tests/test_seo_tags.php
+php wp-plugin/tests/test_seo_faq.php
+php wp-plugin/tests/test_seo_routes.php
 TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 ```
 
@@ -136,12 +139,19 @@ Die Fixtures in `wp-plugin/tests/fixtures/` sind mitgeschnittene Antworten von
 `api.dhbw.app`. Sie stehen in `.prettierignore` und müssen byteweise
 unverändert bleiben, sonst sind sie keine Aufzeichnung mehr.
 
-Die Tests decken nur `stuv-mensa` ab. `stuv-theme` und `stuv-dsgvo` bestehen aus
-Browser-Code, den man von Hand prüft: `stuv-dsgvo` einmal mit aktivem Plugin
+Die Tests decken `stuv-mensa` und die pure Schicht von `stuv-seo` ab. Der
+Browser-Code wird von Hand geprüft: `stuv-dsgvo` einmal mit aktivem Plugin
 (Platzhalter, Klick lädt den Kalender), einmal deaktiviert und einmal mit
 abgeschaltetem JavaScript — in allen drei Fällen darf **kein** leerer Kasten
 stehen bleiben und beim Aufbau der Seite darf keine Anfrage an
 `calendar.google.com` gehen (Netzwerk-Tab der Entwicklerwerkzeuge).
+
+`stuv-seo` hat zwei Stellen für die Handprüfung: `assets/admin.js` (Zeichenzähler
+und Medienauswahl auf der Bearbeitungsseite und unter Einstellungen → StuV SEO —
+einmal eine Beschreibung ändern und ein Vorschaubild wählen) und die
+Deaktivierungsprobe (Plugin deaktivieren, alle sieben Seiten aufrufen: identisches
+Layout, nur fehlende Tags — danach wieder aktivieren und prüfen, dass die
+Beschreibungen noch dastehen).
 
 Dazu kommt seit der gespeicherten Zustimmung ein vierter Durchgang: Kalender
 laden, auf die andere Seite wechseln (er lädt jetzt direkt), unter dem Kalender
