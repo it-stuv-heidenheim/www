@@ -1,0 +1,189 @@
+{
+  "id": "stadtzentrum",
+  "zoom": 17,
+  "padding_m": 80,
+  "alt": "Detailkarte des Heidenheimer Stadtzentrums mit Gastronomie, Cafés, Kultur, Schloss und Nahverkehr",
+  "targets": ["data/pages/studentenleben/09-freizeit.html"],
+  "pins": [
+    {
+      "n": 1,
+      "name": "Cafe Curt",
+      "icon": "coffee",
+      "lat": 48.67744,
+      "lon": 10.15207,
+      "detail": "Hauptstraße 13, 89522 Heidenheim",
+      "note": "Gemütliches Café mit Frühstück und Kuchen"
+    },
+    {
+      "n": 2,
+      "name": "Capitol",
+      "icon": "film",
+      "lat": 48.67766,
+      "lon": 10.15221,
+      "detail": "Karlstraße 6, 89518 Heidenheim",
+      "note": "Kino mitten im Stadtzentrum"
+    },
+    {
+      "n": 3,
+      "name": "Keyf-Et Döner & Burger",
+      "icon": "pizza",
+      "lat": 48.67752,
+      "lon": 10.15182,
+      "detail": "Hauptstraße 10, 89522 Heidenheim",
+      "note": "Beliebter Döner- und Burgerladen in der Fußgängerzone"
+    },
+    {
+      "n": 4,
+      "name": "La Gondola",
+      "icon": "ice-cream-cone",
+      "lat": 48.6769,
+      "lon": 10.15306,
+      "detail": "Hauptstraße 26, 89522 Heidenheim",
+      "note": "Eisdiele mit hausgemachtem Eis"
+    },
+    {
+      "n": 5,
+      "name": "Schwarz Coffee Shop",
+      "icon": "coffee",
+      "lat": 48.67703,
+      "lon": 10.15132,
+      "detail": "Hintere Gasse 16, 89522 Heidenheim",
+      "note": "Spezialitätenkaffee zum Mitnehmen oder vor Ort lernen"
+    },
+    {
+      "n": 6,
+      "name": "Poseidon",
+      "icon": "utensils",
+      "lat": 48.67782,
+      "lon": 10.15353,
+      "detail": "Brenzstraße 10, 89518 Heidenheim",
+      "note": "Griechisches Restaurant im Stadtzentrum"
+    },
+    {
+      "n": 7,
+      "name": "Stadtbibliothek",
+      "icon": "book-open",
+      "lat": 48.67717,
+      "lon": 10.15429,
+      "detail": "Willy-Brandt-Platz 1, 89522 Heidenheim",
+      "note": "Zentraler Lernort mit WLAN und Arbeitsplätzen"
+    },
+    {
+      "n": 8,
+      "name": "ZOH – Zentraler Omnibusbahnhof",
+      "icon": "bus",
+      "lat": 48.67858,
+      "lon": 10.15391,
+      "detail": "Am ZOH, 89518 Heidenheim",
+      "note": "Zentraler Umsteigepunkt aller Stadt- und Regionalbusse"
+    },
+    {
+      "n": 9,
+      "name": "StattGarten",
+      "icon": "beer",
+      "lat": 48.67718,
+      "lon": 10.15482,
+      "detail": "Brenzstraße 18, 89518 Heidenheim",
+      "note": "Biergarten direkt an der Brenz"
+    },
+    {
+      "n": 10,
+      "name": "Da Franco",
+      "icon": "utensils",
+      "lat": 48.67733,
+      "lon": 10.15552,
+      "detail": "Bahnhofstraße 17, 89518 Heidenheim",
+      "note": "Italienisches Restaurant mit Holzofen-Pizza"
+    },
+    {
+      "n": 11,
+      "name": "Schloss Hellenstein",
+      "icon": "castle",
+      "lat": 48.6756,
+      "lon": 10.14975,
+      "detail": "Schlossberg, 89518 Heidenheim",
+      "note": "Wahrzeichen der Stadt mit Museum und Aussicht über Heidenheim"
+    },
+    {
+      "n": 12,
+      "name": "Georges-Levillain-Anlage",
+      "icon": "tree-pine",
+      "lat": 48.67939,
+      "lon": 10.15451,
+      "detail": "Marienstraße, 89518 Heidenheim",
+      "note": "Kleine Grünfläche direkt am Hauptcampus"
+    },
+    {
+      "n": 13,
+      "name": "Brunnengarten",
+      "icon": "flower",
+      "lat": 48.6752,
+      "lon": 10.1493,
+      "detail": "Schlossberg, 89518 Heidenheim",
+      "note": "Historischer Garten am Schloss mit dem 78 m tiefen Kindlesbrunnen"
+    },
+    {
+      "n": 14,
+      "name": "Rialto Eiscafé",
+      "icon": "ice-cream-cone",
+      "lat": 48.68015,
+      "lon": 10.15282,
+      "detail": "Karlstraße 5, 89518 Heidenheim",
+      "note": "Eiscafé im Stadtzentrum"
+    },
+    {
+      "n": 15,
+      "name": "Museum im Römerbad",
+      "icon": "landmark",
+      "lat": 48.67824,
+      "lon": 10.1565,
+      "detail": "Theodor-Heuss-Straße 3, 89518 Heidenheim",
+      "note": "Römische Funde aus dem Kastell Heidenheim"
+    },
+    {
+      "n": 16,
+      "name": "Restaurant Munzur",
+      "icon": "utensils",
+      "lat": 48.67458,
+      "lon": 10.15452,
+      "detail": "St. Pöltener Straße 35, 89522 Heidenheim",
+      "note": "Biergarten und türkische Küche mit großer Terrasse"
+    },
+    {
+      "n": 17,
+      "name": "Kunstmuseum Heidenheim",
+      "icon": "palette",
+      "lat": 48.6803,
+      "lon": 10.15418,
+      "detail": "Marienstraße 4, 89518 Heidenheim",
+      "note": "Wechselausstellungen moderner Kunst, Eintritt frei"
+    },
+    {
+      "n": 18,
+      "name": "Kulturbühne Halbe Treppe",
+      "icon": "music",
+      "lat": 48.67415,
+      "lon": 10.15176,
+      "detail": "St. Pöltener Straße 5, 89522 Heidenheim",
+      "note": "Kleinkunstbühne mit Konzerten und Comedy"
+    },
+    {
+      "n": 19,
+      "name": "Bahnhof Heidenheim",
+      "icon": "train-front",
+      "lat": 48.6802,
+      "lon": 10.15658,
+      "detail": "Bahnhofplatz 1, 89518 Heidenheim",
+      "note": "Brenzbahn Richtung Ulm und Aalen"
+    },
+    {
+      "n": 20,
+      "name": "Alter Hut",
+      "icon": "beer",
+      "lat": 48.6787,
+      "lon": 10.15105,
+      "detail": "Eugen-Jaekle-Platz, 89518 Heidenheim",
+      "note": "Traditionskneipe mitten in der Stadt"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "global-styles": {
+    "type": "global-styles",
+    "tokens": "global-styles.json",
+    "css": "styles/component.css"
+  },
+  "header": {
+    "type": "structural",
+    "endpoint": "template-parts",
+    "id": "twentytwentyfive//header",
+    "source": "header_blocks.html",
+    "status": "publish"
+  },
+  "footer": {
+    "type": "structural",
+    "endpoint": "template-parts",
+    "id": "twentytwentyfive//footer",
+    "source": "footer_blocks.html",
+    "status": "publish"
+  },
+  "media": {
+    "type": "media",
+    "source": "media"
+  },
+  "homepage": {
+    "type": "structural",
+    "endpoint": "pages",
+    "id": 9,
+    "source": "sections",
+    "status": "publish"
+  },
+  "ueber-uns": {
+    "type": "structural",
+    "endpoint": "pages",
+    "id": 10,
+    "source": "pages/ueber-uns",
+    "status": "publish"
+  },
+  "linktree": {
+    "type": "structural",
+    "endpoint": "pages",
+    "id": 14,
+    "source": "pages/linktree",
+    "status": "publish"
+  },
+  "studentenleben": {
+    "type": "structural",
+    "endpoint": "pages",
+    "id": 12,
+    "source": "pages/studentenleben",
+    "status": "publish"
+  },
+  "events": {
+    "type": "structural",
+    "endpoint": "pages",
+    "id": 11,
+    "source": "pages/events",
+    "status": "publish"
+  },
+  "kontakt": {
+    "type": "structural",
+    "endpoint": "pages",
+    "id": 13,
+    "source": "pages/kontakt",
+    "status": "publish"
+  },
+  "kummer-karsten": {
+    "type": "structural",
+    "endpoint": "pages",
+    "id": 16,
+    "source": "pages/kummer-karsten",
+    "status": "publish"
+  }
+}

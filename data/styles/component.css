@@ -1,0 +1,2319 @@
+:root {
+  /* Everything the browser paints itself — scrollbars and their track, the text
+     caret, the native <select> dropdown, form-control internals, autofill —
+     follows color-scheme, not our tokens. Without it the UA assumes the light
+     scheme in both themes: on a dark page that leaves a light scrollbar track
+     framing the right edge and a white select popup. It has to be declared in
+     both blocks, not just under .dark: the site theme is class-driven and may
+     disagree with the OS, so a light page on a dark-mode OS needs the pin just
+     as much. Deliberately `light`/`dark`, never `light dark` — that hands the
+     decision back to the OS and re-opens the mismatch. */
+  color-scheme: light;
+  /* Light values sourced from the theme global-styles palette (single source of truth);
+       hex fallbacks keep the design intact if a preset is ever missing. */
+  --stuv-background: var(--wp--preset--color--background, #ffffff);
+  --stuv-foreground: var(--wp--preset--color--foreground, #0a0a0a);
+  --stuv-primary: var(--wp--preset--color--primary, #e2001a);
+  --stuv-primary-foreground: var(
+    --wp--preset--color--primary-foreground,
+    #ffffff
+  );
+  /* --stuv-primary carries two roles with opposite contrast requirements: red
+       *text* on the page, and a red *fill* that carries white text on top.
+       Dark mode lifts the text role to #ff1a33 so it stays legible on near-black
+       — but white on that fill is 3.85:1, under the 4.5:1 AA threshold.
+       -surface is the fill role, pinned to the brand red in both themes
+       (white on #e2001a = 4.94:1, and the fill itself clears 3:1 against either
+       background). Paint with -surface wherever --stuv-primary-foreground sits
+       on top; keep --stuv-primary for text, borders and accents. */
+  --stuv-primary-surface: var(--stuv-primary);
+  --stuv-muted: var(--wp--preset--color--muted, #f4f4f5);
+  --stuv-muted-foreground: var(--wp--preset--color--muted-foreground, #71717a);
+  --stuv-border: var(--wp--preset--color--border, #e4e4e7);
+  --stuv-radius: var(--wp--custom--stuv-radius, 0.5rem);
+  /* Component tokens: not palette entries on purpose — palette slugs surface as
+       swatches in the editor colour picker, and these are not colours to paint with. */
+  --stuv-radius-sm: calc(var(--stuv-radius) - 0.125rem);
+  --stuv-radius-lg: calc(var(--stuv-radius) + 0.125rem);
+  /* Spacing scale — Tailwind v4 model: one base unit, every step a multiple.
+     Rung = value / 0.25rem, so the layout band lands on 4/8/12 (1/2/3rem).
+     Component classes below reference these instead of raw rem literals; the
+     editor's own spacing presets live in global-styles.json (settings.spacing). */
+  --spacing: 0.25rem;
+  --space-0_5: calc(var(--spacing) * 0.5); /* 0.125rem */
+  --space-1: calc(var(--spacing) * 1); /* 0.25rem */
+  --space-1_5: calc(var(--spacing) * 1.5); /* 0.375rem */
+  --space-2: calc(var(--spacing) * 2); /* 0.5rem */
+  --space-2_5: calc(var(--spacing) * 2.5); /* 0.625rem */
+  --space-3: calc(var(--spacing) * 3); /* 0.75rem */
+  --space-3_5: calc(var(--spacing) * 3.5); /* 0.875rem */
+  --space-4: calc(var(--spacing) * 4); /* 1rem */
+  --space-5: calc(var(--spacing) * 5); /* 1.25rem */
+  --space-6: calc(var(--spacing) * 6); /* 1.5rem */
+  --space-8: calc(var(--spacing) * 8); /* 2rem */
+  --space-10: calc(var(--spacing) * 10); /* 2.5rem */
+  --space-12: calc(var(--spacing) * 12); /* 3rem */
+  --space-24: calc(var(--spacing) * 24); /* 6rem */
+  --space-28: calc(var(--spacing) * 28); /* 7rem */
+  --stuv-ring: color-mix(in srgb, var(--stuv-primary) 50%, transparent);
+  /* accent (outline button :active) and input (form borders) are the same zinc as
+     muted/border; alias them so a palette change stays a one-line edit. */
+  --stuv-accent: var(--stuv-muted);
+  --stuv-input: var(--stuv-border);
+  /* Destructive used to alias --stuv-primary on the grounds that the site had no
+       destructive actions. Form validation is one: an error rendered in the brand
+       red is the same red as the submit button, the required-field asterisk and
+       every accent on the page, which makes colour the only error signal (WCAG
+       1.4.1) and leaves it weak for red-green colour deficiency. Its own darker
+       red reads as "wrong" rather than "brand" — 6.5:1 on the page background,
+       and the error rules below add a glyph and a border so colour is never
+       carrying the message alone. */
+  --stuv-destructive: #b91c1c;
+  /* The alert body used to inherit --stuv-muted-foreground, which lands around
+     3:1 on the tinted panel. -foreground is an amber dark enough to clear 4.5:1
+     against -bg in both themes while still reading as part of the warning. */
+  --stuv-alert-bg: rgba(234, 179, 8, 0.12);
+  --stuv-alert-border: rgba(234, 179, 8, 0.45);
+  --stuv-alert-icon: #a16207;
+  --stuv-alert-foreground: #713f12;
+  /* Linktree card accents — one hue per link. The four Instagram cards share a
+     glyph, so colour is the only thing telling them apart; the hues are spread
+     around the wheel (amber 32°, green 142°, blue 221°, violet 262°, pink 333°,
+     min gap 41°) rather than picked ad hoc. Tint is the 500 weight at 10% and
+     fill the 600, same construction as the alert tokens above. -site is for the
+     cards that stay on this site, which wear brand red instead of an accent. */
+  --stuv-link-whatsapp-tint: rgba(34, 197, 94, 0.1);
+  --stuv-link-whatsapp-fill: #16a34a;
+  --stuv-link-awareness-tint: rgba(245, 158, 11, 0.1);
+  --stuv-link-awareness-fill: #d97706;
+  --stuv-link-sport-tint: rgba(59, 130, 246, 0.1);
+  --stuv-link-sport-fill: #2563eb;
+  --stuv-link-connect-tint: rgba(139, 92, 246, 0.1);
+  --stuv-link-connect-fill: #7c3aed;
+  --stuv-link-stuv-tint: rgba(236, 72, 153, 0.1);
+  --stuv-link-stuv-fill: #db2777;
+  --stuv-link-site-tint: color-mix(
+    in srgb,
+    var(--stuv-primary) 10%,
+    transparent
+  );
+  --stuv-primary-shimmer: rgba(226, 0, 26, 0.03);
+  --stuv-primary-wash: rgba(226, 0, 26, 0.05);
+  /* Opaque stand-in for the "band" preset, which is a translucent wash (see
+     the dark-mode override below) rather than a solid color — flattening it
+     against the page background here lets a gradient fade to it smoothly. */
+  --stuv-band-solid: color-mix(in srgb, black 3%, var(--stuv-background) 97%);
+}
+/* Dark mode is class-driven, not media-query-driven: the header's theme script
+   sets .dark on <html> from localStorage, falling back to the OS preference. */
+:root.dark {
+  color-scheme: dark; /* see :root */
+  --stuv-background: #09090b;
+  --stuv-foreground: #fafafa;
+  --stuv-primary: #ff1a33;
+  /* Does NOT follow --stuv-primary up to #ff1a33 — see the note in :root. The
+     fill role stays on the brand red so white text on it keeps 4.94:1. */
+  --stuv-primary-surface: #e2001a;
+  /* #b91c1c is only 3.1:1 on the near-black page — red-400 instead, at 7.2:1. */
+  --stuv-destructive: #f87171;
+  --stuv-muted: #27272a;
+  --stuv-muted-foreground: #a1a1aa;
+  --stuv-border: #27272a;
+  /* The section-band preset is consumed directly via .has-band-background-color,
+     not through a --stuv-* alias, so it needs its own dark value: the light
+     3% black wash is invisible on the near-black background. */
+  --wp--preset--color--band: rgba(255, 255, 255, 0.03);
+  /* --stuv-ring references --stuv-primary and --stuv-accent/-input reference
+     --stuv-muted/-border, all redefined above, so they re-resolve to their dark
+     values on their own. (-destructive no longer does — it has its own pair.) */
+  --stuv-alert-bg: rgba(234, 179, 8, 0.12);
+  --stuv-alert-border: rgba(234, 179, 8, 0.5);
+  --stuv-alert-icon: #facc15;
+  --stuv-alert-foreground: #fde68a;
+  /* Linktree accents: a 10% tint is invisible on the near-black background and
+     the 600 fills go muddy, so tints rise to 18% and fills lift two steps to the
+     400 weight. (The alert tokens above only lift one step — they paint a large
+     panel where a light fill would glare; these paint a 36px chip.)
+     -site inherits the dark --stuv-primary through color-mix on its own. */
+  --stuv-link-whatsapp-tint: rgba(34, 197, 94, 0.18);
+  --stuv-link-whatsapp-fill: #4ade80;
+  --stuv-link-awareness-tint: rgba(245, 158, 11, 0.18);
+  --stuv-link-awareness-fill: #fbbf24;
+  --stuv-link-sport-tint: rgba(59, 130, 246, 0.18);
+  --stuv-link-sport-fill: #60a5fa;
+  --stuv-link-connect-tint: rgba(139, 92, 246, 0.18);
+  --stuv-link-connect-fill: #a78bfa;
+  --stuv-link-stuv-tint: rgba(236, 72, 153, 0.18);
+  --stuv-link-stuv-fill: #f472b6;
+  --stuv-primary-shimmer: rgba(255, 26, 51, 0.06);
+  --stuv-primary-wash: rgba(255, 26, 51, 0.1);
+  --stuv-band-solid: color-mix(in srgb, white 3%, var(--stuv-background) 97%);
+}
+/* gen_icon_css:start — erzeugt von tools/gen_icon_css.py; nicht von Hand bearbeiten */
+:root {
+  --ico-banknote: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Crect%20width='20'%20height='12'%20x='2'%20y='6'%20rx='2'%20/%3E%3Ccircle%20cx='12'%20cy='12'%20r='2'%20/%3E%3Cpath%20d='M6%2012h.01M18%2012h.01'%20/%3E%3C/svg%3E");
+  --ico-megaphone: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M11%206a13%2013%200%200%200%208.4-2.8A1%201%200%200%201%2021%204v12a1%201%200%200%201-1.6.8A13%2013%200%200%200%2011%2014H5a2%202%200%200%201-2-2V8a2%202%200%200%201%202-2z'%20/%3E%3Cpath%20d='M6%2014a12%2012%200%200%200%202.4%207.2%202%202%200%200%200%203.2-2.4A8%208%200%200%201%2010%2014'%20/%3E%3Cpath%20d='M8%206v8'%20/%3E%3C/svg%3E");
+  --ico-party-popper: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M5.8%2011.3%202%2022l10.7-3.79'%20/%3E%3Cpath%20d='M4%203h.01'%20/%3E%3Cpath%20d='M22%208h.01'%20/%3E%3Cpath%20d='M15%202h.01'%20/%3E%3Cpath%20d='M22%2020h.01'%20/%3E%3Cpath%20d='m22%202-2.24.75a2.9%202.9%200%200%200-1.96%203.12c.1.86-.57%201.63-1.45%201.63h-.38c-.86%200-1.6.6-1.76%201.44L14%2010'%20/%3E%3Cpath%20d='m22%2013-.82-.33c-.86-.34-1.82.2-1.98%201.11c-.11.7-.72%201.22-1.43%201.22H17'%20/%3E%3Cpath%20d='m11%202%20.33.82c.34.86-.2%201.82-1.11%201.98C9.52%204.9%209%205.52%209%206.23V7'%20/%3E%3Cpath%20d='M11%2013c1.93%201.93%202.83%204.17%202%205-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5%20.83-.83%203.07.07%205%202Z'%20/%3E%3C/svg%3E");
+  --ico-monitor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Crect%20width='20'%20height='14'%20x='2'%20y='3'%20rx='2'%20/%3E%3Cline%20x1='8'%20x2='16'%20y1='21'%20y2='21'%20/%3E%3Cline%20x1='12'%20x2='12'%20y1='17'%20y2='21'%20/%3E%3C/svg%3E");
+  --ico-dumbbell: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M17.596%2012.768a2%202%200%201%200%202.829-2.829l-1.768-1.767a2%202%200%200%200%202.828-2.829l-2.828-2.828a2%202%200%200%200-2.829%202.828l-1.767-1.768a2%202%200%201%200-2.829%202.829z'%20/%3E%3Cpath%20d='m2.5%2021.5%201.4-1.4'%20/%3E%3Cpath%20d='m20.1%203.9%201.4-1.4'%20/%3E%3Cpath%20d='M5.343%2021.485a2%202%200%201%200%202.829-2.828l1.767%201.768a2%202%200%201%200%202.829-2.829l-6.364-6.364a2%202%200%201%200-2.829%202.829l1.768%201.767a2%202%200%200%200-2.828%202.829z'%20/%3E%3Cpath%20d='m9.6%2014.4%204.8-4.8'%20/%3E%3C/svg%3E");
+  --ico-leaf: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M11%2020A7%207%200%200%201%209.8%206.1C15.5%205%2017%204.48%2019%202c1%202%202%204.18%202%208%200%205.5-4.78%2010-10%2010Z'%20/%3E%3Cpath%20d='M2%2021c0-3%201.85-5.36%205.08-6C9.5%2014.52%2012%2013%2013%2012'%20/%3E%3C/svg%3E");
+  --ico-graduation-cap: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M21.42%2010.922a1%201%200%200%200-.019-1.838L12.83%205.18a2%202%200%200%200-1.66%200L2.6%209.08a1%201%200%200%200%200%201.832l8.57%203.908a2%202%200%200%200%201.66%200z'%20/%3E%3Cpath%20d='M22%2010v6'%20/%3E%3Cpath%20d='M6%2012.5V16a6%203%200%200%200%2012%200v-3.5'%20/%3E%3C/svg%3E");
+  --ico-heart: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M2%209.5a5.5%205.5%200%200%201%209.591-3.676.56.56%200%200%200%20.818%200A5.49%205.49%200%200%201%2022%209.5c0%202.29-1.5%204-3%205.5l-5.492%205.313a2%202%200%200%201-3%20.019L5%2015c-1.5-1.5-3-3.2-3-5.5'%20/%3E%3C/svg%3E");
+  --ico-map-pin: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M20%2010c0%204.993-5.539%2010.193-7.399%2011.799a1%201%200%200%201-1.202%200C9.539%2020.193%204%2014.993%204%2010a8%208%200%200%201%2016%200'%20/%3E%3Ccircle%20cx='12'%20cy='10'%20r='3'%20/%3E%3C/svg%3E");
+  --ico-globe: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Ccircle%20cx='12'%20cy='12'%20r='10'%20/%3E%3Cpath%20d='M12%202a14.5%2014.5%200%200%200%200%2020%2014.5%2014.5%200%200%200%200-20'%20/%3E%3Cpath%20d='M2%2012h20'%20/%3E%3C/svg%3E");
+  --ico-landmark: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M10%2018v-7'%20/%3E%3Cpath%20d='M11.12%202.198a2%202%200%200%201%201.76.006l7.866%203.847c.476.233.31.949-.22.949H3.474c-.53%200-.695-.716-.22-.949z'%20/%3E%3Cpath%20d='M14%2018v-7'%20/%3E%3Cpath%20d='M18%2018v-7'%20/%3E%3Cpath%20d='M3%2022h18'%20/%3E%3Cpath%20d='M6%2018v-7'%20/%3E%3C/svg%3E");
+  --ico-calendar: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M8%202v4'%20/%3E%3Cpath%20d='M16%202v4'%20/%3E%3Crect%20width='18'%20height='18'%20x='3'%20y='4'%20rx='2'%20/%3E%3Cpath%20d='M3%2010h18'%20/%3E%3C/svg%3E");
+  --ico-calendar-days: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M8%202v4'%20/%3E%3Cpath%20d='M16%202v4'%20/%3E%3Crect%20width='18'%20height='18'%20x='3'%20y='4'%20rx='2'%20/%3E%3Cpath%20d='M3%2010h18'%20/%3E%3Cpath%20d='M8%2014h.01'%20/%3E%3Cpath%20d='M12%2014h.01'%20/%3E%3Cpath%20d='M16%2014h.01'%20/%3E%3Cpath%20d='M8%2018h.01'%20/%3E%3Cpath%20d='M12%2018h.01'%20/%3E%3Cpath%20d='M16%2018h.01'%20/%3E%3C/svg%3E");
+  --ico-coffee: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M10%202v2'%20/%3E%3Cpath%20d='M14%202v2'%20/%3E%3Cpath%20d='M16%208a1%201%200%200%201%201%201v8a4%204%200%200%201-4%204H7a4%204%200%200%201-4-4V9a1%201%200%200%201%201-1h14a4%204%200%201%201%200%208h-1'%20/%3E%3Cpath%20d='M6%202v2'%20/%3E%3C/svg%3E");
+  --ico-trophy: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M10%2014.66v1.626a2%202%200%200%201-.976%201.696A5%205%200%200%200%207%2021.978'%20/%3E%3Cpath%20d='M14%2014.66v1.626a2%202%200%200%200%20.976%201.696A5%205%200%200%201%2017%2021.978'%20/%3E%3Cpath%20d='M18%209h1.5a1%201%200%200%200%200-5H18'%20/%3E%3Cpath%20d='M4%2022h16'%20/%3E%3Cpath%20d='M6%209a6%206%200%200%200%2012%200V3a1%201%200%200%200-1-1H7a1%201%200%200%200-1%201z'%20/%3E%3Cpath%20d='M6%209H4.5a1%201%200%200%201%200-5H6'%20/%3E%3C/svg%3E");
+  --ico-home: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M15%2021v-8a1%201%200%200%200-1-1h-4a1%201%200%200%200-1%201v8'%20/%3E%3Cpath%20d='M3%2010a2%202%200%200%201%20.709-1.528l7-6a2%202%200%200%201%202.582%200l7%206A2%202%200%200%201%2021%2010v9a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2z'%20/%3E%3C/svg%3E");
+  --ico-utensils-crossed: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='m16%202-2.3%202.3a3%203%200%200%200%200%204.2l1.8%201.8a3%203%200%200%200%204.2%200L22%208'%20/%3E%3Cpath%20d='M15%2015%203.3%203.3a4.2%204.2%200%200%200%200%206l7.3%207.3c.7.7%202%20.7%202.8%200L15%2015Zm0%200%207%207'%20/%3E%3Cpath%20d='m2.1%2021.8%206.4-6.3'%20/%3E%3Cpath%20d='m19%205-7%207'%20/%3E%3C/svg%3E");
+  --ico-ticket: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M2%209a3%203%200%200%201%200%206v2a2%202%200%200%200%202%202h16a2%202%200%200%200%202-2v-2a3%203%200%200%201%200-6V7a2%202%200%200%200-2-2H4a2%202%200%200%200-2%202Z'%20/%3E%3Cpath%20d='M13%205v2'%20/%3E%3Cpath%20d='M13%2017v2'%20/%3E%3Cpath%20d='M13%2011v2'%20/%3E%3C/svg%3E");
+  --ico-clock: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Ccircle%20cx='12'%20cy='12'%20r='10'%20/%3E%3Cpath%20d='M12%206v6l4%202'%20/%3E%3C/svg%3E");
+  --ico-instagram: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Crect%20width='20'%20height='20'%20x='2'%20y='2'%20rx='5'%20ry='5'%20/%3E%3Cpath%20d='M16%2011.37A4%204%200%201%201%2012.63%208%204%204%200%200%201%2016%2011.37z'%20/%3E%3Cline%20x1='17.5'%20x2='17.51'%20y1='6.5'%20y2='6.5'%20/%3E%3C/svg%3E");
+  --ico-message-circle: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M2.992%2016.342a2%202%200%200%201%20.094%201.167l-1.065%203.29a1%201%200%200%200%201.236%201.168l3.413-.998a2%202%200%200%201%201.099.092%2010%2010%200%201%200-4.777-4.719'%20/%3E%3C/svg%3E");
+  --ico-link-2: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M9%2017H7A5%205%200%200%201%207%207h2'%20/%3E%3Cpath%20d='M15%207h2a5%205%200%201%201%200%2010h-2'%20/%3E%3Cline%20x1='8'%20x2='16'%20y1='12'%20y2='12'%20/%3E%3C/svg%3E");
+  --ico-users: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M16%2021v-2a4%204%200%200%200-4-4H6a4%204%200%200%200-4%204v2'%20/%3E%3Cpath%20d='M16%203.128a4%204%200%200%201%200%207.744'%20/%3E%3Cpath%20d='M22%2021v-2a4%204%200%200%200-3-3.87'%20/%3E%3Ccircle%20cx='9'%20cy='7'%20r='4'%20/%3E%3C/svg%3E");
+  --ico-mail: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='m22%207-8.991%205.727a2%202%200%200%201-2.009%200L2%207'%20/%3E%3Crect%20x='2'%20y='4'%20width='20'%20height='16'%20rx='2'%20/%3E%3C/svg%3E");
+  --ico-external-link: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M15%203h6v6'%20/%3E%3Cpath%20d='M10%2014%2021%203'%20/%3E%3Cpath%20d='M18%2013v6a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2V8a2%202%200%200%201%202-2h6'%20/%3E%3C/svg%3E");
+  --ico-message-circle-heart: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M2.992%2016.342a2%202%200%200%201%20.094%201.167l-1.065%203.29a1%201%200%200%200%201.236%201.168l3.413-.998a2%202%200%200%201%201.099.092%2010%2010%200%201%200-4.777-4.719'%20/%3E%3Cpath%20d='M7.828%2013.07A3%203%200%200%201%2012%208.764a3%203%200%200%201%205.004%202.224%203%203%200%200%201-.832%202.083l-3.447%203.62a1%201%200%200%201-1.45-.001z'%20/%3E%3C/svg%3E");
+  --ico-send: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M14.536%2021.686a.5.5%200%200%200%20.937-.024l6.5-19a.496.496%200%200%200-.635-.635l-19%206.5a.5.5%200%200%200-.024.937l7.93%203.18a2%202%200%200%201%201.112%201.11z'%20/%3E%3Cpath%20d='m21.854%202.147-10.94%2010.939'%20/%3E%3C/svg%3E");
+  --ico-chevron-down: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='m6%209%206%206%206-6'%20/%3E%3C/svg%3E");
+  --ico-alert-circle: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Ccircle%20cx='12'%20cy='12'%20r='10'%20/%3E%3Cline%20x1='12'%20x2='12'%20y1='8'%20y2='12'%20/%3E%3Cline%20x1='12'%20x2='12.01'%20y1='16'%20y2='16'%20/%3E%3C/svg%3E");
+  --ico-book-open: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M12%207v14'%20/%3E%3Cpath%20d='M3%2018a1%201%200%200%201-1-1V4a1%201%200%200%201%201-1h5a4%204%200%200%201%204%204%204%204%200%200%201%204-4h5a1%201%200%200%201%201%201v13a1%201%200%200%201-1%201h-6a3%203%200%200%200-3%203%203%203%200%200%200-3-3z'%20/%3E%3C/svg%3E");
+  --ico-lock: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Crect%20width='18'%20height='11'%20x='3'%20y='11'%20rx='2'%20ry='2'%20/%3E%3Cpath%20d='M7%2011V7a5%205%200%200%201%2010%200v4'%20/%3E%3C/svg%3E");
+  --ico-phone: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M13.832%2016.568a1%201%200%200%200%201.213-.303l.355-.465A2%202%200%200%201%2017%2015h3a2%202%200%200%201%202%202v3a2%202%200%200%201-2%202A18%2018%200%200%201%202%204a2%202%200%200%201%202-2h3a2%202%200%200%201%202%202v3a2%202%200%200%201-.8%201.6l-.468.351a1%201%200%200%200-.292%201.233%2014%2014%200%200%200%206.392%206.384'%20/%3E%3C/svg%3E");
+  --ico-shield: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M20%2013c0%205-3.5%207.5-7.66%208.95a1%201%200%200%201-.67-.01C7.5%2020.5%204%2018%204%2013V6a1%201%200%200%201%201-1c2%200%204.5-1.2%206.24-2.72a1.17%201.17%200%200%201%201.52%200C14.51%203.81%2017%205%2019%205a1%201%200%200%201%201%201z'%20/%3E%3C/svg%3E");
+  --ico-sparkles: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M11.017%202.814a1%201%200%200%201%201.966%200l1.051%205.558a2%202%200%200%200%201.594%201.594l5.558%201.051a1%201%200%200%201%200%201.966l-5.558%201.051a2%202%200%200%200-1.594%201.594l-1.051%205.558a1%201%200%200%201-1.966%200l-1.051-5.558a2%202%200%200%200-1.594-1.594l-5.558-1.051a1%201%200%200%201%200-1.966l5.558-1.051a2%202%200%200%200%201.594-1.594z'%20/%3E%3Cpath%20d='M20%202v4'%20/%3E%3Cpath%20d='M22%204h-4'%20/%3E%3Ccircle%20cx='4'%20cy='20'%20r='2'%20/%3E%3C/svg%3E");
+  --ico-utensils: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M3%202v7c0%201.1.9%202%202%202h4a2%202%200%200%200%202-2V2'%20/%3E%3Cpath%20d='M7%202v20'%20/%3E%3Cpath%20d='M21%2015V2a5%205%200%200%200-5%205v6c0%201.1.9%202%202%202h3Zm0%200v7'%20/%3E%3C/svg%3E");
+  --ico-briefcase: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M16%2020V4a2%202%200%200%200-2-2h-4a2%202%200%200%200-2%202v16'%20/%3E%3Crect%20width='20'%20height='14'%20x='2'%20y='6'%20rx='2'%20/%3E%3C/svg%3E");
+  --ico-lightbulb: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M15%2014c.2-1%20.7-1.7%201.5-2.5%201-.9%201.5-2.2%201.5-3.5A6%206%200%200%200%206%208c0%201%20.2%202.2%201.5%203.5.7.7%201.3%201.5%201.5%202.5'%20/%3E%3Cpath%20d='M9%2018h6'%20/%3E%3Cpath%20d='M10%2022h4'%20/%3E%3C/svg%3E");
+  --ico-moon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M20.985%2012.486a9%209%200%201%201-9.473-9.472c.405-.022.617.46.402.803a6%206%200%200%200%208.268%208.268c.344-.215.825-.004.803.401'%20/%3E%3C/svg%3E");
+  --ico-beer: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M17%2011h1a3%203%200%200%201%200%206h-1'%20/%3E%3Cpath%20d='M9%2012v6'%20/%3E%3Cpath%20d='M13%2012v6'%20/%3E%3Cpath%20d='M14%207.5c-1%200-1.44.5-3%20.5s-2-.5-3-.5-1.72.5-2.5.5a2.5%202.5%200%200%201%200-5c.78%200%201.57.5%202.5.5S9.44%202%2011%202s2%201.5%203%201.5%201.72-.5%202.5-.5a2.5%202.5%200%200%201%200%205c-.78%200-1.5-.5-2.5-.5Z'%20/%3E%3Cpath%20d='M5%208v12a2%202%200%200%200%202%202h8a2%202%200%200%200%202-2V8'%20/%3E%3C/svg%3E");
+  --ico-binoculars: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M10%2010h4'%20/%3E%3Cpath%20d='M19%207V4a1%201%200%200%200-1-1h-2a1%201%200%200%200-1%201v3'%20/%3E%3Cpath%20d='M20%2021a2%202%200%200%200%202-2v-3.851c0-1.39-2-2.962-2-4.829V8a1%201%200%200%200-1-1h-4a1%201%200%200%200-1%201v11a2%202%200%200%200%202%202z'%20/%3E%3Cpath%20d='M%2022%2016%20L%202%2016'%20/%3E%3Cpath%20d='M4%2021a2%202%200%200%201-2-2v-3.851c0-1.39%202-2.962%202-4.829V8a1%201%200%200%201%201-1h4a1%201%200%200%201%201%201v11a2%202%200%200%201-2%202z'%20/%3E%3Cpath%20d='M9%207V4a1%201%200%200%200-1-1H6a1%201%200%200%200-1%201v3'%20/%3E%3C/svg%3E");
+  --ico-bus: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M8%206v6'%20/%3E%3Cpath%20d='M15%206v6'%20/%3E%3Cpath%20d='M2%2012h19.6'%20/%3E%3Cpath%20d='M18%2018h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2%200-.4-.1-.8-.2-1.2l-1.4-5C20.1%206.8%2019.1%206%2018%206H4a2%202%200%200%200-2%202v10h3'%20/%3E%3Ccircle%20cx='7'%20cy='18'%20r='2'%20/%3E%3Cpath%20d='M9%2018h5'%20/%3E%3Ccircle%20cx='16'%20cy='18'%20r='2'%20/%3E%3C/svg%3E");
+  --ico-castle: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M10%205V3'%20/%3E%3Cpath%20d='M14%205V3'%20/%3E%3Cpath%20d='M15%2021v-3a3%203%200%200%200-6%200v3'%20/%3E%3Cpath%20d='M18%203v8'%20/%3E%3Cpath%20d='M18%205H6'%20/%3E%3Cpath%20d='M22%2011H2'%20/%3E%3Cpath%20d='M22%209v10a2%202%200%200%201-2%202H4a2%202%200%200%201-2-2V9'%20/%3E%3Cpath%20d='M6%203v8'%20/%3E%3C/svg%3E");
+  --ico-film: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Crect%20width='18'%20height='18'%20x='3'%20y='3'%20rx='2'%20/%3E%3Cpath%20d='M7%203v18'%20/%3E%3Cpath%20d='M3%207.5h4'%20/%3E%3Cpath%20d='M3%2012h18'%20/%3E%3Cpath%20d='M3%2016.5h4'%20/%3E%3Cpath%20d='M17%203v18'%20/%3E%3Cpath%20d='M17%207.5h4'%20/%3E%3Cpath%20d='M17%2016.5h4'%20/%3E%3C/svg%3E");
+  --ico-flower: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Ccircle%20cx='12'%20cy='12'%20r='3'%20/%3E%3Cpath%20d='M12%2016.5A4.5%204.5%200%201%201%207.5%2012%204.5%204.5%200%201%201%2012%207.5a4.5%204.5%200%201%201%204.5%204.5%204.5%204.5%200%201%201-4.5%204.5'%20/%3E%3Cpath%20d='M12%207.5V9'%20/%3E%3Cpath%20d='M7.5%2012H9'%20/%3E%3Cpath%20d='M16.5%2012H15'%20/%3E%3Cpath%20d='M12%2016.5V15'%20/%3E%3Cpath%20d='m8%208%201.88%201.88'%20/%3E%3Cpath%20d='M14.12%209.88%2016%208'%20/%3E%3Cpath%20d='m8%2016%201.88-1.88'%20/%3E%3Cpath%20d='M14.12%2014.12%2016%2016'%20/%3E%3C/svg%3E");
+  --ico-ice-cream-cone: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='m7%2011%204.08%2010.35a1%201%200%200%200%201.84%200L17%2011'%20/%3E%3Cpath%20d='M17%207A5%205%200%200%200%207%207'%20/%3E%3Cpath%20d='M17%207a2%202%200%200%201%200%204H7a2%202%200%200%201%200-4'%20/%3E%3C/svg%3E");
+  --ico-mountain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='m8%203%204%208%205-5%205%2015H2L8%203z'%20/%3E%3C/svg%3E");
+  --ico-music: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M9%2018V5l12-2v13'%20/%3E%3Ccircle%20cx='6'%20cy='18'%20r='3'%20/%3E%3Ccircle%20cx='18'%20cy='16'%20r='3'%20/%3E%3C/svg%3E");
+  --ico-palette: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M12%2022a1%201%200%200%201%200-20%2010%209%200%200%201%2010%209%205%205%200%200%201-5%205h-2.25a1.75%201.75%200%200%200-1.4%202.8l.3.4a1.75%201.75%200%200%201-1.4%202.8z'%20/%3E%3Ccircle%20cx='13.5'%20cy='6.5'%20r='.5'%20fill='%23E2001A'%20/%3E%3Ccircle%20cx='17.5'%20cy='10.5'%20r='.5'%20fill='%23E2001A'%20/%3E%3Ccircle%20cx='6.5'%20cy='12.5'%20r='.5'%20fill='%23E2001A'%20/%3E%3Ccircle%20cx='8.5'%20cy='7.5'%20r='.5'%20fill='%23E2001A'%20/%3E%3C/svg%3E");
+  --ico-pizza: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='m12%2014-1%201'%20/%3E%3Cpath%20d='m13.75%2018.25-1.25%201.42'%20/%3E%3Cpath%20d='M17.775%205.654a15.68%2015.68%200%200%200-12.121%2012.12'%20/%3E%3Cpath%20d='M18.8%209.3a1%201%200%200%200%202.1%207.7'%20/%3E%3Cpath%20d='M21.964%2020.732a1%201%200%200%201-1.232%201.232l-18-5a1%201%200%200%201-.695-1.232A19.68%2019.68%200%200%201%2015.732%202.037a1%201%200%200%201%201.232.695z'%20/%3E%3C/svg%3E");
+  --ico-train-front: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M8%203.1V7a4%204%200%200%200%208%200V3.1'%20/%3E%3Cpath%20d='m9%2015-1-1'%20/%3E%3Cpath%20d='m15%2015%201-1'%20/%3E%3Cpath%20d='M9%2019c-2.8%200-5-2.2-5-5v-4a8%208%200%200%201%2016%200v4c0%202.8-2.2%205-5%205Z'%20/%3E%3Cpath%20d='m8%2019-2%203'%20/%3E%3Cpath%20d='m16%2019%202%203'%20/%3E%3C/svg%3E");
+  --ico-tree-pine: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='m17%2014%203%203.3a1%201%200%200%201-.7%201.7H4.7a1%201%200%200%201-.7-1.7L7%2014h-.3a1%201%200%200%201-.7-1.7L9%209h-.2A1%201%200%200%201%208%207.3L12%203l4%204.3a1%201%200%200%201-.8%201.7H15l3%203.3a1%201%200%200%201-.7%201.7H17Z'%20/%3E%3Cpath%20d='M12%2022v-3'%20/%3E%3C/svg%3E");
+  --ico-waves: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M2%206c.6.5%201.2%201%202.5%201C7%207%207%205%209.5%205c2.6%200%202.4%202%205%202%202.5%200%202.5-2%205-2%201.3%200%201.9.5%202.5%201'%20/%3E%3Cpath%20d='M2%2012c.6.5%201.2%201%202.5%201%202.5%200%202.5-2%205-2%202.6%200%202.4%202%205%202%202.5%200%202.5-2%205-2%201.3%200%201.9.5%202.5%201'%20/%3E%3Cpath%20d='M2%2018c.6.5%201.2%201%202.5%201%202.5%200%202.5-2%205-2%202.6%200%202.4%202%205%202%202.5%200%202.5-2%205-2%201.3%200%201.9.5%202.5%201'%20/%3E%3C/svg%3E");
+  --ico-wine: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23E2001A'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%3Cpath%20d='M8%2022h8'%20/%3E%3Cpath%20d='M7%2010h10'%20/%3E%3Cpath%20d='M12%2015v7'%20/%3E%3Cpath%20d='M12%2015a5%205%200%200%200%205-5c0-2-.5-4-2-8H9c-1.5%204-2%206-2%208a5%205%200%200%200%205%205Z'%20/%3E%3C/svg%3E");
+}
+/* gen_icon_css:end */
+body {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background-color: var(--stuv-background);
+  color: var(--stuv-foreground);
+  font-weight: 400;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+p {
+  line-height: 1.6;
+}
+a {
+  text-decoration: none;
+}
+/* Full-bleed section band. Every alignfull section wrapper shares this
+     padding; the few deviating bands (tighter CTAs, flush-top follow-ups)
+     keep their values inline. Mobile gets its own (smaller) step instead of
+     inheriting the tablet/desktop value — 5rem read as dead space stacked
+     between full-bleed bands on a short viewport. */
+.stuv-section {
+  padding: var(--space-12) var(--space-6);
+}
+/* Left-aligned subpage header (Über uns, Events, Kontakt, Studentenleben).
+     Replaces the old centered banner with a thin primary accent rule to the
+     left of the stacked eyebrow / title / subtitle. The header group inherits
+     the 56rem content width, so this accent edge lines up with the sections
+     below it. */
+.stuv-page-header {
+  border-left: 3px solid var(--stuv-primary);
+  padding-left: var(--space-6);
+}
+/* shadcn card: resting shadow-sm, no hover lift and no hover shadow.
+     1.5rem is the default padding; the 2rem/0 outliers override it inline, and
+     .stuv-map-frame zeroes it (the frame geometry assumes none). */
+.stuv-card {
+  background: var(--stuv-background);
+  border: 1px solid var(--stuv-border);
+  border-radius: var(--stuv-radius-lg);
+  padding: var(--space-6);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+.wp-block-column {
+  display: flex;
+  flex-direction: column;
+}
+/* Equal-height cards across a card row — only when the card is the column's sole block.
+	     Columns that stack a header plus several blocks (02-was-wir-bieten) must keep natural flow. */
+.wp-block-column > .wp-block-group.stuv-card:only-child {
+  flex: 1;
+}
+.wp-block-column .stuv-card {
+  display: flex;
+  flex-direction: column;
+}
+/* ---------- Card grid ----------
+     Breakpoints (match Tailwind defaults): sm 640px, md 768px, lg 1024px, xl 1280px.
+     Every @media below citing one of these four numbers should keep using the
+     same value rather than drift to a nearby one. */
+.stuv-grid-2,
+.stuv-grid-3,
+.stuv-grid-4 {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .stuv-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 768px) {
+  .stuv-grid-3,
+  .stuv-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .stuv-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .stuv-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+/* Equal-height cards inside a migrated grid group — .wp-block-column's own
+     flex-column rule (above) no longer applies once wp:column is removed, so
+     the direct .stuv-card children need the same treatment restated here. */
+.stuv-grid-2 > .stuv-card,
+.stuv-grid-3 > .stuv-card,
+.stuv-grid-4 > .stuv-card {
+  display: flex;
+  flex-direction: column;
+}
+/* A grid child that breaks the column rhythm to span the whole row — e.g. the
+   Hochschulsport block sitting below the two-up cards in 02-was-wir-bieten. On
+   the single-column mobile grid 1 / -1 is the sole column, so this is a no-op
+   until .stuv-grid-2 splits into two columns at 640px. */
+.stuv-col-span-full {
+  grid-column: 1 / -1;
+}
+.stuv-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1_5);
+  margin-top: auto;
+}
+.stuv-badge-row > p {
+  margin-block: 0;
+}
+/* Card CTA block, pinned to the card's bottom-left (the card is already a flex
+     column, so margin-top:auto eats the slack). A card carrying several links
+     therefore grows upward instead of dropping its buttons below the row. */
+.stuv-card-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin-top: auto;
+  margin-bottom: 0;
+}
+.stuv-clip {
+  overflow: hidden;
+}
+/* The Google Calendar embeds (homepage "Anstehende Events", Events page) can't
+   follow the site's .dark toggle — their background is baked into the iframe src
+   as bgcolor=… . Invert the rendered frame in dark mode so the white agenda
+   doesn't glare on the near-black page; hue-rotate(180deg) carries the red event
+   markers back to red after the invert. Scoped to the iframe so the other
+   .stuv-clip cards (quicklinks, linktree) stay untouched. */
+:root.dark .stuv-clip iframe {
+  filter: invert(1) hue-rotate(180deg);
+  /* The one place that opts back out of the root's color-scheme:dark. The frame
+     is inverted, so a dark initial canvas would render *white* until Google's
+     own white page paints over it — the invert wants a light box underneath. */
+  color-scheme: light;
+}
+/* Both embeds used to carry scrolling="no" next to a fixed pixel height. Google's
+   agenda view reflows into taller stacked rows on a narrow viewport, so the
+   content outgrew the box and scrolling="no" removed the only way to reach it —
+   events past the cut were simply unreachable on a phone. The attribute is gone
+   (obsolete in HTML5 anyway, as is frameborder — the inline border:0 covers that),
+   so the frame scrolls internally again. min-height rather than height so this
+   only ever raises: the homepage AGENDA embed goes 380px -> 32rem where it is
+   tightest, while the Events page keeps its taller 600px box. */
+@media (max-width: 639px) {
+  .stuv-clip iframe {
+    min-height: 32rem;
+  }
+}
+
+/* DSGVO click-to-load placeholder for Google Calendar embeds. The stuv-dsgvo
+   plugin finds iframe[data-stuv-src] elements and inserts a .stuv-dsgvo-placeholder
+   before them; a click on the button sets the iframe's src and removes the card.
+   The placeholder uses the same design tokens as .stuv-card, so it follows the
+   light/dark toggle on its own.
+
+   The embeds carry no src of their own, so an iframe that still has
+   data-stuv-src has nothing to show — hide it until the plugin swaps the URL in
+   and adds .stuv-dsgvo-loaded. Hiding on the attribute rather than on a
+   JS-applied class is what keeps the plugin-off / JS-off case from rendering a
+   600px empty box; .stuv-dsgvo-fallback then carries the visible link, and the
+   plugin hides that again by putting .stuv-dsgvo-ready on the wrapper. */
+.stuv-dsgvo-embed iframe[data-stuv-src] {
+  display: none;
+}
+
+.stuv-dsgvo-embed iframe[data-stuv-src].stuv-dsgvo-loaded {
+  display: block;
+}
+
+.stuv-dsgvo-fallback {
+  margin: 0;
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--stuv-muted-foreground);
+}
+
+.stuv-dsgvo-embed.stuv-dsgvo-ready .stuv-dsgvo-fallback {
+  display: none;
+}
+
+.stuv-dsgvo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+
+.stuv-dsgvo-icon {
+  color: var(--stuv-muted-foreground);
+  margin-bottom: var(--space-1);
+}
+
+.stuv-dsgvo-notice {
+  margin: 0;
+  font-weight: 600;
+  color: var(--stuv-foreground);
+}
+
+.stuv-dsgvo-note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--stuv-muted-foreground);
+  max-width: 28rem;
+  line-height: 1.5;
+}
+
+/* The base rule is `a { text-decoration: none }`, so a link inside muted body
+   copy would be invisible without this. */
+.stuv-dsgvo-note a,
+.stuv-dsgvo-fallback a {
+  color: var(--stuv-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Sits under a loaded embed and is the only way back out of the remembered
+   consent, so it is always rendered when the iframe is — never behind a hover
+   or a toggle. Quiet by design: muted, small, and inside the card, so it reads
+   as a footnote to the calendar rather than as a second call to action. */
+.stuv-dsgvo-revoke {
+  margin: 0;
+  padding: var(--space-3) var(--space-6);
+  border-top: 1px solid var(--stuv-border);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--stuv-muted-foreground);
+  text-align: center;
+}
+
+/* A <button>, not a link — it changes state on this device, it does not
+   navigate. The reset is explicit because the theme styles buttons. */
+.stuv-dsgvo-revoke-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--stuv-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.stuv-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--stuv-radius);
+  background: color-mix(in srgb, var(--stuv-primary) 10%, transparent);
+  color: var(--stuv-primary);
+  transition: background-color 0.15s ease;
+}
+.has-text-align-center .stuv-icon-box {
+  align-self: center;
+}
+/* Card header row — icon box beside the card title instead of stacked above it
+     (Referate cards). Same geometry as .stuv-quicklink-head; the child rule
+     replaces the per-block inline margins those two blocks used to carry, so
+     the blocks themselves keep no spacing attributes. */
+.stuv-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2_5);
+  margin-bottom: var(--space-4);
+}
+.stuv-card-head > * {
+  margin-block: 0;
+}
+/* ---------- Buttons (shadcn variant set) ----------
+     Every rule targets a bare <a> and the link inside a core/button wrapper.
+     .stuv-button-overlay is the white-on-dark style for the hero cover and the red
+     events CTA band.
+     Focus rings come from the shared :focus-visible rule further down. */
+a.stuv-button-primary,
+.wp-block-button.stuv-button-primary .wp-block-button__link,
+a.stuv-button-outline,
+.wp-block-button.stuv-button-outline .wp-block-button__link,
+a.stuv-button-link,
+.wp-block-button.stuv-button-link .wp-block-button__link,
+a.stuv-button-overlay,
+.wp-block-button.stuv-button-overlay .wp-block-button__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 2.5rem;
+  padding: 0 var(--space-4);
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: var(--stuv-radius);
+  font-weight: 500;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+a.stuv-button-primary,
+.wp-block-button.stuv-button-primary .wp-block-button__link {
+  background: var(--stuv-primary-surface);
+  color: var(--stuv-primary-foreground);
+}
+a.stuv-button-primary:hover,
+.wp-block-button.stuv-button-primary .wp-block-button__link:hover {
+  background: color-mix(in srgb, var(--stuv-primary-surface) 90%, #000);
+}
+
+a.stuv-button-outline,
+.wp-block-button.stuv-button-outline .wp-block-button__link {
+  background: transparent;
+  color: var(--stuv-foreground);
+  border-color: var(--stuv-border);
+}
+a.stuv-button-outline:hover,
+.wp-block-button.stuv-button-outline .wp-block-button__link:hover {
+  border-color: var(--stuv-primary);
+  color: var(--stuv-primary);
+}
+a.stuv-button-outline:active,
+.wp-block-button.stuv-button-outline .wp-block-button__link:active {
+  background: var(--stuv-accent);
+}
+
+a.stuv-button-link,
+.wp-block-button.stuv-button-link .wp-block-button__link {
+  background: transparent;
+  color: var(--stuv-primary);
+  height: auto;
+  padding: 0;
+}
+a.stuv-button-link:hover,
+.wp-block-button.stuv-button-link .wp-block-button__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+a.stuv-button-overlay,
+.wp-block-button.stuv-button-overlay .wp-block-button__link {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+a.stuv-button-overlay:hover,
+.wp-block-button.stuv-button-overlay .wp-block-button__link:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* .stuv-ico normally masks in a fixed red — wrong inside a button, where the
+   fill needs to match that button's own text colour (e.g. white on the red
+   primary button, or it disappears against the red background). */
+.stuv-button-primary .stuv-ico,
+.stuv-button-outline .stuv-ico,
+.stuv-button-link .stuv-ico,
+.stuv-button-overlay .stuv-ico {
+  background-color: currentColor;
+}
+
+/* Size — applied alongside a variant class. */
+a.stuv-button-lg,
+.wp-block-button.stuv-button-lg .wp-block-button__link {
+  height: 2.75rem;
+  padding: 0 var(--space-8);
+  font-size: 1rem;
+}
+
+[class*="stuv-button-"]:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+/* Section eyebrow pill (mirrors Next.js Badge variant="outline"). Apply to an inline <span>. */
+.stuv-eyebrow {
+  display: inline-block;
+  padding: var(--space-0_5) var(--space-3);
+  border: 1px solid var(--stuv-border);
+  border-radius: var(--stuv-radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--stuv-foreground);
+}
+/* Lead paragraph of the eyebrow/h2/lead section header. At 1.25rem the 56rem
+   content width runs to ~87 characters per line, well past the ~65 that stays
+   comfortable to read, so cap it at the same 42rem the hero subtitle uses.
+   The cap alone is not enough: these paragraphs sit in core "constrained"
+   groups, whose layout CSS sets margin-inline:auto !important on every child
+   narrower than the content width — that would centre the lead away from the
+   left-aligned eyebrow and heading above it. Only the centred variants
+   (the CTA bands) want the auto margins back. */
+p.stuv-section-intro {
+  max-width: 42rem;
+  margin-inline: 0 !important;
+  /* One authoritative h2->lead gap for every section header. The rhythm used to
+     live in per-block inline margins scattered across ~15 files and had drifted
+     into a 1rem (studentenleben) vs 1.5rem (ueber-uns/events) split. Centralising
+     it here keeps the intended uneven rhythm — eyebrow->h2 stays the tighter 1rem
+     bond (blockGap / the eyebrow paragraph's margin-bottom), the lead sits one
+     step looser at 1.5rem. !important is required to beat the inline margin-top
+     those blocks still carry, and matches the margin-inline override above. */
+  margin-top: var(--space-6) !important;
+  /* text-xl: the lead sits one step above the 1.125rem body. It owns its size
+     here rather than in the block's inline style so the whole section-header
+     ramp lives in one place. The size/leading pair is fixed at every viewport —
+     settings.typography.fluid is false, so nothing rewrites it into a clamp().
+     !important beats the blocks' inline font-size, like the margins above. */
+  font-size: 1.25rem !important;
+  line-height: 1.75rem;
+}
+p.stuv-section-intro.has-text-align-center {
+  margin-inline: auto !important;
+}
+/* Leading icon inside a primary button (mirrors the Next.js icon+label buttons); masks the SVG shape in the button text colour. */
+a.stuv-button-primary.stuv-btn-message-circle-heart::before,
+.wp-block-button.stuv-button-primary.stuv-btn-message-circle-heart
+  .wp-block-button__link::before {
+  content: "";
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: currentColor;
+  -webkit-mask: var(--ico-message-circle-heart) center/contain no-repeat;
+  mask: var(--ico-message-circle-heart) center/contain no-repeat;
+}
+@media (max-width: 639px) {
+  .wp-block-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  .wp-block-button__link {
+    width: 100%;
+  }
+}
+/* ---------- Logo ---------- */
+.stuv-logo-mark {
+  display: block;
+  height: 2.5rem;
+  width: auto;
+}
+
+/* ---------- Sticky header bar ---------- */
+/* position:sticky lives on the auto-generated <header class="wp-block-template-part">
+     wrapper, not .stuv-header itself. .stuv-header is that wrapper's only child, so its
+     containing block is exactly as tall as .stuv-header — zero slack for the sticky
+     offset, so it silently never sticks (verified in a real browser, not just computed
+     style: position reports "sticky" but the element still scrolls away like static). */
+header.wp-block-template-part {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+/* Anchor targets must clear the sticky header, or every in-page jump lands with
+     its heading scrolled underneath it — ~100 fragment links do this: the map-pin
+     anchors on /studentenleben/ and the cross-page section links
+     (/ueber-uns/#sport, /studentenleben/#wg-suche, …). Tapping a map
+     pin is the worst case: it is the primary interaction and appears to do nothing.
+     scroll-padding-top on the scrollport rather than scroll-margin-top on each
+     target: one rule instead of a selector list that has to be kept in step with
+     every new id, and it also covers keyboard focus jumps, find-in-page and
+     scrollIntoView(), which scroll-margin-top on enumerated selectors would miss.
+     The value is the header box (2.5rem logo/button + its vertical padding + the
+     1px border) plus a little breathing room. Over-shooting is harmless — the
+     target just sits lower — so this rounds up; re-measure the rendered header
+     before trimming it. */
+:root {
+  scroll-padding-top: 5.5rem;
+}
+/* Header/footer padding used to come from var(--wp--preset--spacing--30|50|60),
+     presets owned by Twenty Twenty-Five's theme.json rather than by this repo — a
+     theme update or theme switch would have silently collapsed the chrome, and no
+     --dry-run could see it coming. The values below are TT5's verbatim (30 = 20px,
+     50 = clamp(30px,5vw,50px), 60 = clamp(30px,7vw,70px)), so nothing moves; they
+     are just owned here now. The blocks themselves carry no spacing attribute any
+     more. Keep the header figure in step with scroll-padding-top above: the sticky
+     header measures 2.5rem (logo/button) + 2x this padding + the 1px border. */
+.stuv-header-row {
+  padding-block: var(--space-5); /* 1.25rem = TT5 spacing 30 */
+}
+.stuv-header {
+  border-bottom: 1px solid var(--stuv-border);
+  background: color-mix(in srgb, var(--stuv-background) 92%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+/* Logo | nav | actions as three flex siblings — nav's box grows to fill the
+     space between the other two and centers its own content within that box
+     (the actual shadcn header pattern, not an absolute page-center hack). */
+.stuv-header-nav-wrap {
+  flex: 1 1 auto;
+}
+.stuv-header .wp-block-navigation-item__content {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--stuv-muted-foreground);
+  transition: color 0.15s ease;
+}
+.stuv-header .wp-block-navigation-item__content:hover {
+  color: var(--stuv-foreground);
+}
+/* On mobile the core Navigation overlay is position:fixed; backdrop-filter on the
+     sticky header would create a containing block and clip the overlay to the header
+     height. Drop the blur below the nav breakpoint so the overlay covers the viewport.
+     Also keep the hamburger and the Kontakt button on one row (button to its left).
+     Core hard-codes the hamburger/inline-nav switch to 600px (Gutenberg's $break-small
+     via `!important`); override both sides of that switch so it lines up with our own
+     breakpoint below — otherwise 600–1023px shows the full inline nav crammed into the
+     shrink-only .stuv-header-nav-wrap box instead of the hamburger. */
+@media (max-width: 1023px) {
+  .stuv-header {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--stuv-background);
+  }
+  .stuv-header .wp-block-navigation__responsive-container-open {
+    display: flex !important;
+  }
+  .stuv-header .wp-block-navigation__responsive-container:not(.is-menu-open) {
+    display: none !important;
+  }
+  /* Nav collapses to a hamburger below this breakpoint — stop it growing so
+       it doesn't float in the middle of the row, and cluster it with the
+       actions on the right the way the mobile header looked before the nav
+       was split out into its own sibling group. */
+  .stuv-header-nav-wrap {
+    flex: 0 1 auto;
+    order: 3;
+  }
+  .stuv-header .stuv-header-actions {
+    order: 2;
+    margin-left: auto;
+    flex-wrap: nowrap !important;
+    gap: var(--space-3) !important;
+  }
+  /* Keep the Kontakt button to the left of the hamburger, sized to its
+       content — override the global < sm rule that turns .wp-block-buttons
+       into a full-width column (correct for content CTAs, wrong in the header). */
+  .stuv-header-actions .wp-block-buttons {
+    flex-direction: row;
+    width: auto;
+  }
+  .stuv-header-actions .wp-block-button__link {
+    width: auto;
+  }
+  /* The open overlay's colours come from the Navigation block's
+       overlayBackgroundColor/overlayTextColor attributes, which point at TT5's
+       own base/contrast presets — static #FFFFFF / #111111, emitted as
+       .has-base-background-color{…!important} on the responsive container. Those
+       presets are not theme-aware, so dark mode left the open menu a white sheet
+       carrying the dark-mode link colour (--stuv-muted-foreground, #a1a1aa):
+       white on white. Redefining the two presets under :root.dark is not an
+       option — the hero cover dims through has-contrast-background-color and
+       would flip to a 70% white wash over the photo. Dropping the block
+       attributes is not one either: core then falls back to its own hard-coded
+       .wp-block-navigation:not(.has-background) … {background-color:#fff}. So the
+       overlay takes the site tokens here, in both modes; !important is what beats
+       the preset classes. Light mode is unchanged — base is the same #ffffff. */
+  .wp-block-navigation__responsive-container.is-menu-open {
+    background-color: var(--stuv-background) !important;
+    color: var(--stuv-foreground) !important;
+  }
+  /* Bigger, closer links in the mobile nav overlay. */
+  .wp-block-navigation__responsive-container.is-menu-open
+    .wp-block-navigation-item__content,
+  .wp-block-navigation__responsive-container.is-menu-open
+    .wp-block-navigation-submenu__toggle {
+    padding: var(--space-2) 0;
+    font-size: 1.25rem;
+    line-height: 1.25;
+  }
+  .wp-block-navigation__responsive-container.is-menu-open
+    .wp-block-navigation__submenu-container {
+    display: none !important;
+  }
+  .wp-block-navigation__responsive-container.is-menu-open
+    .wp-block-navigation-submenu
+    .wp-block-navigation__submenu-icon {
+    display: none !important;
+  }
+}
+
+/* The header row is flexWrap:nowrap and, on a phone, held more than it had room
+   for: at 360px the root padding leaves ~300px, while the logo alone is 168px
+   (2.5rem tall x the 1342/320 mark ratio) and the theme toggle, the Kontakt
+   button and the hamburger want ~180px more. Nothing in the row could shrink,
+   so the last item — .stuv-header-nav-wrap with the hamburger — was pushed
+   ~28px past the viewport, and that is the whole page's horizontal scroll:
+   the document grows to its widest child, so *every* page could be swiped
+   sideways.
+
+   Two halves, and the second is the one that matters. The numbers below buy
+   back the ~50px the row was short of, but a fixed set of numbers only ever
+   fits the widths it was measured at. So the row is also made shrinkable:
+   min-width:0 lifts the flex default (min-width:auto, i.e. "never smaller than
+   your content") off the logo group, and max-width on the mark itself lets the
+   logo give way. Below whatever width the numbers stop covering, the logo
+   scales down instead of the header overflowing — object-fit keeps it from
+   squashing while it does. Fixing only the numbers would move the breakage to
+   the next narrow device rather than remove it. */
+@media (max-width: 639px) {
+  /* !important for the same reason as .stuv-header-actions above: the row's gap
+     is the block's blockGap, emitted by core as a .wp-container-* rule of equal
+     specificity whose position in the inline stylesheet is not ours to rely on. */
+  .stuv-header .stuv-header-row {
+    gap: var(--space-2) !important;
+  }
+  .stuv-header-row > :first-child {
+    min-width: 0;
+  }
+  .stuv-logo-mark {
+    height: 2rem;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left center;
+  }
+  /* Sized down with the row, not hidden: Kontakt is the header's only CTA and
+     it is not in the nav overlay either, so hiding it would take it off the
+     phone entirely. */
+  .stuv-header-actions .wp-block-button__link {
+    padding-inline: var(--space-3);
+    font-size: 0.8125rem;
+  }
+}
+
+/* ---------- Masked icon inside .stuv-icon-box ---------- */
+.stuv-icon-box::before {
+  content: "";
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--stuv-primary);
+  transition: background-color 0.15s ease;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.stuv-icon-box-lg {
+  width: 3rem;
+  height: 3rem;
+}
+.stuv-icon-box-lg::before {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Quicklink card — compact CTA card link (icon + title + optional
+     external-link glyph in a header row, description below). The whole card
+     is a real <a> (wp:html), so unlike the old bottom-right arrow affordance
+     there's no separate tap-target element to keep in sync with card height. */
+.stuv-quicklink {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  text-decoration: none;
+  color: inherit;
+}
+.stuv-quicklink-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2_5);
+}
+.stuv-quicklink-title {
+  flex: 1;
+  font-weight: 600;
+}
+.stuv-quicklink-ext {
+  flex-shrink: 0;
+  background-color: var(--stuv-muted-foreground);
+}
+.stuv-quicklink-desc {
+  color: var(--stuv-muted-foreground);
+  font-size: 1rem;
+}
+
+/* Bare inline icon glyph — the span itself is the mask surface (no box, no
+     ::before). Lives inside flex rows, so width/height apply. Colour defaults to
+     brand primary; the linktree cards override it with a --stuv-link-*-fill
+     token. -sm/-lg are sizes, not icon names; the shape comes from a
+     .stuv-ico-<name> class below. */
+.stuv-ico {
+  width: 1rem;
+  height: 1rem;
+  /* Every icon+label row is a nowrap flex group; without this the icon is a
+     shrinkable flex item and squashes before the label wraps. */
+  flex-shrink: 0;
+  background-color: var(--stuv-primary);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.stuv-ico-sm {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+.stuv-ico-lg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Per-icon mask images (theme-aware spots). Two consumers: the ::before of a
+     box (.stuv-icon-box) and the bare .stuv-ico span. The element-level selector
+     must stay compound — a bare .stuv-ico-<name> would mask the .stuv-icon-box
+     element itself and clip the rounded square to the icon shape. */
+.stuv-ico-calendar::before,
+.stuv-ico.stuv-ico-calendar {
+  -webkit-mask-image: var(--ico-calendar);
+  mask-image: var(--ico-calendar);
+}
+.stuv-ico-calendar-days::before,
+.stuv-ico.stuv-ico-calendar-days {
+  -webkit-mask-image: var(--ico-calendar-days);
+  mask-image: var(--ico-calendar-days);
+}
+.stuv-ico-coffee::before {
+  -webkit-mask-image: var(--ico-coffee);
+  mask-image: var(--ico-coffee);
+}
+.stuv-ico-trophy::before {
+  -webkit-mask-image: var(--ico-trophy);
+  mask-image: var(--ico-trophy);
+}
+.stuv-ico-home::before {
+  -webkit-mask-image: var(--ico-home);
+  mask-image: var(--ico-home);
+}
+.stuv-ico-utensils-crossed::before {
+  -webkit-mask-image: var(--ico-utensils-crossed);
+  mask-image: var(--ico-utensils-crossed);
+}
+.stuv-ico-dumbbell::before {
+  -webkit-mask-image: var(--ico-dumbbell);
+  mask-image: var(--ico-dumbbell);
+}
+.stuv-ico-ticket::before {
+  -webkit-mask-image: var(--ico-ticket);
+  mask-image: var(--ico-ticket);
+}
+.stuv-ico-message-circle-heart::before,
+.stuv-ico.stuv-ico-message-circle-heart {
+  -webkit-mask-image: var(--ico-message-circle-heart);
+  mask-image: var(--ico-message-circle-heart);
+}
+.stuv-ico-instagram::before,
+.stuv-ico.stuv-ico-instagram {
+  -webkit-mask-image: var(--ico-instagram);
+  mask-image: var(--ico-instagram);
+}
+.stuv-ico-message-circle::before,
+.stuv-ico.stuv-ico-message-circle {
+  -webkit-mask-image: var(--ico-message-circle);
+  mask-image: var(--ico-message-circle);
+}
+.stuv-ico-link-2::before {
+  -webkit-mask-image: var(--ico-link-2);
+  mask-image: var(--ico-link-2);
+}
+.stuv-ico-users::before,
+.stuv-ico.stuv-ico-users {
+  -webkit-mask-image: var(--ico-users);
+  mask-image: var(--ico-users);
+}
+.stuv-ico-mail::before,
+.stuv-ico.stuv-ico-mail {
+  -webkit-mask-image: var(--ico-mail);
+  mask-image: var(--ico-mail);
+}
+/* No .stuv-ico-alert-circle helper: --ico-alert-circle is masked directly by
+   .stuv-alert-row, the form-level error banner and the field-error line, and no
+   markup asks for it by class. The variable stays, the unused class doesn't. */
+.stuv-ico-book-open::before {
+  -webkit-mask-image: var(--ico-book-open);
+  mask-image: var(--ico-book-open);
+}
+.stuv-ico-lock::before,
+.stuv-ico.stuv-ico-lock {
+  -webkit-mask-image: var(--ico-lock);
+  mask-image: var(--ico-lock);
+}
+.stuv-ico-phone::before,
+.stuv-ico.stuv-ico-phone {
+  -webkit-mask-image: var(--ico-phone);
+  mask-image: var(--ico-phone);
+}
+.stuv-ico-shield::before,
+.stuv-ico.stuv-ico-shield {
+  -webkit-mask-image: var(--ico-shield);
+  mask-image: var(--ico-shield);
+}
+.stuv-ico-sparkles::before,
+.stuv-ico.stuv-ico-sparkles {
+  -webkit-mask-image: var(--ico-sparkles);
+  mask-image: var(--ico-sparkles);
+}
+.stuv-ico-utensils::before {
+  -webkit-mask-image: var(--ico-utensils);
+  mask-image: var(--ico-utensils);
+}
+.stuv-ico-banknote::before {
+  -webkit-mask-image: var(--ico-banknote);
+  mask-image: var(--ico-banknote);
+}
+.stuv-ico-megaphone::before {
+  -webkit-mask-image: var(--ico-megaphone);
+  mask-image: var(--ico-megaphone);
+}
+.stuv-ico-party-popper::before {
+  -webkit-mask-image: var(--ico-party-popper);
+  mask-image: var(--ico-party-popper);
+}
+.stuv-ico-monitor::before {
+  -webkit-mask-image: var(--ico-monitor);
+  mask-image: var(--ico-monitor);
+}
+.stuv-ico-leaf::before {
+  -webkit-mask-image: var(--ico-leaf);
+  mask-image: var(--ico-leaf);
+}
+.stuv-ico-graduation-cap::before,
+.stuv-ico.stuv-ico-graduation-cap {
+  -webkit-mask-image: var(--ico-graduation-cap);
+  mask-image: var(--ico-graduation-cap);
+}
+.stuv-ico-heart::before,
+.stuv-ico.stuv-ico-heart {
+  -webkit-mask-image: var(--ico-heart);
+  mask-image: var(--ico-heart);
+}
+.stuv-ico-map-pin::before,
+.stuv-ico.stuv-ico-map-pin {
+  -webkit-mask-image: var(--ico-map-pin);
+  mask-image: var(--ico-map-pin);
+}
+.stuv-ico-globe::before {
+  -webkit-mask-image: var(--ico-globe);
+  mask-image: var(--ico-globe);
+}
+.stuv-ico-landmark::before,
+.stuv-ico.stuv-ico-landmark {
+  -webkit-mask-image: var(--ico-landmark);
+  mask-image: var(--ico-landmark);
+}
+.stuv-ico-clock::before {
+  -webkit-mask-image: var(--ico-clock);
+  mask-image: var(--ico-clock);
+}
+.stuv-ico-briefcase::before,
+.stuv-ico.stuv-ico-briefcase {
+  -webkit-mask-image: var(--ico-briefcase);
+  mask-image: var(--ico-briefcase);
+}
+.stuv-ico-lightbulb::before,
+.stuv-ico.stuv-ico-lightbulb {
+  -webkit-mask-image: var(--ico-lightbulb);
+  mask-image: var(--ico-lightbulb);
+}
+.stuv-ico-moon::before,
+.stuv-ico.stuv-ico-moon {
+  -webkit-mask-image: var(--ico-moon);
+  mask-image: var(--ico-moon);
+}
+.stuv-ico.stuv-ico-external-link {
+  -webkit-mask-image: var(--ico-external-link);
+  mask-image: var(--ico-external-link);
+}
+
+/* ---------- Referate accordion ---------- */
+.stuv-accordion {
+  border-bottom: 1px solid var(--stuv-border);
+}
+.stuv-accordion > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  font-weight: 500;
+  color: var(--stuv-foreground);
+}
+.stuv-accordion > summary::-webkit-details-marker {
+  display: none;
+}
+.stuv-accordion > summary:hover {
+  color: var(--stuv-primary);
+}
+.stuv-accordion > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 1rem;
+  height: 1rem;
+  background: var(--stuv-muted-foreground);
+  -webkit-mask: var(--ico-chevron-down) center/contain no-repeat;
+  mask: var(--ico-chevron-down) center/contain no-repeat;
+  transition: transform 0.2s ease;
+}
+.stuv-accordion[open] > summary::after {
+  transform: rotate(180deg);
+}
+/* ---------- Type scale (xs < 640px, sm=640px, md=768px, lg=1024px, xl=1280px, 2xl=1536px) ---------- */
+.stuv-hero-eyebrow {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.stuv-hero-title {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  font-weight: 600;
+}
+p.stuv-hero-subtitle {
+  font-size: 1.25rem;
+  line-height: 1.625;
+  max-width: 42rem;
+}
+.stuv-hero .stuv-hero-subtitle {
+  max-width: 42rem;
+  margin-inline: auto;
+}
+/* The page-header group is a core "constrained" layout, which forces
+     margin-inline: auto !important on any child narrower than the content
+     width. The eyebrow/title fill the full width so that's invisible, but the
+     width-capped subtitle gets centered away from the left-aligned accent
+     rule unless overridden here. */
+.stuv-page-header .stuv-hero-subtitle {
+  margin-inline: 0 !important;
+}
+/* Fades the cover photo into the section below (was-wir-bieten's "band"
+   background) instead of cutting it off hard. 6rem matches the inner
+   group's own padding-bottom, so the fade covers only that padding strip
+   and never overlaps the button/text above it. A plain two-stop
+   linear-gradient has a constant alpha slope that snaps to 0 at both ends,
+   which the eye reads as a hard seam (Mach-band effect) right where the
+   fade starts and ends. The smoothstep-eased stops below (3t^2-2t^3) taper
+   the slope to zero at both 0% and 100%, removing the visible hard edges
+   at both boundaries. */
+.stuv-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 6rem;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--stuv-band-solid) 2.8%, transparent) 10%,
+    color-mix(in srgb, var(--stuv-band-solid) 10.4%, transparent) 20%,
+    color-mix(in srgb, var(--stuv-band-solid) 21.6%, transparent) 30%,
+    color-mix(in srgb, var(--stuv-band-solid) 35.2%, transparent) 40%,
+    color-mix(in srgb, var(--stuv-band-solid) 50%, transparent) 50%,
+    color-mix(in srgb, var(--stuv-band-solid) 64.8%, transparent) 60%,
+    color-mix(in srgb, var(--stuv-band-solid) 78.4%, transparent) 70%,
+    color-mix(in srgb, var(--stuv-band-solid) 89.6%, transparent) 80%,
+    color-mix(in srgb, var(--stuv-band-solid) 97.2%, transparent) 90%,
+    var(--stuv-band-solid) 100%
+  );
+  pointer-events: none;
+}
+@media (min-width: 1280px) {
+  p.stuv-hero-subtitle {
+    max-width: 48rem;
+  }
+  .stuv-hero .stuv-hero-subtitle {
+    max-width: 48rem;
+  }
+}
+.stuv-h2 {
+  font-size: 1.875rem;
+  line-height: 1.2;
+}
+.stuv-h3 {
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+.stuv-h3-sm {
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+/* Secondary body copy — card text, list items under a heading, captions.
+   Was written inline on ~60 paragraphs as the same colour/size pair; the size
+   is the theme's own body size, repeated only because the colour had to be set
+   anyway. Plain class, no !important: nothing else styles a bare <p> except
+   the element rule above, which this outranks. Paragraphs inside
+   .stuv-alert-row are the exception — that rule is more specific and keeps its
+   own colour — so don't add this class there. */
+.stuv-body-muted {
+  font-size: 1rem;
+  color: var(--stuv-muted-foreground);
+}
+@media (min-width: 640px) {
+  .stuv-hero-title {
+    font-size: 3rem;
+  }
+  .stuv-h2 {
+    font-size: 2.25rem;
+  }
+  /* Desktop dropdown: align the submenu's left edge with the trigger's left
+       edge (Gutenberg defaults to right-alignment because the nav is right-justified). */
+  .stuv-header
+    .wp-block-navigation.items-justified-right
+    .wp-block-navigation__container
+    .has-child
+    .wp-block-navigation__submenu-container {
+    left: 0 !important;
+    right: auto !important;
+  }
+}
+@media (min-width: 768px) {
+  .stuv-section {
+    padding: var(--space-24) var(--space-8);
+  }
+  .stuv-hero-title {
+    font-size: 3.75rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .stuv-section {
+    padding: var(--space-28) var(--space-12);
+  }
+}
+
+/* ---------- Event rows + type badge ---------- */
+/* shadcn badge: the base variant is solid primary. Every badge on the site today is
+     the muted one — those carry .stuv-badge-secondary explicitly. */
+.stuv-badge {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  padding: var(--space-0_5) var(--space-2_5);
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: var(--stuv-primary-surface);
+  color: var(--stuv-primary-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+/* Badge text is 12px, so it needs the full 4.5:1. --stuv-muted-foreground
+     (#71717a) on --stuv-muted (#f4f4f5) is only 4.40:1 — the same pairing passes
+     everywhere else on the site (4.83:1 on the page background, 4.51:1 on the
+     section band); it is the badge's own muted fill that pushes it under. One
+     step darker to zinc-600 gives 7.0:1 without touching the shared token.
+     Dark mode is already fine at 5.81:1 and keeps the token. */
+.stuv-badge-secondary {
+  background: var(--stuv-muted);
+  color: #52525b;
+}
+:root.dark .stuv-badge-secondary {
+  color: var(--stuv-muted-foreground);
+}
+/* TT5's root blockGap paints a 1rem strip of page background between the last
+   section and the footer: `:where(.wp-site-blocks) > * {margin-block-start:
+   1rem}`, and core's `:last-child` rule only zeroes margin-block-end. Every
+   section zeroes this inline. The footer cannot — core wraps the template part
+   in its own `<footer class="wp-block-template-part">`, so the element that
+   carries the margin is that wrapper, not .stuv-footer inside it. Putting the
+   reset on .stuv-footer looks right in the stylesheet and does nothing.
+   Scoped to the direct child so the header template part, which needs no reset
+   (it is :first-child), stays untouched. */
+.wp-site-blocks > .wp-block-template-part {
+  margin-block-start: 0;
+}
+/* ---------- Footer (deliberately NOT theme-aware — always dark, opts out of
+   the light/dark toggle by design. Hex values are the same ones :root.dark
+   sets above; keep the two in sync by hand if that palette ever changes.) ---------- */
+.stuv-footer {
+  color: #fafafa;
+  background: #09090b;
+  border-top: 1px solid #27272a;
+  /* See .stuv-header-row: TT5 spacing 60 / 50, owned here instead of inherited.
+     The clamps are kept rather than flattened onto the fixed --space-* ladder —
+     they are what keeps the footer from eating a phone screen. */
+  padding-top: clamp(30px, 7vw, 70px);
+  padding-bottom: clamp(30px, 5vw, 50px);
+}
+.stuv-footer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.stuv-footer li {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+.stuv-footer h3 {
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.stuv-footer a {
+  color: #a1a1aa;
+  text-decoration: none;
+}
+.stuv-footer a:hover {
+  color: #fafafa;
+}
+.stuv-footer hr {
+  background: #27272a;
+  color: #27272a;
+}
+
+/* ---------- WPForms (Kummer Karsten) ----------
+     WPForms' own "modern full" stylesheet qualifies every rule with the real
+     .wpforms-container-full/.wpforms-form ancestors (plus a bare `div`), which
+     out-specifies a lone .stuv-wpforms selector and loads after component.css
+     in <head>. Repeating that real ancestor chain here beats it on specificity
+     alone (no !important needed) — verified against the live wpforms-full.min.css. */
+.stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-field {
+  margin-bottom: var(--space-4);
+  padding: 0;
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-field-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--stuv-foreground);
+  margin-bottom: var(--space-2);
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-required-label {
+  color: var(--stuv-primary);
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form input[type="text"],
+.stuv-wpforms .wpforms-container-full .wpforms-form input[type="email"],
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea,
+.stuv-wpforms .wpforms-container-full .wpforms-form select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  box-sizing: border-box;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--stuv-foreground);
+  background: var(--stuv-background);
+  border: 1px solid var(--stuv-input);
+  border-radius: var(--stuv-radius-sm);
+  box-shadow: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+/* Single-line controls take the shadcn 2.5rem height; textarea keeps flowing. */
+.stuv-wpforms .wpforms-container-full .wpforms-form input[type="text"],
+.stuv-wpforms .wpforms-container-full .wpforms-form input[type="email"],
+.stuv-wpforms .wpforms-container-full .wpforms-form select {
+  height: 2.5rem;
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form input:disabled,
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea:disabled,
+.stuv-wpforms .wpforms-container-full .wpforms-form select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea {
+  resize: vertical;
+  min-height: 7.5rem;
+  height: auto;
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form input::placeholder,
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea::placeholder {
+  color: var(--stuv-muted-foreground);
+}
+/* The colour repeat is not redundant. WPForms ships exactly one rule that paints
+   a field's text on focus — `div.wpforms-container-full .wpforms-form
+   textarea:focus {color: var(--wpforms-field-text-color)}` (0,3,2) — and it
+   out-specifies the base rule above (0,3,1), so a focused textarea took
+   WPForms' own rgba(0,0,0,0.7): black text while typing, snapping back to the
+   token on blur. Only the textarea, because no such rule exists for input or
+   select — which is why the symptom looked arbitrary ("but not in every
+   field"). Restating it on this selector (0,4,1) wins, and it fixes light mode
+   too, where focus was quietly greying #0a0a0a text to 70% black. */
+.stuv-wpforms .wpforms-container-full .wpforms-form input:focus,
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea:focus,
+.stuv-wpforms .wpforms-container-full .wpforms-form select:focus {
+  outline: none;
+  color: var(--stuv-foreground);
+  border-color: var(--stuv-primary);
+  box-shadow: 0 0 0 2px var(--stuv-ring);
+}
+/* A field being edited is usually `:invalid` — a half-typed address, a required
+   field not filled in yet — and WPForms paints that state itself:
+   `div.wpforms-container-full input[type=email]:focus:invalid` (0,4,3), one of a
+   long type-list, repaints text, border and ring with its own tokens. That
+   out-specifies the :focus rule above (0,4,1) and loads after us, so a dark-mode
+   visitor typing an e-mail address got WPForms' default
+   `--wpforms-field-text-color: rgba(0,0,0,0.7)` on the near-black card:
+   invisible while typing, snapping back to the token on blur (the rule needs
+   :focus) or as soon as the address parsed as valid. Adding :invalid here lifts
+   this to (0,5,1) and wins on class count. The border and shadow are restated
+   alongside the colour because that same WPForms rule also swaps the focus ring
+   for its own — one rule, one override.
+   Not to be confused with `.wpforms-error`, which is the *submitted* invalid
+   state further down; `:invalid` is live and fires mid-keystroke. */
+.stuv-wpforms .wpforms-container-full .wpforms-form input:focus:invalid,
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea:focus:invalid,
+.stuv-wpforms .wpforms-container-full .wpforms-form select:focus:invalid {
+  color: var(--stuv-foreground);
+  border-color: var(--stuv-primary);
+  box-shadow: 0 0 0 2px var(--stuv-ring);
+}
+/* Autofilled fields are painted by the UA, which forces its own text colour over
+   ours with !important — `color` cannot win there, so the field keeps the light
+   scheme's near-black text on the dark card. -webkit-text-fill-color is a
+   separate property the UA sheet leaves alone, so it takes the token instead;
+   caret-color does the same for the cursor. color-scheme on :root already makes
+   the UA pick its dark branch; this pins the result to the theme regardless of
+   how an engine resolves it. The autofill *background* is deliberately left to
+   the browser — it is a legitimate "this was filled for you" signal and reads
+   correctly in both themes once the scheme is declared.
+   This is a separate defect from the :invalid one above, not a second attempt at
+   it: the "black e-mail field" report was twice mis-attributed to autofill (the
+   computed style said `:autofill` was false and `color`, not
+   -webkit-text-fill-color, carried the black). Do not escalate these to
+   !important on that evidence — a UA !important outranks an author one anyway.
+   Split into two blocks on purpose: an engine that does not know one of the two
+   selectors drops the whole rule it appears in, so pairing them in one comma
+   list would take the working half down with it. */
+.stuv-wpforms .wpforms-container-full .wpforms-form input:-webkit-autofill,
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea:-webkit-autofill,
+.stuv-wpforms .wpforms-container-full .wpforms-form select:-webkit-autofill {
+  -webkit-text-fill-color: var(--stuv-foreground);
+  caret-color: var(--stuv-foreground);
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form input:autofill,
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea:autofill,
+.stuv-wpforms .wpforms-container-full .wpforms-form select:autofill {
+  -webkit-text-fill-color: var(--stuv-foreground);
+  caret-color: var(--stuv-foreground);
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-submit-container {
+  margin-top: var(--space-2);
+}
+/* WPForms paints its own blue via
+   `div.wpforms-container-full button[type=submit]:not(:hover):not(:active)`
+   (0,4,2), which out-specifies a plain `button.wpforms-submit` (0,4,1) — so the
+   brand red used to appear on hover only, where that :not() rule drops out.
+   The [type="submit"] attribute selector lifts this rule to 0,5,1. */
+.stuv-wpforms
+  .wpforms-container-full
+  .wpforms-form
+  button.wpforms-submit[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-6);
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--stuv-primary-foreground);
+  background: var(--stuv-primary-surface);
+  border: none;
+  border-radius: var(--stuv-radius);
+  cursor: pointer;
+}
+.stuv-wpforms
+  .wpforms-container-full
+  .wpforms-form
+  button.wpforms-submit:hover {
+  background: color-mix(in srgb, var(--stuv-primary-surface) 90%, #000);
+}
+.stuv-wpforms
+  .wpforms-container-full
+  .wpforms-form
+  button.wpforms-submit::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  background: currentColor;
+  -webkit-mask: var(--ico-send) center/contain no-repeat;
+  mask: var(--ico-send) center/contain no-repeat;
+}
+/* Mobile Safari zooms the viewport whenever a focused control computes below
+   16px, and does not zoom back out on blur — so tapping the first field throws
+   the layout off-centre and every following field needs a pinch-zoom. On two
+   pages whose entire purpose is completing a form, one of them used by students
+   in distress, that is the most likely reason a submission gets abandoned.
+   Only the controls are lifted; labels and helper text stay at 14px. The full
+   ancestor chain is required for the same specificity reason as above. */
+@media (max-width: 639px) {
+  .stuv-wpforms .wpforms-container-full .wpforms-form input[type="text"],
+  .stuv-wpforms .wpforms-container-full .wpforms-form input[type="email"],
+  .stuv-wpforms .wpforms-container-full .wpforms-form textarea,
+  .stuv-wpforms .wpforms-container-full .wpforms-form select {
+    font-size: 16px;
+  }
+}
+/* Field-level validation message: colour is deliberately not the only signal —
+   see --stuv-destructive. The glyph rides on currentColor so it follows the
+   token into dark mode, and the invalid control itself takes a matching border. */
+.stuv-wpforms .wpforms-container-full .wpforms-form label.wpforms-error,
+.stuv-wpforms .wpforms-container-full .wpforms-form em.wpforms-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1_5);
+  color: var(--stuv-destructive);
+  font-size: 0.75rem;
+  margin-top: var(--space-1);
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form label.wpforms-error::before,
+.stuv-wpforms .wpforms-container-full .wpforms-form em.wpforms-error::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.875rem;
+  height: 0.875rem;
+  background-color: currentColor;
+  -webkit-mask: var(--ico-alert-circle) center/contain no-repeat;
+  mask: var(--ico-alert-circle) center/contain no-repeat;
+}
+.stuv-wpforms .wpforms-container-full .wpforms-form input.wpforms-error,
+.stuv-wpforms .wpforms-container-full .wpforms-form textarea.wpforms-error,
+.stuv-wpforms .wpforms-container-full .wpforms-form select.wpforms-error {
+  border-color: var(--stuv-destructive);
+}
+/* Submission outcome — the one screen that decides whether the visitor believes
+   the message was sent, and the only part of both forms that was still wearing
+   WPForms' stock styling. Left alone it renders a light-green box with dark text
+   inside a near-black .stuv-card in dark mode, which is the most visually broken
+   moment on the site. Two selectors per banner on purpose: WPForms qualifies its
+   own rules with `div.wpforms-container-full …` (0,2,1), which the nested variant
+   below beats at (0,3,1); the short variant covers the WPForms versions that
+   render the confirmation as a sibling of the container rather than inside it,
+   where WPForms' own rule does not match either and (0,2,0) is enough. */
+.stuv-wpforms .wpforms-confirmation-container-full,
+.stuv-wpforms div.wpforms-container-full .wpforms-confirmation-container-full {
+  background: color-mix(in srgb, var(--stuv-primary) 8%, transparent);
+  border: 1px solid var(--stuv-border);
+  border-radius: var(--stuv-radius);
+  color: var(--stuv-foreground);
+  padding: var(--space-4);
+  margin: 0;
+}
+.stuv-wpforms .wpforms-confirmation-container-full p,
+.stuv-wpforms
+  div.wpforms-container-full
+  .wpforms-confirmation-container-full
+  p {
+  color: var(--stuv-foreground);
+  margin: 0;
+}
+/* Form-level error banner ("Formular konnte nicht gesendet werden"), same
+   treatment in the destructive palette, with the glyph the field errors use. */
+.stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-error-container {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  background: color-mix(in srgb, var(--stuv-destructive) 10%, transparent);
+  border: 1px solid var(--stuv-destructive);
+  border-radius: var(--stuv-radius);
+  color: var(--stuv-foreground);
+  font-size: 0.875rem;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.stuv-wpforms
+  .wpforms-container-full
+  .wpforms-form
+  .wpforms-error-container::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  background-color: var(--stuv-destructive);
+  -webkit-mask: var(--ico-alert-circle) center/contain no-repeat;
+  mask: var(--ico-alert-circle) center/contain no-repeat;
+}
+
+/* ---------- Ganze Karte klickbar (stuv-card-cover streckt sich ueber die volle Kartenflaeche) ---------- */
+.stuv-card {
+  position: relative;
+}
+.stuv-card .stuv-card-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+/* Icon box inverts to solid red + white glyph on hover, but only for cards
+     that are actually links — :has(.stuv-card-cover) scopes it away from the
+     plain informational .stuv-card instances that share the same markup. */
+.stuv-card:has(.stuv-card-cover):hover .stuv-icon-box,
+.stuv-quicklink:hover .stuv-icon-box {
+  background: var(--stuv-primary);
+}
+.stuv-card:has(.stuv-card-cover):hover .stuv-icon-box::before,
+.stuv-quicklink:hover .stuv-icon-box::before {
+  background: var(--stuv-primary-foreground);
+}
+
+/* ---------- Focus ring ----------
+     Scoped to interactive elements on purpose. A bare *:focus-visible would also hit
+     images, wrappers and nav containers. The .stuv-wpforms :focus rule above is more
+     specific and wins for form controls — both draw a ring, so they agree visually. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--stuv-background),
+    0 0 0 4px var(--stuv-ring);
+}
+
+/* ---------- Native-block layout rows ----------
+     These replace the inline styles of former wp:html wrappers. core/group only
+     serialises styles it can derive from block attributes, so a converted row
+     carries a class and nothing else — the layout has to live here.
+     `margin-block: 0` on the children cancels the theme's flow-layout sibling
+     margin, which would otherwise offset the items of these flex rows. */
+
+/* Testimonials carousel — parked/04-erfahrungen.html. The section is out of the
+   homepage deploy until real quotes exist, so these rules are currently unused;
+   they stay so the section can be moved back into data/sections/ unchanged. */
+.stuv-carousel {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-6);
+  overflow-x: auto;
+  padding-bottom: var(--space-4);
+  scroll-snap-type: x mandatory;
+}
+.stuv-carousel > * {
+  margin-block: 0;
+}
+.stuv-carousel-item {
+  min-width: 280px;
+  max-width: 20rem;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+.stuv-carousel-item > p {
+  margin-block: 0;
+}
+.stuv-quote-author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.stuv-quote-author > * {
+  margin-block: 0;
+}
+.stuv-quote-meta > p {
+  margin-block: 0;
+}
+/* Circular initials badge. Not .stuv-icon-box: that is a rounded square and always
+     draws its ::before icon, which would render on top of the initials. */
+.stuv-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--stuv-primary) 10%, transparent);
+  color: var(--stuv-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Trust-badge bar — pages/kummer-karsten/01-intro.html */
+.stuv-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-6) var(--space-12);
+  font-size: 1rem;
+  color: var(--stuv-muted-foreground);
+}
+.stuv-trust-row > p {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block: 0;
+}
+
+/* Alert row — pages/kummer-karsten/04-ablauf.html. The icon is a ::before rather than
+     an element, so the group needs no icon child. It is the one icon on the site tinted
+     --stuv-alert-icon (yellow) instead of --stuv-primary. */
+.stuv-alert-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+.stuv-alert-row::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: var(--space-0_5);
+  background-color: var(--stuv-alert-icon);
+  -webkit-mask: var(--ico-alert-circle) center/contain no-repeat;
+  mask: var(--ico-alert-circle) center/contain no-repeat;
+}
+.stuv-alert-row > * {
+  margin-block: 0;
+}
+.stuv-alert-row p {
+  margin-block: 0;
+  color: var(--stuv-alert-foreground);
+}
+.stuv-alert-row p + p {
+  margin-top: var(--space-1);
+}
+
+/* Linktree hero logo — pages/linktree/01-hero.html. The DHBW/StuV logo already
+     carries the wordmark, so it stands in for both the old round "S" avatar and
+     the text heading; it sits in an <h1> (raw wp:html — no core block nests an
+     <img> in a heading) whose accessible name comes from the alt text. The PNG
+     has a transparent background and is the same file the header uses, so it
+     works on the light and dark band without a second asset. */
+.stuv-linktree-logo {
+  margin: 0;
+  text-align: center;
+  line-height: 0;
+}
+.stuv-linktree-logo img {
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+}
+
+/* Linktree social cards — pages/linktree/02-social.html. Stay raw wp:html
+     (no core block wraps a group in <a>), so layout moves to classes; the
+     per-card accent comes from a --stuv-link-*-tint/-fill pair set inline. */
+.stuv-linktree-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  text-decoration: none;
+  color: inherit;
+}
+.stuv-linktree-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+}
+.stuv-linktree-body {
+  min-width: 0;
+  flex: 1;
+}
+.stuv-linktree-title {
+  display: block;
+  font-weight: 600;
+}
+.stuv-linktree-subtitle {
+  display: block;
+  font-size: 1rem;
+  color: var(--stuv-muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Linktree mobile fit — tighten hero + card list so all 6 links plus the
+     email button sit in one screen once the list is reached, including in-app
+     browsers (Instagram/WhatsApp) with less usable height. Mobile-only; the
+     desktop/tablet layout above is untouched.
+     The hero band, social-section padding and email button carry their spacing
+     as inline Gutenberg block styles, which selector specificity can never
+     beat — so those overrides use !important. The card/icon/subtitle rules are
+     plain class overrides (later rule wins, no !important), and the card gap
+     out-specifies WordPress's :where()-based blockGap on its own.
+     639px, not 640px: the sm breakpoint above is min-width:640px, so a
+     max-width:640px query here would match at exactly 640px too and let these
+     mobile overrides fight the desktop grid rules at that one width. */
+@media (max-width: 639px) {
+  /* Hero band — scoped to .stuv-linktree-hero so the shared homepage hero
+     (also a plain .wp-block-group) is unaffected. */
+  .stuv-linktree-hero {
+    padding-top: var(--space-8) !important;
+    padding-bottom: var(--space-8) !important;
+  }
+  .stuv-linktree-logo img {
+    max-width: 16rem;
+  }
+
+  /* Link cards */
+  .stuv-linktree-card {
+    padding: var(--space-2_5) var(--space-3_5);
+    gap: var(--space-3);
+  }
+  .stuv-linktree-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .stuv-linktree-icon .stuv-ico-lg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  .stuv-linktree-subtitle {
+    font-size: 0.875rem;
+  }
+  /* Tighten the block-gap between cards for this list only. Real specificity
+     beats WordPress's :where()-based blockGap, so no !important needed. */
+  .stuv-card + .stuv-card {
+    margin-top: var(--space-2);
+  }
+
+  /* Social section + email button — scoped to .stuv-linktree-list. Inline
+     block styles, hence !important. */
+  .stuv-linktree-list {
+    padding-top: var(--space-6) !important;
+    padding-bottom: var(--space-6) !important;
+  }
+  .stuv-linktree-list p:has(> .stuv-button-outline) {
+    margin-top: var(--space-5) !important;
+  }
+  .stuv-linktree-list .stuv-button-outline {
+    padding-top: var(--space-3) !important;
+    padding-bottom: var(--space-3) !important;
+  }
+}
+
+/* Mensa widget -------------------------------------------------------------- */
+.stuv-mensa {
+  margin-bottom: var(--space-8);
+}
+
+.stuv-mensa[hidden] {
+  display: none;
+}
+
+.stuv-mensa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.stuv-mensa-lead {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.stuv-mensa-tabs {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.stuv-mensa-tab {
+  min-width: 2.5rem;
+  padding: var(--space-1_5) var(--space-2_5);
+  border: 1px solid var(--stuv-border);
+  border-radius: var(--stuv-radius);
+  background: transparent;
+  color: var(--stuv-muted-foreground);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.stuv-mensa-tab[aria-selected="true"] {
+  border-color: var(--stuv-primary-surface);
+  background: var(--stuv-primary-surface);
+  color: var(--stuv-primary-foreground);
+  font-weight: 500;
+}
+
+.stuv-mensa-meal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--stuv-border);
+}
+
+.stuv-mensa-meal:first-child {
+  border-top: 0;
+}
+
+.stuv-mensa-meal-image {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--stuv-radius);
+  object-fit: cover;
+}
+
+.stuv-mensa-meal-body {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.stuv-mensa-meal-name {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.stuv-mensa-meal-price {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.stuv-mensa-hours {
+  margin: var(--space-4) 0 0;
+  color: var(--stuv-muted-foreground);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 639px) {
+  .stuv-mensa-meal-body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+}
+
+/* ---------- Theme Toggle ---------- */
+/* Hidden until something can actually service a click: the stuv-theme plugin
+   puts .stuv-theme-ready on <html> from its head script. Without the plugin —
+   or without JS — the control stays out of the header instead of sitting there
+   doing nothing. The class lands before first paint, so it never flickers in.
+   <details> rather than popover: an open popover sits in the top layer, whose
+   containing block is the viewport, so it could not be anchored under the
+   trigger without CSS anchor positioning. Escape and outside-click, which
+   popover would have given for free, are handled in the plugin instead. */
+.stuv-theme-switch {
+  display: none;
+  position: relative;
+}
+:root.stuv-theme-ready .stuv-theme-switch {
+  display: block;
+}
+.stuv-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--stuv-radius);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--stuv-foreground);
+  cursor: pointer;
+  list-style: none;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.stuv-theme-toggle::-webkit-details-marker {
+  display: none;
+}
+.stuv-theme-toggle:hover {
+  background: var(--stuv-muted);
+  color: var(--stuv-primary);
+}
+/* The trigger shows the theme actually on screen, so it keys off .dark rather
+   than the explicit mode — System mode then resolves to sun or moon by itself.
+   Which of the three modes is set is signalled by the check in the menu. */
+.stuv-theme-toggle .stuv-icon-sun,
+.stuv-theme-toggle .stuv-icon-moon {
+  display: none;
+}
+:root:not(.dark) .stuv-theme-toggle .stuv-icon-sun,
+:root.dark .stuv-theme-toggle .stuv-icon-moon {
+  display: block;
+}
+.stuv-theme-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 60;
+  min-width: 11rem;
+  padding: var(--space-1);
+  border: 1px solid var(--stuv-border);
+  border-radius: var(--stuv-radius);
+  background: var(--stuv-background);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+.stuv-theme-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border: 0;
+  border-radius: calc(var(--stuv-radius) - 2px);
+  background: transparent;
+  color: var(--stuv-foreground);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+.stuv-theme-option span {
+  flex: 1;
+}
+.stuv-theme-option:hover {
+  background: var(--stuv-muted);
+}
+.stuv-theme-option .stuv-icon-check {
+  display: none;
+  color: var(--stuv-primary);
+}
+.stuv-theme-option[aria-checked="true"] .stuv-icon-check {
+  display: block;
+}
+
+/* ---------- Karten (Campus + Stadt) — tools/gen_map.py ----------
+   The basemap is a self-hosted image, carried as two custom properties on the
+   frame (gen_map.py writes them inline) so the light/dark swap follows the
+   site's own .dark class rather than the OS. A <picture> with a
+   prefers-color-scheme <source> would ignore the theme toggle. Only the var()
+   that background-image actually references is ever fetched, so this still
+   costs one request per map.
+
+   No <img> means no intrinsic size, so --stuv-map-ratio (also written inline,
+   from the render) is what keeps the page from jumping while the basemap loads.
+   Pins are percentage-positioned, so they scale with the frame and need no JS.
+   Every colour is a token, so the legend follows the theme into dark mode on its
+   own. */
+.stuv-map {
+  margin: 0;
+}
+/* The image is rendered 16:9 and the frame shows all of it. Under 640px that
+   would be a letterbox slit, so the frame goes 3:2 and crops instead: the canvas
+   keeps the image's own ratio and overflows the frame's sides. The basemap and
+   the pins share the canvas, so they crop as one and no pin leaves its building
+   — and because gen_map grew the box sideways to reach 16:9, the sides are
+   padding, not content. */
+.stuv-map-frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: var(--stuv-map-ratio);
+  /* The frame is a .stuv-card; the card's default padding would inflate the
+     aspect-ratio box and shift every percentage-positioned pin. */
+  padding: 0;
+}
+.stuv-map-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 100%;
+  min-width: 100%;
+  aspect-ratio: var(--stuv-map-ratio);
+  background-image: var(--stuv-map-light);
+  background-size: cover;
+  background-position: center;
+}
+:root.dark .stuv-map-canvas {
+  background-image: var(--stuv-map-dark);
+}
+@media (max-width: 639px) {
+  .stuv-map-frame {
+    aspect-ratio: 3 / 2;
+  }
+}
+.stuv-map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background: var(--stuv-primary-surface);
+  color: var(--stuv-primary-foreground);
+  border: 2px solid var(--stuv-background);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+/* Icon pin and legend icon badge: a white icon masked over the red circle via
+   ::before. The icon name comes from --stuv-map-icon set inline by gen_map.py. */
+.stuv-map-pin-icon::before,
+.stuv-map-legend-icon::before {
+  content: "";
+  position: absolute;
+  inset: 25%;
+  background-color: var(--stuv-primary-foreground);
+  -webkit-mask-image: var(--stuv-map-icon);
+  mask-image: var(--stuv-map-icon);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+/* Raise the hovered/focused pin so its tooltip is not covered by a neighbour. */
+.stuv-map-pin:hover,
+.stuv-map-pin:focus-visible {
+  z-index: 3;
+}
+.stuv-map-tip {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 14rem;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--stuv-radius);
+  background: var(--stuv-foreground);
+  color: var(--stuv-background);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+}
+.stuv-map-pin:hover .stuv-map-tip,
+.stuv-map-pin:focus-visible .stuv-map-tip {
+  opacity: 1;
+  visibility: visible;
+}
+/* gen_map.py sets this on any pin sitting in the top quarter of the frame: the
+   frame clips (that is what crops the canvas), so a tooltip opening upwards from
+   up there would be cut off. */
+.stuv-map-pin-below .stuv-map-tip {
+  top: calc(100% + var(--space-2));
+  bottom: auto;
+}
+/* Edge pins — locations outside the map bounding box, clamped to the frame
+   edge. A small CSS-border triangle extends in the direction of the actual
+   location; gen_map.py sets the directional class from the pin's offset. */
+.stuv-map-pin-edge {
+  box-shadow:
+    0 0 0 2px var(--stuv-background),
+    0 0 0 4px var(--stuv-primary);
+}
+.stuv-map-pin-edge::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.stuv-map-pin-edge-n::after {
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid var(--stuv-primary);
+}
+.stuv-map-pin-edge-ne::after {
+  bottom: calc(100% + 2px);
+  left: calc(100% + 2px);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid var(--stuv-primary);
+  transform: rotate(-45deg);
+  transform-origin: bottom left;
+}
+.stuv-map-pin-edge-e::after {
+  top: 50%;
+  left: calc(100% + 2px);
+  transform: translateY(-50%);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 10px solid var(--stuv-primary);
+}
+.stuv-map-pin-edge-se::after {
+  top: calc(100% + 2px);
+  left: calc(100% + 2px);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid var(--stuv-primary);
+  transform: rotate(-135deg);
+  transform-origin: top left;
+}
+.stuv-map-pin-edge-s::after {
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 10px solid var(--stuv-primary);
+}
+.stuv-map-pin-edge-sw::after {
+  top: calc(100% + 2px);
+  right: calc(100% + 2px);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid var(--stuv-primary);
+  transform: rotate(135deg);
+  transform-origin: top right;
+}
+.stuv-map-pin-edge-w::after {
+  top: 50%;
+  right: calc(100% + 2px);
+  transform: translateY(-50%);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 10px solid var(--stuv-primary);
+}
+.stuv-map-pin-edge-nw::after {
+  bottom: calc(100% + 2px);
+  right: calc(100% + 2px);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid var(--stuv-primary);
+  transform: rotate(45deg);
+  transform-origin: bottom right;
+}
+.stuv-map-caption {
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--stuv-muted-foreground);
+}
+.stuv-map-legend {
+  list-style: none;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+.stuv-map-legend > li {
+  padding: var(--space-5);
+}
+/* The pin's jump target: mark the entry the visitor was sent to. */
+.stuv-map-legend > li:target {
+  border-color: var(--stuv-primary);
+}
+.stuv-map-legend p {
+  margin-block: 0;
+}
+.stuv-map-legend p + p {
+  margin-top: var(--space-2);
+}
+.stuv-map-legend-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 1rem;
+}
+.stuv-map-legend-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background: var(--stuv-primary-surface);
+  color: var(--stuv-primary-foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+}
+/* Icon variant of the legend badge: same circle as .stuv-map-legend-num, a
+   masked icon instead of the number — the ::before is shared with
+   .stuv-map-pin-icon above. */
+.stuv-map-legend-icon {
+  position: relative;
+}
+.stuv-map-legend-detail,
+.stuv-map-legend-note {
+  font-size: 0.875rem;
+  color: var(--stuv-muted-foreground);
+}
