@@ -1,0 +1,33 @@
+{
+  "id": "campus",
+  "zoom": 17,
+  "padding_m": 80,
+  "alt": "Karte des DHBW-Campus Heidenheim mit den drei Standorten Marienstraße 20, Wilhelmstraße 10 und Digitalcampus",
+  "targets": ["data/pages/studentenleben/02-campus-karte.html"],
+  "pins": [
+    {
+      "n": 1,
+      "name": "Hauptcampus Marienstraße",
+      "lat": 48.68202,
+      "lon": 10.15455,
+      "detail": "Marienstraße 20, 89518 Heidenheim",
+      "note": "Mensa (warmes Mittagessen), Hauptbibliothek, StuV-Büro M003"
+    },
+    {
+      "n": 2,
+      "name": "Zweitcampus Wilhelmstraße",
+      "lat": 48.67974,
+      "lon": 10.1501,
+      "detail": "Wilhelmstraße 10, 89518 Heidenheim",
+      "note": "Cafeteria (kleine Snacks), Zweigbibliothek"
+    },
+    {
+      "n": 3,
+      "name": "Digitalcampus",
+      "lat": 48.68389,
+      "lon": 10.15568,
+      "detail": "Hanns-Voith-Campus 1, 89520 Heidenheim",
+      "note": "Automatenraum (kleine Snacks), Neubau nördlich der Bahngleise, Fußgängerbrücke vom Bahnhof"
+    }
+  ]
+}

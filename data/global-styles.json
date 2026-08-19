@@ -1,0 +1,60 @@
+{
+  "settings": {
+    "layout": { "contentSize": "56rem", "wideSize": "72rem" },
+    "spacing": {
+      "spacingSizes": [
+        { "slug": "4", "size": "1rem", "name": "1rem" },
+        { "slug": "6", "size": "1.5rem", "name": "1.5rem" },
+        { "slug": "8", "size": "2rem", "name": "2rem" },
+        { "slug": "12", "size": "3rem", "name": "3rem" }
+      ]
+    },
+    "color": {
+      "palette": [
+        { "slug": "primary", "color": "#E2001A", "name": "StuV Red" },
+        {
+          "slug": "primary-foreground",
+          "color": "#ffffff",
+          "name": "On Primary"
+        },
+        { "slug": "background", "color": "#ffffff", "name": "Background" },
+        { "slug": "foreground", "color": "#0a0a0a", "name": "Foreground" },
+        { "slug": "muted", "color": "#f4f4f5", "name": "Muted" },
+        {
+          "slug": "muted-foreground",
+          "color": "#71717a",
+          "name": "Muted Foreground"
+        },
+        { "slug": "border", "color": "#e4e4e7", "name": "Border" },
+        { "slug": "band", "color": "rgba(0,0,0,0.03)", "name": "Section Band" }
+      ]
+    },
+    "typography": {
+      "fluid": false,
+      "fontSizes": [
+        { "slug": "small", "size": "0.875rem", "name": "Small" },
+        { "slug": "medium", "size": "1rem", "name": "Medium" },
+        { "slug": "large", "size": "1.125rem", "name": "Large" },
+        { "slug": "x-large", "size": "1.875rem", "name": "X-Large" },
+        { "slug": "xx-large", "size": "3rem", "name": "XX-Large" }
+      ],
+      "fontFamilies": [
+        {
+          "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "slug": "inter",
+          "name": "Inter"
+        }
+      ]
+    },
+    "custom": { "stuvRadius": "0.5rem" }
+  },
+  "styles": {
+    "spacing": { "blockGap": "1rem" },
+    "typography": { "fontFamily": "var:preset|font-family|inter" },
+    "blocks": {
+      "core/columns": {
+        "spacing": { "blockGap": "1rem" }
+      }
+    }
+  }
+}
