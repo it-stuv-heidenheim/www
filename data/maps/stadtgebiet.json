@@ -1,0 +1,129 @@
+{
+  "id": "stadtgebiet",
+  "zoom": 15,
+  "padding_m": 150,
+  "alt": "Übersichtskarte von Heidenheim mit Bars, Bad, Naturtheater, Parks und Aussichtspunkten im weiteren Stadtgebiet",
+  "targets": ["data/pages/studentenleben/09-freizeit.html"],
+  "pins": [
+    {
+      "n": 1,
+      "name": "Q-Bar",
+      "icon": "wine",
+      "lat": 48.68051,
+      "lon": 10.14846,
+      "detail": "Bergstraße 32, 89518 Heidenheim",
+      "note": "Cocktailbar mit Wohnzimmer-Flair"
+    },
+    {
+      "n": 2,
+      "name": "Rock Cafe",
+      "icon": "music",
+      "lat": 48.68206,
+      "lon": 10.15335,
+      "detail": "Karlstraße 27, 89518 Heidenheim",
+      "note": "Livemusik und Bar mit langer Theke"
+    },
+    {
+      "n": 3,
+      "name": "El Mariachi",
+      "icon": "wine",
+      "lat": 48.67937,
+      "lon": 10.1454,
+      "detail": "Wilhelmstraße 52, 89518 Heidenheim",
+      "note": "Mexikanische Bar in Campusnähe"
+    },
+    {
+      "n": 4,
+      "name": "Naturtheater",
+      "icon": "music",
+      "lat": 48.67299,
+      "lon": 10.14518,
+      "detail": "Hugo-Rupf-Platz 1, 89522 Heidenheim",
+      "note": "Freilichtbühne der Opernfestspiele im Sommer"
+    },
+    {
+      "n": 5,
+      "name": "HellensteinBad aquarena",
+      "icon": "waves",
+      "lat": 48.6838,
+      "lon": 10.1427,
+      "detail": "Friedrich-Pfenning-Straße 24, 89518 Heidenheim",
+      "note": "Hallen- und Freibad mit Saunalandschaft"
+    },
+    {
+      "n": 6,
+      "name": "Hexenfelsen",
+      "icon": "mountain",
+      "lat": 48.66847,
+      "lon": 10.14828,
+      "edge": true,
+      "edge_x": 42.9,
+      "edge_y": 94.0,
+      "detail": "Am Hexenfelsen, 89522 Heidenheim",
+      "note": "Sandsteinfelsen mit Kletterrouten und Aussichtspunkt"
+    },
+    {
+      "n": 7,
+      "name": "Brenzpark",
+      "icon": "tree-pine",
+      "lat": 48.68791,
+      "lon": 10.15827,
+      "detail": "Am Brenzpark, 89522 Heidenheim",
+      "note": "Erholung, Sport und Natur direkt in der Stadt"
+    },
+    {
+      "n": 8,
+      "name": "Jumpers",
+      "icon": "dumbbell",
+      "lat": 48.68969,
+      "lon": 10.16132,
+      "detail": "Robert-Bosch-Straße 10, 89520 Heidenheim",
+      "note": "Trampolinhalle mit Ninja-Parcours"
+    },
+    {
+      "n": 9,
+      "name": "Aussichtspunkt Moldenberg",
+      "icon": "binoculars",
+      "lat": 48.7002,
+      "lon": 10.17681,
+      "edge": true,
+      "edge_x": 85.0,
+      "edge_y": 6.0,
+      "detail": "Moldenberg, 89520 Heidenheim",
+      "note": "Aussichtspunkt über Schnaitheim und das Brenztal"
+    },
+    {
+      "n": 10,
+      "name": "Georg-Elser-Anlage",
+      "icon": "tree-pine",
+      "lat": 48.70878,
+      "lon": 10.16146,
+      "edge": true,
+      "edge_x": 68.1,
+      "edge_y": 6.0,
+      "detail": "Schnaitheim, 89520 Heidenheim",
+      "note": "Park mit Spielplatz und Georg-Elser-Denkmal"
+    },
+    {
+      "n": 11,
+      "name": "Cafe-Bar Felsen",
+      "icon": "wine",
+      "lat": 48.68393,
+      "lon": 10.1541,
+      "detail": "Schnaitheimer Straße 69, 89520 Heidenheim",
+      "note": "Café und Bar im Norden der Stadt"
+    },
+    {
+      "n": 12,
+      "name": "Voith-Arena",
+      "icon": "trophy",
+      "lat": 48.66852,
+      "lon": 10.1393,
+      "edge": true,
+      "edge_x": 27.0,
+      "edge_y": 94.0,
+      "detail": "Schloßhaustraße 160, 89522 Heidenheim",
+      "note": "Heimstadion des 1. FC Heidenheim 1846"
+    }
+  ]
+}
