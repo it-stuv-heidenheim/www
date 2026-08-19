@@ -1,0 +1,7 @@
+# Captured upstream API response — must stay byte-exact to match api.dhbw.app
+wp-plugin/tests/fixtures/
+
+# Build artifact
+wp-plugin/stuv-mensa.zip
+wp-plugin/stuv-theme.zip
+wp-plugin/stuv-dsgvo.zip
