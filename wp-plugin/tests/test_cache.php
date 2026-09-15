@@ -1,22 +1,9 @@
 <?php
 /**
- * Zero-dependency test harness. Run: php wp-plugin/tests/test_cache.php
+ * Unit tests for inc/cache.php. Run: php wp-plugin/tests/test_cache.php
  */
+require __DIR__ . '/harness.php';
 require __DIR__ . '/../stuv-mensa/inc/cache.php';
-
-$failed = 0;
-
-function check(string $name, $actual, $expected): void {
-    global $failed;
-    if ($actual === $expected) {
-        echo "  ok    $name\n";
-        return;
-    }
-    $failed++;
-    echo "FAIL    $name\n";
-    echo "        expected: " . var_export($expected, true) . "\n";
-    echo "        actual:   " . var_export($actual, true) . "\n";
-}
 
 // --- stuv_mensa_payload_decision -------------------------------------------
 check('fresh payload is served',
@@ -83,6 +70,3 @@ check('cacheable: exactly at 2 MB — yes',
 check('cacheable: one byte over 2 MB — no',
     stuv_mensa_image_cacheable(200, 'image/webp', str_repeat('x', 2 * 1024 * 1024 + 1)),
     false);
-
-echo $failed ? "\n$failed failed\n" : "\nall passed\n";
-exit($failed ? 1 : 0);

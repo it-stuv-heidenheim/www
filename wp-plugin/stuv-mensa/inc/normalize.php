@@ -7,8 +7,11 @@
  * lives here so the browser never parses an upstream timestamp.
  */
 
+if (!defined('STUV_MENSA_HOST')) {
+    define('STUV_MENSA_HOST', 'https://api.dhbw.app');
+}
 if (!defined('STUV_MENSA_UPSTREAM')) {
-    define('STUV_MENSA_UPSTREAM', 'https://api.dhbw.app/mensa/HDH');
+    define('STUV_MENSA_UPSTREAM', STUV_MENSA_HOST . '/mensa/HDH');
 }
 if (!defined('STUV_MENSA_WINDOW')) {
     define('STUV_MENSA_WINDOW', 5); // open days shown, rolling from today
@@ -123,7 +126,7 @@ function stuv_mensa_image_id(string $url): ?int {
  * /file/<id>/<id>.webp, so the id is the only thing we need to store.
  */
 function stuv_mensa_upstream_image_url(int $id): string {
-    return sprintf('https://api.dhbw.app/file/%d/%d.webp', $id, $id);
+    return sprintf('%s/file/%d/%d.webp', STUV_MENSA_HOST, $id, $id);
 }
 
 /**

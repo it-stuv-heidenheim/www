@@ -1,13 +1,6 @@
-# StuV DHBW Heidenheim — Website
+# Website der StuV DHBW Heidenheim
 
-Inhalte der Live-WordPress-Site der Studierendenvertretung (StuV) DHBW
-Heidenheim: Gutenberg-Block-HTML, Design-Tokens und Komponenten-CSS, deployt
-über die WordPress-REST-API.
-
-Die Doku steht auch im AStA-Wiki (BookStack):
-[wiki.dhbw-asta.de](https://wiki.dhbw-asta.de/). Quelle bleibt das Markdown in
-`docs/`; `tools/export_docs_wiki.py` bereitet es zum Einfügen in eine
-Wiki-Seite auf.
+Die WordPress-Site der Studierendenvertretung (StuV) der DHBW Heidenheim basiert auf Gutenberg-Block-HTML, Design-Tokens und Komponenten-CSS. Sie wird über die WordPress-REST-API bereitgestellt.
 
 **Anfangen**
 

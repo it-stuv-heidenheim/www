@@ -22,16 +22,19 @@ This repo holds WordPress block HTML, CSS, and design tokens deployed via REST A
 
 ## Where quality problems actually live
 
-| Symptom                                      | Idiomatic fix                                                                                                                                     | Reference in AGENTS.md               |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Same block HTML written 2+ times             | Copy from the existing deployed occurrence directly — deployed content is the single source of truth, no separate template dir                    | Layout                               |
-| Repeated CSS rules across sections           | Reuse existing `.stuv-*` component class from `data/styles/component.css`                                                                         | Layout                               |
-| Magic values (colors, sizes, spacing) in CSS | Tokens in `data/global-styles.json` (palette, typography, layout widths)                                                                          | Layout                               |
-| Magic values (colors, sizes) in inline HTML  | Use Gutenberg native controls (`style.color.text`, `style.spacing.*`) or CSS class instead of hardcoded `style=`                                  | Layout                               |
-| Block flagged "ungültiger Inhalt"            | Match Gutenberg's canonical `save()` output; add `has-text-color` / `wp-element-button` as needed; validate with `blockcheck/validate_blocks.cjs` | Content Gotchas — Block validation   |
-| `!important` reflex in CSS                   | Tighter selector instead                                                                                                                          | —                                    |
-| URL slugs with umlauts                       | Keep ASCII digraphs (`ueber-uns` not `über-uns`)                                                                                                  | Content Gotchas — German orthography |
-| Duplicated manifest entries                  | One source file, one manifest entry; sections join via filename order                                                                             | Layout                               |
+This table is a **pointer**, not a second source of truth — where it and
+`AGENTS.md` disagree, `AGENTS.md` is right and this file is stale.
+
+| Symptom                                      | Idiomatic fix                                                                                                                                             | Reference in AGENTS.md               |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Same block HTML written 2+ times             | Copy from the existing deployed occurrence directly — deployed content is the single source of truth, no separate template dir                            | Layout                               |
+| Repeated CSS rules across sections           | Reuse existing `.stuv-*` component class from `data/styles/component.css`                                                                                 | Layout                               |
+| Magic values (colors, sizes, spacing) in CSS | Tokens in `data/global-styles.json` (palette, typography, layout widths)                                                                                  | Layout                               |
+| Magic values (colors, sizes) in inline HTML  | Use Gutenberg native controls (`style.color.text`, `style.spacing.*`) or CSS class instead of hardcoded `style=`                                          | Layout                               |
+| Block flagged "ungültiger Inhalt"            | Match Gutenberg's canonical `save()` output; add `has-text-color` / `wp-element-button` as needed; validate with `scripts/blockcheck/validate_blocks.cjs` | Content Gotchas — Block validation   |
+| `!important` reflex in CSS                   | Tighter selector instead                                                                                                                                  | —                                    |
+| URL slugs with umlauts                       | Keep ASCII digraphs (`ueber-uns` not `über-uns`)                                                                                                          | Content Gotchas — German orthography |
+| Duplicated manifest entries                  | One source file, one manifest entry; sections join via filename order                                                                                     | Layout                               |
 
 ## Verifying a refactor is a no-op
 
@@ -41,7 +44,7 @@ There is no build — changes are deployed live. Verification means:
 
 ```bash
 SKILL=~/.claude/skills/wordpress-default-editor
-node $SKILL/blockcheck/validate_blocks.cjs data/pages/<page>/<file>.html
+node $SKILL/scripts/blockcheck/validate_blocks.cjs data/pages/<page>/<file>.html
 ```
 
 2. **CSS diff** (for `component.css` changes) — normalize minified output to compare semantically:
@@ -63,6 +66,10 @@ python3 $SKILL/scripts/deploy.py --manifest data/manifest.json <target> --dry-ru
 
 - Do **not** edit `data/global-styles.json` design tokens unless the change is explicitly requested — many components depend on palette values.
 - Do **not** rename existing CSS classes (`.stuv-card`, `.stuv-icon-box`, `.stuv-button-*`) without updating every occurrence across all block HTML.
-- Dark-mode `@media (prefers-color-scheme: dark)` overrides must stay in sync with their light-mode counterparts.
+- Dark mode is **class-driven**: the `:root.dark` token block in
+  `component.css`, set by the `stuv-theme` plugin before first paint. Do **not**
+  add `@media (prefers-color-scheme: dark)` rules — they follow the OS and would
+  ignore the site's own toggle. Prefer redefining a custom property in
+  `:root.dark` over restating a whole rule.
 - Commit only when asked. No `Co-Authored-By` trailer. Keep commit messages in repo style.
 - Don't churn the whole repo. Do the clearly-safe, highest-value dedup and verify it; list further candidates rather than mass-editing.
