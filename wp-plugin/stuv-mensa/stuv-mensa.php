@@ -41,15 +41,12 @@ function stuv_mensa_payload(): ?array {
         is_array($store)
     );
 
-    if ($decision === 'serve') {
+    // 'serve' and 'serve_stale' both hand back the stored copy; only the
+    // distinction from 'fetch' changes what happens next.
+    if ($decision !== 'fetch') {
         return $store;
     }
 
-    if ($decision === 'serve_stale') {
-        return $store;
-    }
-
-    // 'fetch'
     if (!$lock_held && is_array($store)) {
         set_transient('stuv_mensa_refresh_lock', 1, STUV_MENSA_LOCK_TTL);
     }
@@ -126,14 +123,7 @@ function stuv_mensa_image_route(WP_REST_Request $request) {
     if (is_array($cached) && isset($cached['type'], $cached['body'])) {
         $body = base64_decode($cached['body'], true);
         if ($body !== false) {
-            // Re-checked on read, not trusted from the cache: a transient written
-            // by an older build predates the guard.
-            header('Content-Type: ' . stuv_mensa_safe_image_type($cached['type']));
-            header('X-Content-Type-Options: nosniff');
-            header('Content-Length: ' . strlen($body));
-            header('Cache-Control: public, max-age=2592000, immutable');
-            echo $body;
-            exit;
+            stuv_mensa_send_image($cached['type'], $body);
         }
         delete_transient($transient);
     }
@@ -151,10 +141,22 @@ function stuv_mensa_image_route(WP_REST_Request $request) {
         set_transient($transient, ['type' => $type, 'body' => $encoded], STUV_MENSA_IMAGE_TTL);
     }
 
+    stuv_mensa_send_image($type, $body);
+}
+
+/**
+ * Emit an image response and stop.
+ *
+ * Both arms of the route (transient hit and upstream fetch) end here, so the
+ * headers cannot drift apart between a cached and an uncached visitor. The
+ * type is re-checked here rather than by the caller: a transient written by an
+ * older build predates the guard.
+ */
+function stuv_mensa_send_image(string $type, string $body): void {
     header('Content-Type: ' . stuv_mensa_safe_image_type($type));
     header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . strlen($body));
-    header('Cache-Control: public, max-age=2592000, immutable');
+    header('Cache-Control: public, max-age=' . STUV_MENSA_IMAGE_TTL . ', immutable');
     echo $body;
     exit;
 }

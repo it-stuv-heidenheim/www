@@ -1,22 +1,9 @@
 <?php
 /**
- * Zero-dependency test harness. Run: php wp-plugin/tests/test_normalize.php
+ * Unit tests for inc/normalize.php. Run: php wp-plugin/tests/test_normalize.php
  */
+require __DIR__ . '/harness.php';
 require __DIR__ . '/../stuv-mensa/inc/normalize.php';
-
-$failed = 0;
-
-function check(string $name, $actual, $expected): void {
-    global $failed;
-    if ($actual === $expected) {
-        echo "  ok    $name\n";
-        return;
-    }
-    $failed++;
-    echo "FAIL    $name\n";
-    echo "        expected: " . var_export($expected, true) . "\n";
-    echo "        actual:   " . var_export($actual, true) . "\n";
-}
 
 // --- stuv_mensa_berlin_date -------------------------------------------------
 // The regression test for the whole feature: upstream stamps local midnight as
@@ -90,6 +77,3 @@ check('allowlist: excludes an id that is not in the payload',
     in_array(999999999, $ids, true), false);
 check('allowlist: empty payload yields no ids',
     stuv_mensa_image_ids(['openingHours' => '', 'days' => []]), []);
-
-echo $failed ? "\n$failed failed\n" : "\nall passed\n";
-exit($failed ? 1 : 0);
