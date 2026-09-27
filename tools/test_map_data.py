@@ -16,7 +16,9 @@ import gen_map
 # and the attachment's source_url then points at the -scaled derivative, not at ours.
 WP_BIG_IMAGE_PX = 2560
 
-MAPS = ("campus", "stadtgebiet", "stadtzentrum")
+# Derived from the directory, not typed out: a new data/maps/<id>.json is
+# covered by these tests the moment it lands, instead of silently untested.
+MAPS = tuple(sorted(p.stem for p in (gen_map.REPO / "data" / "maps").glob("*.json")))
 
 
 class TestMapData(unittest.TestCase):

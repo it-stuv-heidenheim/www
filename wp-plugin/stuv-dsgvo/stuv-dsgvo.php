@@ -41,9 +41,9 @@ function stuv_dsgvo_script(): string {
   var ICON =
     '<svg class="stuv-dsgvo-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>';
 
-  // Which iframe a placeholder belongs to. The old version walked
-  // nextElementSibling, which turns the button into a silent no-op the moment
-  // anything wraps either element.
+  // Which iframe a placeholder or revoke line belongs to. The old version
+  // walked nextElementSibling, which turns the button into a silent no-op the
+  // moment anything wraps either element.
   var iframeFor = new WeakMap();
 
   // Safari in private mode and "block all cookies" settings make localStorage
@@ -65,12 +65,13 @@ function stuv_dsgvo_script(): string {
     } catch (e) {}
   }
 
-  function buildRevoke() {
+  function buildRevoke(iframe) {
     var p = document.createElement('p');
     p.className = 'stuv-dsgvo-revoke';
     p.innerHTML =
       'Der Kalender wird auf diesem Gerät automatisch geladen. ' +
       '<button type="button" class="stuv-dsgvo-revoke-btn">Nicht mehr automatisch laden</button>';
+    iframeFor.set(p, iframe);
     return p;
   }
 
@@ -102,7 +103,7 @@ function stuv_dsgvo_script(): string {
   function loadEmbed(iframe) {
     iframe.src = iframe.getAttribute('data-stuv-src');
     iframe.classList.add('stuv-dsgvo-loaded');
-    iframe.parentNode.insertBefore(buildRevoke(), iframe.nextSibling);
+    iframe.parentNode.insertBefore(buildRevoke(iframe), iframe.nextSibling);
   }
 
   /**
@@ -112,8 +113,9 @@ function stuv_dsgvo_script(): string {
   function unloadEmbed(iframe) {
     iframe.removeAttribute('src');
     iframe.classList.remove('stuv-dsgvo-loaded');
-    delete iframe.dataset.stuvPlaceholder;
 
+    // The clone keeps data-stuv-placeholder, which is exactly the state
+    // setupEmbeds() needs to see so it does not re-initialise this iframe.
     var fresh = iframe.cloneNode(false);
     iframe.parentNode.replaceChild(fresh, iframe);
     return fresh;
@@ -167,8 +169,8 @@ function stuv_dsgvo_script(): string {
     var revokeBtn = e.target.closest('.stuv-dsgvo-revoke-btn');
     if (revokeBtn) {
       var note = revokeBtn.closest('.stuv-dsgvo-revoke');
-      var loaded = note && note.previousElementSibling;
-      if (!loaded || loaded.tagName !== 'IFRAME') return;
+      var loaded = note && iframeFor.get(note);
+      if (!loaded) return;
 
       rememberConsent(false);
       note.remove();
@@ -176,7 +178,6 @@ function stuv_dsgvo_script(): string {
       var reset = unloadEmbed(loaded);
       var fresh = buildPlaceholder(reset);
       reset.parentNode.insertBefore(fresh, reset);
-      reset.dataset.stuvPlaceholder = '1';
 
       // Same focus reasoning as above — the button that was clicked is gone.
       var loadAgain = fresh.querySelector('.stuv-dsgvo-load-btn');
