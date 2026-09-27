@@ -21,15 +21,17 @@
     currency: "EUR",
   });
 
+  var berlinDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+  });
+
   function formatPrice(value) {
     return priceFormat.format(value);
   }
 
   /** Today's date in Berlin, as 'YYYY-MM-DD', whatever the visitor's clock says. */
   function todayInBerlin(date) {
-    return new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Berlin",
-    }).format(date || new Date());
+    return berlinDate.format(date || new Date());
   }
 
   /**
@@ -80,6 +82,7 @@
 
   function renderMeals(panel, day) {
     panel.textContent = "";
+    var frame = document.createDocumentFragment();
 
     day.meals.forEach(function (meal) {
       var item = el("div", "stuv-mensa-meal");
@@ -101,8 +104,10 @@
       );
       item.appendChild(body);
 
-      panel.appendChild(item);
+      frame.appendChild(item);
     });
+
+    panel.appendChild(frame);
   }
 
   // Build the tab strip once. Switching days only moves aria-selected and the
@@ -111,33 +116,41 @@
   function buildTabs(tabs, days, onSelect) {
     tabs.textContent = "";
 
-    days.forEach(function (day, index) {
+    days.forEach(function (day) {
       var tab = el("button", "stuv-mensa-tab", day.weekday.slice(0, 2));
       tab.type = "button";
       tab.setAttribute("role", "tab");
       tab.setAttribute("aria-label", day.label);
-
-      tab.addEventListener("click", function () {
-        onSelect(index);
-        tab.focus();
-      });
-
-      tab.addEventListener("keydown", function (event) {
-        var next =
-          event.key === "ArrowRight"
-            ? index + 1
-            : event.key === "ArrowLeft"
-              ? index - 1
-              : null;
-        if (next === null || next < 0 || next >= days.length) {
-          return;
-        }
-        event.preventDefault();
-        onSelect(next);
-        tabs.children[next].focus();
-      });
-
       tabs.appendChild(tab);
+    });
+
+    function indexOf(target) {
+      var tab = target && target.closest && target.closest(".stuv-mensa-tab");
+      return tab ? Array.prototype.indexOf.call(tabs.children, tab) : -1;
+    }
+
+    tabs.addEventListener("click", function (event) {
+      var index = indexOf(event.target);
+      if (index < 0) return;
+      onSelect(index);
+      tabs.children[index].focus();
+    });
+
+    tabs.addEventListener("keydown", function (event) {
+      var index = indexOf(event.target);
+      if (index < 0) return;
+      var next =
+        event.key === "ArrowRight"
+          ? index + 1
+          : event.key === "ArrowLeft"
+            ? index - 1
+            : null;
+      if (next === null || next < 0 || next >= days.length) {
+        return;
+      }
+      event.preventDefault();
+      onSelect(next);
+      tabs.children[next].focus();
     });
   }
 

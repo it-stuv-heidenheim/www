@@ -24,6 +24,7 @@ Tiles are cached under ~/.cache/stuv-map-tiles/, so re-runs hit CARTO once.
 """
 
 import argparse
+import functools
 import hashlib
 import html
 import io
@@ -91,7 +92,7 @@ ENHANCE = {
 }
 
 TILE_URL = "https://a.basemaps.cartocdn.com/{style}/{z}/{x}/{y}@2x.png"
-# Cloudflare fronts the site and CARTO bans the stdlib default UA outright.
+# CARTO's tile servers ban the stdlib default User-Agent and CARTO bans the stdlib default UA outright.
 USER_AGENT = "stuv-map-render/1.0 (+https://stuv-heidenheim.de)"
 
 # A pin this far down (in % of the frame) has room for a tooltip above it; one
@@ -338,26 +339,12 @@ def edge_pin_info(pin: dict, bbox: BBox) -> tuple[str, float, str]:
         dirs.append("e")
     direction = "".join(dirs) if dirs else "center"
 
-    # Closest point on the bbox perimeter
+    # Closest point on the bbox perimeter. Each axis clamps independently, which
+    # covers the diagonals for free: beyond_n/beyond_s cannot both hold, nor can
+    # beyond_e/beyond_w, so "center" falls out as the both-unclamped case.
     lat, lon = pin["lat"], pin["lon"]
-    if direction == "n":
-        closest_lat, closest_lon = bbox.north, lon
-    elif direction == "s":
-        closest_lat, closest_lon = bbox.south, lon
-    elif direction == "e":
-        closest_lat, closest_lon = lat, bbox.east
-    elif direction == "w":
-        closest_lat, closest_lon = lat, bbox.west
-    elif direction == "ne":
-        closest_lat, closest_lon = bbox.north, bbox.east
-    elif direction == "nw":
-        closest_lat, closest_lon = bbox.north, bbox.west
-    elif direction == "se":
-        closest_lat, closest_lon = bbox.south, bbox.east
-    elif direction == "sw":
-        closest_lat, closest_lon = bbox.south, bbox.west
-    else:
-        closest_lat, closest_lon = lat, lon
+    closest_lat = bbox.north if beyond_n else bbox.south if beyond_s else lat
+    closest_lon = bbox.east if beyond_e else bbox.west if beyond_w else lon
 
     dist_m = haversine_m(lat, lon, closest_lat, closest_lon)
     label = DIR_LABELS.get(direction, "außerhalb")
@@ -457,10 +444,16 @@ def write_preview(data: dict, style: str, path: pathlib.Path) -> None:
     image.save(path)
 
 
+@functools.lru_cache(maxsize=None)
 def _image_hash(map_id: str, style: str) -> str:
     """First 8 chars of SHA-256 of the image file on disk.
 
     Returns empty string if the file doesn't exist (run --render first).
+
+    Cached because a single run hashes the same pair repeatedly (once per
+    render_html call, and --check renders more than once). The cache is
+    process-local, and --render writes the images before any URL is built, so
+    it never serves a hash from before a re-render.
     """
     path = MEDIA_DIR / media_name(map_id, style)
     if not path.exists():
@@ -519,12 +512,6 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
     light = _cache_busted_url(map_id, "light_all", media_base)
     dark = _cache_busted_url(map_id, "dark_all", media_base)
 
-    legend_pins = {p["n"] for p in data["pins"] if p.get("legend")}
-    has_legend = len(legend_pins) > 0
-
-    def _pin_has_legend(pin):
-        return not has_legend or pin["n"] in legend_pins
-
     out = [
         "<!-- wp:html -->",
         MARKER.format(id=map_id),
@@ -553,15 +540,9 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
             tip_parts.append(f"<br />{dist} {dir_label.lower()}")
         tip = f'<span class="stuv-map-tip">{"".join(tip_parts)}</span>'
 
-        has_link = _pin_has_legend(pin)
-        tag = "a" if has_link else "span"
-        href = f' href="#karte-{map_id}-{pin["n"]}"' if has_link else ""
-        aria = (
-            f' aria-label="{esc(pin["name"])} – zum Eintrag in der Legende">'
-            if has_link
-            else f' aria-label="{esc(pin["name"])}">'
-        )
-        closing = "</a>" if has_link else "</span>"
+        # Every pin links to its own legend entry below the map.
+        href = f' href="#karte-{map_id}-{pin["n"]}"'
+        aria = f' aria-label="{esc(pin["name"])} – zum Eintrag in der Legende">'
         if pin.get("icon"):
             icon_cls = " stuv-map-pin-icon"
             icon_style = f' --stuv-map-icon: var(--ico-{esc(pin["icon"])});'
@@ -571,11 +552,11 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
             icon_style = ""
             number = f'<span aria-hidden="true">{pin["n"]}</span>'
         out.append(
-            f'      <{tag} class="stuv-map-pin{below}{edge_cls}{icon_cls}"{href}'
+            f'      <a class="stuv-map-pin{below}{edge_cls}{icon_cls}"{href}'
             f' style="left: {x:.2f}%; top: {y:.2f}%;{icon_style}"'
             + aria
             + number
-            + f"{tip}{closing}"
+            + f"{tip}</a>"
         )
     out += [
         "    </div>",
@@ -585,8 +566,6 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
     ]
     out.append('<ol class="stuv-map-legend">')
     for pin in data["pins"]:
-        if not _pin_has_legend(pin):
-            continue
         if pin.get("icon"):
             badge = (
                 '<span class="stuv-map-legend-num stuv-map-legend-icon"'
@@ -666,11 +645,18 @@ def prettify(text: str, path: pathlib.Path) -> str:
     return done.stdout
 
 
-def rendered_target(data: dict, path: pathlib.Path, media_base: str) -> str:
-    """`path` with a freshly generated map block spliced in, formatted as committed."""
+def rendered_target(
+    data: dict, path: pathlib.Path, media_base: str, current: str | None = None
+) -> str:
+    """`path` with a freshly generated map block spliced in, formatted as committed.
+
+    `current` is the file's existing text; callers that have already read it
+    pass it in rather than making this read the same file a second time.
+    """
+    if current is None:
+        current = path.read_text(encoding="utf-8")
     block = render_html(data, media_base)
-    spliced = splice(path.read_text(encoding="utf-8"), block, data["id"])
-    return prettify(spliced, path)
+    return prettify(splice(current, block, data["id"]), path)
 
 
 def check(data: dict, media_base: str) -> int:
@@ -687,7 +673,8 @@ def check(data: dict, media_base: str) -> int:
         if not path.exists():
             problems.append(f"missing {target}")
             continue
-        if rendered_target(data, path, media_base) != path.read_text(encoding="utf-8"):
+        current = path.read_text(encoding="utf-8")
+        if rendered_target(data, path, media_base, current) != current:
             problems.append(f"{target}: the map block differs from a fresh render")
     for problem in problems:
         print(f"drift: {problem}", file=sys.stderr)

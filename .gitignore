@@ -5,7 +5,5 @@ __pycache__/
 .worktrees/
 .env
 docs/not-public/
-wp-plugin/stuv-mensa.zip
-wp-plugin/stuv-theme.zip
-wp-plugin/stuv-dsgvo.zip
+wp-plugin/*.zip
 build/

@@ -53,6 +53,18 @@ DEFAULT_SITE = "https://dev.stuv-heidenheim.de"
 FENCE_RE = re.compile(r"^(?P<indent>[ \t]*)(?P<marker>`{3,}|~{3,})(?P<info>.*)$")
 
 
+def _closes(line, marker):
+    """Whether `line` closes a fence opened with `marker`.
+
+    CommonMark: the closing fence is the same character, at least as long as
+    the opening one, and carries nothing else.
+    """
+    stripped = line.strip()
+    return bool(
+        stripped and set(stripped) == {marker[0]} and len(stripped) >= len(marker)
+    )
+
+
 def fenced_mask(lines):
     """True for every line inside a fenced code block, delimiters included.
 
@@ -72,12 +84,7 @@ def fenced_mask(lines):
             continue
 
         mask[i] = True
-        stripped = line.strip()
-        if (
-            stripped
-            and set(stripped) == {marker[0]}
-            and len(stripped) >= len(marker)
-        ):
+        if _closes(line, marker):
             marker = None
     return mask
 
@@ -109,12 +116,7 @@ def unwrap_wphtml(md_text):
         # The body keeps its indentation: the fence sits inside a numbered list
         # item, and dedenting the markup would break it out of that item.
         while i < len(lines):
-            stripped = lines[i].strip()
-            if (
-                stripped
-                and set(stripped) == {marker[0]}
-                and len(stripped) >= len(marker)
-            ):
+            if _closes(lines[i], marker):
                 i += 1
                 break
             out.append(lines[i])
