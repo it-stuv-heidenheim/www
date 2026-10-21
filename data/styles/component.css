@@ -151,12 +151,6 @@
 }
 /* gen_icon_css:end */
 body {
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
   background-color: var(--stuv-background);
   color: var(--stuv-foreground);
   font-weight: 400;
@@ -249,10 +243,8 @@ a {
   margin-top: auto;
   margin-bottom: 0;
 }
-.stuv-clip {
-  overflow: hidden;
-}
 .stuv-card.stuv-clip {
+  overflow: hidden;
   padding: 0;
 }
 :root.dark .stuv-clip iframe {
@@ -463,7 +455,6 @@ p.stuv-section-intro {
   margin-inline: 0 !important;
   margin-top: var(--space-6);
   font-size: 1.25rem;
-  line-height: 1.6;
 }
 p.stuv-section-intro.has-text-align-center {
   margin-inline: auto !important;
@@ -838,9 +829,6 @@ p.stuv-hero-subtitle {
   font-size: 1.25rem;
   line-height: 1.625;
   max-width: 42rem;
-}
-.stuv-hero .stuv-hero-subtitle {
-  margin-inline: auto;
 }
 .stuv-page-header .stuv-hero-subtitle {
   margin-inline: 0 !important;
