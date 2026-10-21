@@ -251,11 +251,6 @@ a {
   filter: invert(1) hue-rotate(180deg);
   color-scheme: light;
 }
-@media (max-width: 639px) {
-  .stuv-clip iframe {
-    min-height: 32rem;
-  }
-}
 
 .stuv-dsgvo-embed iframe[data-stuv-src] {
   display: none;
@@ -477,15 +472,6 @@ a.stuv-button-primary.stuv-btn-message-circle-heart::before,
   -webkit-mask: var(--ico-message-circle-heart) center/contain no-repeat;
   mask: var(--ico-message-circle-heart) center/contain no-repeat;
 }
-@media (max-width: 639px) {
-  .wp-block-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-  .wp-block-button__link {
-    width: 100%;
-  }
-}
 .stuv-logo-mark {
   display: block;
   height: 2.5rem;
@@ -556,25 +542,6 @@ header.wp-block-template-part {
     padding: var(--space-2) 0;
     font-size: 1.25rem;
     line-height: 1.25;
-  }
-}
-
-@media (max-width: 639px) {
-  .stuv-header .stuv-header-row {
-    gap: var(--space-2) !important;
-  }
-  .stuv-header-row > :first-child {
-    min-width: 0;
-  }
-  .stuv-logo-mark {
-    height: 2rem;
-    max-width: 100%;
-    object-fit: contain;
-    object-position: left center;
-  }
-  .stuv-header-actions .wp-block-button__link {
-    padding-inline: var(--space-3);
-    font-size: 0.8125rem;
   }
 }
 
@@ -1085,14 +1052,6 @@ p.stuv-hero-subtitle {
   -webkit-mask: var(--ico-send) center/contain no-repeat;
   mask: var(--ico-send) center/contain no-repeat;
 }
-@media (max-width: 639px) {
-  .stuv-wpforms .wpforms-container-full .wpforms-form input[type="text"],
-  .stuv-wpforms .wpforms-container-full .wpforms-form input[type="email"],
-  .stuv-wpforms .wpforms-container-full .wpforms-form textarea,
-  .stuv-wpforms .wpforms-container-full .wpforms-form select {
-    font-size: 16px;
-  }
-}
 .stuv-wpforms .wpforms-container-full .wpforms-form label.wpforms-error,
 .stuv-wpforms .wpforms-container-full .wpforms-form em.wpforms-error {
   display: flex;
@@ -1318,47 +1277,6 @@ summary:focus-visible,
   text-overflow: ellipsis;
 }
 
-@media (max-width: 639px) {
-  .stuv-linktree-hero {
-    padding-top: var(--space-8) !important;
-    padding-bottom: var(--space-8) !important;
-  }
-  .stuv-linktree-logo img {
-    max-width: 16rem;
-  }
-
-  .stuv-linktree-card {
-    padding: var(--space-2_5) var(--space-3_5);
-    gap: var(--space-3);
-  }
-  .stuv-linktree-icon {
-    width: 2.25rem;
-    height: 2.25rem;
-  }
-  .stuv-linktree-icon .stuv-ico-lg {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-  .stuv-linktree-subtitle {
-    font-size: 0.875rem;
-  }
-  .stuv-linktree-list .stuv-card + .stuv-card {
-    margin-top: var(--space-2);
-  }
-
-  .stuv-linktree-list {
-    padding-top: var(--space-6) !important;
-    padding-bottom: var(--space-6) !important;
-  }
-  .stuv-linktree-list p:has(> .stuv-button-outline) {
-    margin-top: var(--space-5) !important;
-  }
-  .stuv-linktree-list .stuv-button-outline {
-    padding-top: var(--space-3) !important;
-    padding-bottom: var(--space-3) !important;
-  }
-}
-
 .stuv-mensa {
   margin-bottom: var(--space-8);
 }
@@ -1452,14 +1370,6 @@ summary:focus-visible,
   margin: var(--space-4) 0 0;
   color: var(--stuv-muted-foreground);
   font-size: 0.875rem;
-}
-
-@media (max-width: 639px) {
-  .stuv-mensa-meal-body {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-1);
-  }
 }
 
 .stuv-theme-switch {
@@ -1564,11 +1474,6 @@ summary:focus-visible,
 }
 :root.dark .stuv-map-canvas {
   background-image: var(--stuv-map-dark);
-}
-@media (max-width: 639px) {
-  .stuv-map-frame {
-    aspect-ratio: 3 / 2;
-  }
 }
 .stuv-map-pin,
 .stuv-map-legend-num {
@@ -1709,4 +1614,84 @@ summary:focus-visible,
 .stuv-map-legend-note {
   font-size: 0.875rem;
   color: var(--stuv-muted-foreground);
+}
+@media (max-width: 639px) {
+  .stuv-clip iframe {
+    min-height: 32rem;
+  }
+  .wp-block-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  .wp-block-button__link {
+    width: 100%;
+  }
+  .stuv-header .stuv-header-row {
+    gap: var(--space-2) !important;
+  }
+  .stuv-header-row > :first-child {
+    min-width: 0;
+  }
+  .stuv-logo-mark {
+    height: 2rem;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left center;
+  }
+  .stuv-header-actions .wp-block-button__link {
+    padding-inline: var(--space-3);
+    font-size: 0.8125rem;
+  }
+  .stuv-wpforms .wpforms-container-full .wpforms-form input[type="text"],
+  .stuv-wpforms .wpforms-container-full .wpforms-form input[type="email"],
+  .stuv-wpforms .wpforms-container-full .wpforms-form textarea,
+  .stuv-wpforms .wpforms-container-full .wpforms-form select {
+    font-size: 16px;
+  }
+  .stuv-linktree-hero {
+    padding-top: var(--space-8) !important;
+    padding-bottom: var(--space-8) !important;
+  }
+  .stuv-linktree-logo img {
+    max-width: 16rem;
+  }
+
+  .stuv-linktree-card {
+    padding: var(--space-2_5) var(--space-3_5);
+    gap: var(--space-3);
+  }
+  .stuv-linktree-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .stuv-linktree-icon .stuv-ico-lg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  .stuv-linktree-subtitle {
+    font-size: 0.875rem;
+  }
+  .stuv-linktree-list .stuv-card + .stuv-card {
+    margin-top: var(--space-2);
+  }
+
+  .stuv-linktree-list {
+    padding-top: var(--space-6) !important;
+    padding-bottom: var(--space-6) !important;
+  }
+  .stuv-linktree-list p:has(> .stuv-button-outline) {
+    margin-top: var(--space-5) !important;
+  }
+  .stuv-linktree-list .stuv-button-outline {
+    padding-top: var(--space-3) !important;
+    padding-bottom: var(--space-3) !important;
+  }
+  .stuv-mensa-meal-body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+  .stuv-map-frame {
+    aspect-ratio: 3 / 2;
+  }
 }
