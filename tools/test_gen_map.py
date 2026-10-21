@@ -323,6 +323,10 @@ class TestEdgePinInfo(unittest.TestCase):
         self.assertEqual(direction, "n")
         self.assertEqual(label, "nördlich")
 
+    def test_it_refuses_a_direction_without_an_arrow(self):
+        with self.assertRaises(SystemExit):
+            gen_map.edge_pin_info({"n": 9, "lat": 48.680, "lon": 10.3}, EDGE_BBOX)
+
     def test_distance_is_a_few_kilometres(self):
         # Pin 2 is at 48.710, the bbox's north edge near 48.681: ~3.2 km.
         _, dist_m, _ = gen_map.edge_pin_info(self.edge_pin, EDGE_BBOX)

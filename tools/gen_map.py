@@ -294,16 +294,8 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-DIR_LABELS = {
-    "n": "nördlich",
-    "ne": "nordöstlich",
-    "e": "östlich",
-    "se": "südöstlich",
-    "s": "südlich",
-    "sw": "südwestlich",
-    "w": "westlich",
-    "nw": "nordwestlich",
-}
+# component.css draws an edge arrow only for these directions.
+DIR_LABELS = {"n": "nördlich", "s": "südlich"}
 
 
 def format_distance_km(m: float) -> str:
@@ -332,10 +324,12 @@ def edge_pin_info(pin: dict, bbox: BBox) -> tuple[str, float, str]:
     closest_lat = {"n": bbox.north, "s": bbox.south}.get(ns, lat)
     closest_lon = {"w": bbox.west, "e": bbox.east}.get(we, lon)
 
-    dist_m = haversine_m(lat, lon, closest_lat, closest_lon)
-    label = DIR_LABELS.get(direction, "außerhalb")
-
-    return direction, dist_m, label
+    if direction not in DIR_LABELS:
+        sys.exit(
+            f"pin {pin['n']} lies {direction} of the map, but component.css only "
+            f"draws {'/'.join(DIR_LABELS)} edge arrows: add .stuv-map-pin-edge-{direction}"
+        )
+    return direction, haversine_m(lat, lon, closest_lat, closest_lon), DIR_LABELS[direction]
 
 
 def media_name(map_id: str, style: str) -> str:
