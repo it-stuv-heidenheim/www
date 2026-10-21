@@ -20,14 +20,14 @@ Dateien vor und werden per REST-API auf die Live-Site deployt.
 | `data/manifest.json`        | Deploy-Ziele: Name → REST-Endpunkt, ID, Quelldatei                                                                                                                   |
 | `tools/`                    | Generatoren und Hilfsskripte (`docs/tools.md`)                                                                                                                       |
 | `wp-plugin/`                | Drei WordPress-Plugins: `stuv-mensa` (Live-Speiseplan), `stuv-theme` (Dark-Mode-Toggle) und `stuv-dsgvo` (Klick-zum-Laden für die Kalender), siehe `docs/plugins.md` |
-| `docs/`                     | Diese Doku — Quelle für das AStA-Wiki (`wiki.dhbw-asta.de`), Export mit `tools/export_docs_wiki.py`                                                                  |
+| `docs/`                     | Diese Doku, gelesen auf GitHub                                                                                                                                       |
 | `.claude/skills/`           | Repo-lokale Agent-Verfahren (`docs/ai-workflow.md`)                                                                                                                  |
 
 ## Was dieses Repo NICHT ist
 
 - **Kein lauffähiges WordPress-Tooling.** Deploy-Skripte, Block-Validator und
   REST-Client liegen im `wordpress-default-editor`-Skill, hier als
-  [herunterladbarer ZIP-Schnappschuss](/wp-content/uploads/wordpress-default-editor.zip)
+  [herunterladbarer ZIP-Schnappschuss](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
   (entpackt nach `~/.claude/skills/wordpress-default-editor`).
 - **Keine WordPress-Core- oder Theme-Dateien.** Theme (Twenty Twenty-Five) und
   Plugins sind auf dem Host installiert; `wp-plugin/` versioniert nur den

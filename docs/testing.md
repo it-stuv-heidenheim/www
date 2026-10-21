@@ -109,13 +109,6 @@ python3 -m unittest discover -s tools -p "test_*.py" -v
   ein Wegwerf-Git-Repo als Fixture, dass `SKILL.md` unter dem Prefix landet,
   installierte Abhängigkeiten (`node_modules/`, `.venv/`, …) draußen bleiben und
   nur der eine Skill eingepackt wird.
-- `test_export_docs_wiki.py` prüft die Umschreibungen des Wiki-Exports: die
-  **`wphtml`-Escape-Luke** (ein `wphtml`-Fence wird echtes Markup, ein
-  gewöhnlicher `html`-Fence bleibt ein Code-Block), dass **root-relative Links
-  absolut** werden — im Wiki würden sie sonst gegen `wiki.dhbw-asta.de`
-  aufgelöst — und dass die **H1 zum Seitennamen** wird. Die wichtigsten Fälle
-  sind die negativen: Der Export ist überwiegend Durchreichen, und was in einem
-  Code-Fence steht, muss wörtlich stehen bleiben.
 
 ### Die Plugins
 

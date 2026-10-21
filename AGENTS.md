@@ -56,7 +56,7 @@ every check below is run by hand, locally, before a deploy. Human docs:
   `.stuv-dhbw-favicon.svg` sit there as local-only sources.
 - `data/maps/` — map definitions (pins, zoom, padding) for `tools/gen_map.py`.
 - `tools/` — site-specific utilities with no WP REST access: `gen_icon_css.py`,
-  `gen_map.py`, `export_docs_wiki.py`, `build_skill_zip.py`, `export_pdfs.mjs`,
+  `gen_map.py`, `build_skill_zip.py`, `export_pdfs.mjs`,
   plus their `test_*.py`.
 - `wp-plugin/` — source of truth for the three plugins; the copies on the host
   are artifacts.
@@ -475,26 +475,16 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
 
 ## Docs
 
-`docs/*.md` is human-readable documentation, written in German.
-**They are no longer published on the WordPress site.** They live in the AStA
-wiki at `https://wiki.dhbw-asta.de/`, which runs **BookStack**; `/docs/` was
-trashed and the footer link removed on 2026-08-14. BookStack has a native
-per-page Markdown editor, so `tools/export_docs_wiki.py` emits **Markdown**, one
-`build/wiki/<doc>.md` per page (git-ignored), to be pasted into a page switched
-to the Markdown editor. It is stdlib-only — it does not render Markdown,
-BookStack does; it only rewrites what breaks outside this repo, and it skips
-fenced code blocks so a sample showing `src="/wp-content/…"` stays verbatim.
-
-**A docs edit is therefore a two-step change**: edit the Markdown, then
-re-export and re-paste the affected page. Nobody but a human can do the second
-step, so say so rather than assuming the wiki is current. BookStack _does_ have
-a write API (`PUT /api/pages`, `Authorization: Token <id>:<secret>`) that would
-collapse this to one step, but it needs an API token and the maintainer's
-account lacks the `Access system API` role permission — don't design around the
-API until that changes. The exporter reads an explicit allow-list (`DOC_FILES`
-in `tools/export_docs_wiki.py`), not a glob: a new `docs/*.md` stays repo-only
-until it is added there. Nothing in `docs/` may contain secrets. Do not re-add a
-`docs` deploy target to `data/manifest.json`.
+`docs/*.md` is human-readable documentation, written in German, and is read
+**on GitHub** (the repo is public), so a docs edit is done once it is pushed.
+They are no longer published on the WordPress site: `/docs/` was trashed and the
+footer link removed on 2026-08-14. A BookStack wiki at `wiki.dhbw-asta.de` was
+planned and is **not set up**; its exporter was removed (`git show
+410069d:tools/export_docs_wiki.py`). Links must work on GitHub: other docs
+relative (`testing.md`), site files absolute (`https://stuv-heidenheim.de/…`) —
+a root-relative `/wp-content/…` resolves against github.com. Nothing in `docs/`
+may contain secrets. Do not re-add a `docs` deploy target to
+`data/manifest.json`.
 
 `docs/superpowers/` holds specs and plans from the brainstorm → spec → plan →
 execute cycle, and lists **open work only** — executed specs and plans are

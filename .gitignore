@@ -6,4 +6,3 @@ __pycache__/
 .env
 docs/not-public/
 wp-plugin/*.zip
-build/

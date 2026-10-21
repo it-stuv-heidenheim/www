@@ -13,10 +13,7 @@ Git und der Kommandozeile schon.
   denselben Stand wie ein frischer Checkout des Skills, nur ohne die
   installierten Abhängigkeiten, die beim ersten Lauf ohnehin neu entstehen:
 
-  ```wphtml
-  <a class="stuv-button-outline" href="/wp-content/uploads/wordpress-default-editor.zip" download
-     >wordpress-default-editor herunterladen (ZIP)</a>
-  ```
+  [wordpress-default-editor herunterladen (ZIP)](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
 
   ```bash
   unzip wordpress-default-editor.zip -d ~/.claude/skills/

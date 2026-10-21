@@ -31,7 +31,7 @@ gehört hierher.
 Dieses Repo enthält **kein lauffähiges WordPress-Tooling** — kein `deploy.py`,
 keinen REST-Client, keinen Block-Validator. Die liegen im separaten, generischen
 Skill-Repository. Für diese Site steht die Tooling-Fassung als
-[herunterladbarer ZIP-Schnappschuss](/wp-content/uploads/wordpress-default-editor.zip)
+[herunterladbarer ZIP-Schnappschuss](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
 bereit, entpackt nach `~/.claude/skills/`.
 
 Der Grund ist Wiederverwendbarkeit: Das Tooling ist nicht StuV-spezifisch. Es
@@ -54,7 +54,7 @@ passender Gelegenheit lädt. Drei Sorten sind hier im Spiel:
 
 ### 1. `wordpress-default-editor` — das Tool
 
-Extern; als [herunterladbarer ZIP-Schnappschuss](/wp-content/uploads/wordpress-default-editor.zip)
+Extern; als [herunterladbarer ZIP-Schnappschuss](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
 verfügbar, gepflegt in einem separaten Repository. Enthält alles
 Lauffähige:
 
