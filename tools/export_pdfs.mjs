@@ -45,7 +45,7 @@ const PAGES = [
 // Follow WP_SITE so the export targets whichever instance is current, rather
 // than a host baked in at write time (the beta host stuv.michi.onl outlived
 // its usefulness this way). WP_SITE already carries the scheme.
-const SITE = (process.env.WP_SITE || "https://dev.stuv-heidenheim.de").replace(
+const SITE = (process.env.WP_SITE || "https://stuv-heidenheim.de").replace(
   /\/+$/,
   "",
 );

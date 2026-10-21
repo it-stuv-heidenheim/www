@@ -48,7 +48,7 @@ DOC_FILES = [
 
 # Root-relative links (the skill ZIP) point at the WordPress host, not at the
 # wiki. Pasted unchanged they would silently mean wiki.dhbw-asta.de/wp-content/…
-DEFAULT_SITE = "https://dev.stuv-heidenheim.de"
+DEFAULT_SITE = "https://stuv-heidenheim.de"
 
 FENCE_RE = re.compile(r"^(?P<indent>[ \t]*)(?P<marker>`{3,}|~{3,})(?P<info>.*)$")
 

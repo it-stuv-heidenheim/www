@@ -142,8 +142,19 @@ carries no inline CSS at all).
 
 ## Host facts
 
-**The staging host is `dev.stuv-heidenheim.de`** (production DNS will later
-point at `stuv-heidenheim.de`). It replaced the beta host `stuv.michi.onl`,
+**The live host is `stuv-heidenheim.de`, and `WP_SITE` must point at it.**
+`dev.stuv-heidenheim.de` and the apex are one WordPress database but **two
+document roots**: WordPress's site URL is the apex, so `dev.` 301s every page
+there, yet nginx still serves `dev.`'s _own_ files for static paths. A REST
+upload through `dev.` therefore writes the file into `dev.`'s folder while the
+attachment URL (shared database) names the apex, which 404s it — nginx's 404,
+not the theme's. That is how `stuv-dhbw-apple-touch-icon.png` went missing on
+2026-10-21; every upload up to 2026-08-05 exists in both roots, so the split
+happened after that. The two roots also drift apart in other ways (core
+`readme.html` is 403 on `dev.`, 200 on the apex). Page, template-part and
+global-styles deploys only touch the database and are unaffected. If an upload
+is missing on the apex, delete the attachment and re-upload with `WP_SITE` on
+the apex (see Media). The apex replaced the beta host `stuv.michi.onl`,
 which was a _different_ WordPress instance — page ids, the global-styles id and
 the media library all changed with it. Anything that reads like a fact about
 the old host (`index.php/wp-json`, `?pagename=` URLs, Cloudflare,
@@ -190,8 +201,7 @@ reintroduce it from memory or from git history.
   every script is its own process, so without the pin each command pays it
   again. The pin raises `OSError` if the host ever stops publishing an A record
   — deliberately loud rather than a silent fallback. All three names (`dev.`,
-  `www.`, apex) resolve to A `202.61.233.9` plus the same dead AAAA, so the pin
-  stays correct when production DNS flips. If a deploy goes mysteriously slow
+  `www.`, apex) resolve to A `202.61.233.9` plus the same dead AAAA. If a deploy goes mysteriously slow
   again, check this first:
 
   ```bash
@@ -237,8 +247,8 @@ PY
 **Uploads are flat on this host.** Month/year folders are switched off, so files
 land at `uploads/<name>` and `MEDIA_BASE` in `gen_map.py` is the root-relative
 `/wp-content/uploads` — root-relative on purpose, so the same markup renders on
-staging and on production instead of pinning every map to the host it was
-generated against. That URL stability is what makes delete-then-re-upload safe
+every host name instead of pinning every map to the one it was generated
+against. That URL stability is what makes delete-then-re-upload safe
 here. If month/year folders are ever re-enabled, `MEDIA_BASE` has to change with
 them and the "URL only survives within the same month" caveat comes back.
 

@@ -146,7 +146,7 @@ die exportierten Dateien sind Artefakte, Quelle bleibt das Markdown in `docs/`.
 Drei Umschreibungen, alles andere geht unverändert durch:
 
 - **Root-relative Links werden absolut** (`--site`, Standard
-  `https://dev.stuv-heidenheim.de`). Ein `/wp-content/...`-Link würde im Wiki
+  `https://stuv-heidenheim.de`). Ein `/wp-content/...`-Link würde im Wiki
   sonst gegen `wiki.dhbw-asta.de` aufgelöst.
 - **Ein `wphtml`-Fence wird echtes Markup** statt eines Code-Blocks — dieselbe
   Luke wie früher beim WordPress-Generator, damit der ZIP-Download ein Link
