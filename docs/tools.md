@@ -75,7 +75,7 @@ python3 $SKILL/scripts/deploy.py --manifest data/manifest.json studentenleben
 ```
 
 **Hell/Dunkel:** Es gibt je zwei Bilder, umgeschaltet wird über zwei
-CSS-Custom-Properties, die `:root.dark .stuv-map-frame` aufgreift. Ein
+CSS-Custom-Properties, die `:root.dark .stuv-map-canvas` aufgreift. Ein
 `<picture>` mit `prefers-color-scheme` wäre falsch — das folgt dem
 Betriebssystem und ignoriert den Theme-Schalter der Seite.
 

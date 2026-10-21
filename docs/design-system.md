@@ -166,6 +166,57 @@ rechnen sich selbst neu, weil sie auf `--stuv-primary` zeigen.
   Preset selbst in `:root.dark` überschrieben — die hellen 3 % Schwarz wären
   auf dunklem Grund unsichtbar.
 
+## Fallstricke in `component.css`
+
+`component.css` trägt keine Kommentare, weil jeder Kommentar mit auf jede Seite
+ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
+
+- **Sticky Header:** `position: sticky` sitzt auf dem von WordPress erzeugten
+  `header.wp-block-template-part`, nicht auf `.stuv-header`. Dessen Elternbox
+  ist genau so hoch wie er selbst, dort klebt nichts. `scroll-padding-top` auf
+  `:root` hält Sprungziele (Karten-Pins, `#wg-suche` …) unter dem Header frei:
+  Header-Höhe (2.5rem + 2× Padding von `.stuv-header-row` + 1px Rand) plus Luft.
+  Wer das Header-Padding ändert, misst neu.
+- **Header- und Footer-Padding** sind TT5s Spacing-Werte 30/50/60, wörtlich
+  übernommen, damit ein Theme-Update sie nicht verschiebt.
+- **Navigation unter 1024px:** Core schaltet auf das Hamburger-Menü fest bei
+  600px um (mit `!important`); beide Seiten dieses Umschalters sind auf 1023px
+  überschrieben. Unter 1024px entfällt `backdrop-filter` am Header, sonst würde
+  das fixierte Menü-Overlay auf Header-Höhe abgeschnitten. Die Overlay-Farben
+  kommen per `!important` aus den `--stuv-*`-Token: Die Block-Attribute zeigen
+  auf TT5s `base`/`contrast`-Presets, die nicht dunkel werden, und diese Presets
+  unter `:root.dark` umzudefinieren würde die Abdunklung des Hero-Covers
+  umkehren.
+- **Lücke über dem Footer:** TT5s Root-blockGap gibt jedem Kind von
+  `.wp-site-blocks` 1rem `margin-block-start`. Zurückgesetzt wird das auf dem
+  Wrapper `.wp-site-blocks > .wp-block-template-part`; auf `.stuv-footer` wirkt
+  es nicht.
+- **Der Footer ist immer dunkel.** Seine Hex-Werte sind die aus `:root.dark` und
+  müssen von Hand mitgezogen werden.
+- **Hero-Übergang:** Die 6rem Verlauf entsprechen dem inline
+  `padding-bottom: 6rem` der Hero-Gruppe in `01-hero.html`. Die Zwischenstopps
+  folgen einer Smoothstep-Kurve, damit an beiden Enden keine harte Kante
+  entsteht.
+- **Badge-Kontrast:** `.stuv-badge-secondary` nimmt `#52525b`, weil
+  `--stuv-muted-foreground` auf `--stuv-muted` nur 4,40:1 erreicht.
+- **Icons:** `.stuv-ico.stuv-ico-<name>` muss zusammengesetzt bleiben. Ein
+  nacktes `.stuv-ico-<name>` würde die `.stuv-icon-box` selbst maskieren.
+- **Mobil-Breakpoint** ist `max-width: 639px`, nie 640px: Bei genau 640px greift
+  schon `min-width: 640px`.
+- **WPForms** (zusätzlich zur Ahnenketten-Regel in `docs/content-editing.md`):
+  - Die Textfarbe wird bei `:focus` und `:focus:invalid` wiederholt, weil
+    WPForms dort eigene Farben setzt (`textarea:focus` mit 0,3,2,
+    `…:focus:invalid` mit 0,4,3). Ohne die Wiederholung tippt man im Dark Mode
+    schwarz auf schwarz.
+  - Autofill: Der Browser erzwingt seine Textfarbe mit `!important`;
+    `-webkit-text-fill-color` und `caret-color` umgehen das. Die beiden
+    Autofill-Selektoren stehen absichtlich in getrennten Regeln, weil ein
+    Browser, der einen nicht kennt, sonst die ganze Liste verwirft.
+  - Der Absenden-Button braucht `[type="submit"]`, um WPForms' Blau (0,4,2) zu
+    schlagen.
+  - Eingabefelder sind mobil mindestens 16px groß, sonst zoomt iOS Safari beim
+    Antippen hinein und nicht wieder heraus.
+
 ## Wohin gehört meine Änderung?
 
 | Vorhaben                            | Ort                                               |

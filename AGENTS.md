@@ -433,7 +433,7 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
   committed images and blocks still match the data; a Pillow/libwebp upgrade can
   change WebP bytes for identical input, in which case re-render and commit. The
   basemaps are self-hosted and the light/dark swap is two inline custom
-  properties picked up by `:root.dark .stuv-map-frame`; a `<picture>` with a
+  properties picked up by `:root.dark .stuv-map-canvas`; a `<picture>` with a
   `prefers-color-scheme` `<source>` would follow the OS and ignore the site's
   own theme toggle. Leaflet was rejected on purpose (it would send visitor IPs
   to a tile host).
