@@ -2,7 +2,7 @@
 /**
  * Plugin Name: StuV DSGVO Embeds
  * Description: Lädt die eingebetteten Google Kalender erst auf Klick statt automatisch und zeigt vorher einen Datenschutz-Hinweis. Die Zustimmung wird auf Wunsch im Browser des Geräts gemerkt und lässt sich unter dem Kalender jederzeit widerrufen. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Kalender und an seiner Stelle steht ein Link zu Google — die Embeds tragen keine eigene src, es wird also nie ungefragt bei Google geladen. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.1.0
+ * Version: 1.1.1
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUV_DSGVO_VERSION', '1.1.0');
+define('STUV_DSGVO_VERSION', '1.1.1');
 
 /**
  * The click-to-load script.
@@ -180,8 +180,7 @@ function stuv_dsgvo_script(): string {
       reset.parentNode.insertBefore(fresh, reset);
 
       // Same focus reasoning as above — the button that was clicked is gone.
-      var loadAgain = fresh.querySelector('.stuv-dsgvo-load-btn');
-      if (loadAgain) loadAgain.focus();
+      fresh.querySelector('.stuv-dsgvo-load-btn').focus();
     }
   });
 })();

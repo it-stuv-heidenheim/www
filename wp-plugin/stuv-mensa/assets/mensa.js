@@ -7,13 +7,12 @@
  * Never parses an upstream timestamp — the REST route hands us plain
  * 'YYYY-MM-DD' dates and ready-made German labels.
  */
-(function (root, factory) {
+(function (factory) {
   var api = factory();
-  root.StuvMensa = api;
   if (typeof module === "object" && module.exports) {
     module.exports = api;
   }
-})(typeof self !== "undefined" ? self : globalThis, function () {
+})(function () {
   "use strict";
 
   var priceFormat = new Intl.NumberFormat("de-DE", {
@@ -36,12 +35,9 @@
 
   /**
    * Index of the day to show first: today if the Mensa is open today,
-   * otherwise the next open day. -1 when there are no open days at all.
+   * otherwise the next open day. Only called with at least one day.
    */
   function pickInitialDay(days, todayIso) {
-    if (!days || days.length === 0) {
-      return -1;
-    }
     var index = days.findIndex(function (day) {
       return day.date === todayIso;
     });
@@ -235,7 +231,5 @@
     pickInitialDay,
     dropPastDays,
     todayInBerlin,
-    render,
-    init,
   };
 });

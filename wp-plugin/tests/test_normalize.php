@@ -55,10 +55,6 @@ check('semester break: empty days, not an error', $break['days'], []);
 check('semester break: opening hours still present',
     $break['openingHours'], '11:30 – 13:45 Uhr');
 
-// Window is honoured.
-check('window: respects a smaller window',
-    count(stuv_mensa_normalize($fixture, '2026-07-13', $base, 2)['days']), 2);
-
 // --- image helpers ----------------------------------------------------------
 check('image id: parsed from the upstream url',
     stuv_mensa_image_id('https://api.dhbw.app/file/12692/12692.webp'), 12692);

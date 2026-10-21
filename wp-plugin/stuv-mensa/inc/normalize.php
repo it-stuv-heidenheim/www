@@ -7,15 +7,9 @@
  * lives here so the browser never parses an upstream timestamp.
  */
 
-if (!defined('STUV_MENSA_HOST')) {
-    define('STUV_MENSA_HOST', 'https://api.dhbw.app');
-}
-if (!defined('STUV_MENSA_UPSTREAM')) {
-    define('STUV_MENSA_UPSTREAM', STUV_MENSA_HOST . '/mensa/HDH');
-}
-if (!defined('STUV_MENSA_WINDOW')) {
-    define('STUV_MENSA_WINDOW', 5); // open days shown, rolling from today
-}
+const STUV_MENSA_HOST = 'https://api.dhbw.app';
+const STUV_MENSA_UPSTREAM = STUV_MENSA_HOST . '/mensa/HDH';
+const STUV_MENSA_WINDOW = 5; // open days shown, rolling from today
 
 const STUV_MENSA_WEEKDAYS = [
     1 => 'Montag', 2 => 'Dienstag', 3 => 'Mittwoch', 4 => 'Donnerstag',
@@ -56,7 +50,7 @@ function stuv_mensa_label(string $date): array {
 /**
  * Trim the upstream payload to what the widget needs.
  *
- * Returns a rolling window of the next $window OPEN days starting at $today.
+ * Returns a rolling window of the next STUV_MENSA_WINDOW OPEN days from $today.
  * Weekends and holidays are simply absent from the upstream data (they are NOT
  * flagged `closed`), so "no menu today" is expressed by absence — which is why
  * this filters by date rather than trusting the `closed` flag alone.
@@ -66,8 +60,7 @@ function stuv_mensa_label(string $date): array {
 function stuv_mensa_normalize(
     array $upstream,
     string $today,
-    string $image_base,
-    int $window = STUV_MENSA_WINDOW
+    string $image_base
 ): array {
     $site = $upstream[0] ?? [];
 
@@ -112,7 +105,7 @@ function stuv_mensa_normalize(
 
     return [
         'openingHours' => (string) ($site['mensaInfo']['openingHours'] ?? ''),
-        'days'         => array_slice(array_values($days), 0, $window),
+        'days'         => array_slice(array_values($days), 0, STUV_MENSA_WINDOW),
     ];
 }
 

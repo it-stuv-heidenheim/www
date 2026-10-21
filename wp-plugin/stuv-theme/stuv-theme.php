@@ -2,7 +2,7 @@
 /**
  * Plugin Name: StuV Theme Toggle
  * Description: Schaltet den Dark Mode der Website um (Button in der Kopfzeile) und merkt sich die Wahl im Browser. Außerdem liefert es das Apple-Touch-Icon mit weißem Hintergrund aus. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Umschalt-Button, die Seite zeigt immer das helle Design und das Icon auf dem iOS-Home-Bildschirm bekommt einen schwarzen Hintergrund. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.3.0
+ * Version: 1.3.1
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUV_THEME_VERSION', '1.3.0');
+define('STUV_THEME_VERSION', '1.3.1');
 
 /**
  * The theme script, inline in <head>.
@@ -55,7 +55,6 @@ function stuv_theme_script(): string {
   }
 
   function apply(m) {
-    root.dataset.themeMode = m;
     root.classList.toggle('dark', resolve(m) === 'dark');
     var buttons = document.querySelectorAll('.stuv-theme-toggle');
     for (var i = 0; i < buttons.length; i++) {

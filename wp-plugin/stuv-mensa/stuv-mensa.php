@@ -2,7 +2,7 @@
 /**
  * Plugin Name: StuV Mensa
  * Description: Liefert den Speiseplan der Mensa Heidenheim (api.dhbw.app) same-origin an die Website. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Speiseplan auf der Seite "Studentenleben". Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.2.0
+ * Version: 1.2.1
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/inc/normalize.php';
 require_once __DIR__ . '/inc/cache.php';
 
-define('STUV_MENSA_VERSION', '1.2.0'); // keep in sync with the header Version above; it cache-busts assets/mensa.js
+define('STUV_MENSA_VERSION', '1.2.1'); // keep in sync with the header Version above; it cache-busts assets/mensa.js
 define('STUV_MENSA_TTL', 30 * MINUTE_IN_SECONDS);
 define('STUV_MENSA_LOCK_TTL', 60);
 define('STUV_MENSA_IMAGE_TTL', 30 * DAY_IN_SECONDS);

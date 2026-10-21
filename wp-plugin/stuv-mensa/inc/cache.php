@@ -6,9 +6,7 @@
  * (wp-plugin/tests/test_cache.php).
  */
 
-if (!defined('STUV_MENSA_IMAGE_MAX_BYTES')) {
-    define('STUV_MENSA_IMAGE_MAX_BYTES', 2 * 1024 * 1024); // 2 MB
-}
+const STUV_MENSA_IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 
 /**
  * Decide whether to fetch a fresh payload or serve what we already have.
