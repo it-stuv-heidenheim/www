@@ -173,10 +173,6 @@ dem Handy passt — dafür gibt es nur Hinsehen:
 - Bei Kartenänderungen: die drei Deploy-Ziele zusammen deployen, sonst liegt
   das alte Bild unter der neuen Geometrie (`docs/tools.md`).
 
-Für Design-Review über alle Seiten hinweg gibt es den PDF-Export — der braucht
-aber **jedes Mal** eine ausdrückliche Freigabe, weil er einen Browser
-installiert und die Live-Site abruft (`docs/tools.md`).
-
 Und wenn etwas schiefging:
 
 ```bash

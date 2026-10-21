@@ -56,8 +56,7 @@ every check below is run by hand, locally, before a deploy. Human docs:
   `.stuv-dhbw-favicon.svg` sit there as local-only sources.
 - `data/maps/` — map definitions (pins, zoom, padding) for `tools/gen_map.py`.
 - `tools/` — site-specific utilities with no WP REST access: `gen_icon_css.py`,
-  `gen_map.py`, `build_skill_zip.py`, `export_pdfs.mjs`,
-  plus their `test_*.py`.
+  `gen_map.py`, `build_skill_zip.py`, plus their `test_*.py`.
 - `wp-plugin/` — source of truth for the three plugins; the copies on the host
   are artifacts.
 
@@ -494,15 +493,10 @@ deleted one as `git show 6a19d0a^:<path>`, never as a bare path, which reads
 like a live file and rots silently. Grep the tree for references before
 deleting.
 
-## Full-site PDF export
+## Headless browsers
 
-> **Puppeteer rule:** do **not** run Puppeteer/Playwright or any
-> headless-browser script without the maintainer's explicit approval each time —
-> including `tools/export_pdfs.mjs`.
-
-`node tools/export_pdfs.mjs --list` prints planned URLs without a browser; a
-real run self-installs Puppeteer + Chrome into `~/.cache/stuv-pdf-export` and
-merges per-route PDFs with `pdfunite`/`qpdf`.
+Do **not** run Puppeteer/Playwright or any headless-browser script without the
+maintainer's explicit approval each time.
 
 ## Repo-local skills
 

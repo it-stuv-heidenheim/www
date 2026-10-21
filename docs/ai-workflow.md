@@ -136,9 +136,8 @@ Verweisen durchsuchen.**
 Diese Grenzen stehen als harte Regeln in `AGENTS.md`. Sie sind alle aus Schaden
 entstanden:
 
-- **Kein Headless-Browser ohne Freigabe** — Puppeteer/Playwright, auch
-  `tools/export_pdfs.mjs`. Ein Lauf installiert Chrome (mehrere hundert MB)
-  und ruft die Live-Site auf.
+- **Kein Headless-Browser ohne Freigabe** — Puppeteer/Playwright. Ein Lauf
+  installiert oft Chrome (mehrere hundert MB) und ruft die Live-Site auf.
 - **Umlaute nie pauschal ersetzen** — ein `ae→ä`-Suchen-und-Ersetzen zerstört
   `neue` und `Wohnungssuche`. URL-Slugs müssen Digraphen bleiben
   (`?pagename=ueber-uns`).

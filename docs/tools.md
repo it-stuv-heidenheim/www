@@ -1,13 +1,12 @@
 # Tools
 
-Vier Skripte in `tools/`. Keines spricht mit WordPress — drei erzeugen Dateien,
+Drei Skripte in `tools/`. Keines spricht mit WordPress — alle erzeugen Dateien,
 die über den normalen Deploy-Weg auf die Site kommen
 (`docs/content-editing.md`): die beiden Generatoren unten und
 `build_skill_zip.py`, das den Tooling-Skill als ZIP nach `data/media/` packt.
-`export_pdfs.mjs` erzeugt PDFs außerhalb des Repos. Das Deploy-Tooling selbst
-liegt woanders (`docs/ai-workflow.md`).
+Das Deploy-Tooling selbst liegt woanders (`docs/ai-workflow.md`).
 
-Zwei der vier sind Generatoren, deren Ergebnis im Repo liegt. Generierte
+Zwei der drei sind Generatoren, deren Ergebnis im Repo liegt. Generierte
 Dateien **nie von Hand bearbeiten** — die Änderung überlebt bis zum nächsten
 Generatorlauf und verschwindet dann ohne Fehlermeldung. Die Quelle bearbeiten
 und neu generieren.
@@ -123,29 +122,3 @@ die eingebackene Farbe).
 dem Custom-CSS-Feld. Ob die Icons überlebt haben, sagt `verify_global_css.py`
 (Aufruf in `AGENTS.md`); Exit-Code 2 heißt, sie wurden gestrippt und müssen
 stattdessen im `core/html`-Block des Headers stehen.
-
-## `export_pdfs.mjs` — der PDF-Export
-
-Rendert jede Route als durchgehende PDF-Seite und fügt sie zu einem Dokument
-zusammen. Zweck ist Design-Review und Übergabe, nicht der Betrieb.
-
-> **Kein Lauf ohne ausdrückliche Freigabe des Maintainers — jedes Mal.**
-> Ein echter Lauf installiert Puppeteer und Chrome (mehrere hundert MB) nach
-> `~/.cache/stuv-pdf-export` und ruft die Live-Site auf.
-
-Unbedenklich ist nur:
-
-```bash
-node tools/export_pdfs.mjs --list    # zeigt geplante URLs, startet nichts
-```
-
-| Flag            | Wirkung                                               |
-| --------------- | ----------------------------------------------------- |
-| `--list`        | geplante URLs + Ausgaben zeigen, kein Browser         |
-| `--out DIR`     | Zielverzeichnis (Standard: `~/Desktop`)               |
-| `--width PX`    | Viewport-/PDF-Breite in CSS-Pixeln (Standard: 1440)   |
-| `--pages a,b,c` | nur diese Routen (Startseite heißt `home`)            |
-| `--keep-parts`  | Einzel-PDFs neben der zusammengefügten Datei behalten |
-
-Zusammengefügt wird mit `pdfunite` (poppler) oder ersatzweise `qpdf`. Das
-Skript installiert sich selbst in den Cache, damit das Repo sauber bleibt.

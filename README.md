@@ -11,7 +11,7 @@ Die WordPress-Site der Studierendenvertretung (StuV) der DHBW Heidenheim basiert
 **Nachschlagen**
 
 - **Farben, Karten, Buttons** → [Design-System](docs/design-system.md)
-- **Karten, Icons, PDF-Export** → [Werkzeuge](docs/tools.md)
+- **Karten, Icons** → [Werkzeuge](docs/tools.md)
 - **Speiseplan, Dark-Mode** → [Plugins](docs/plugins.md)
 - **Was vor dem Deploy prüfen?** → [Prüfen und Testen](docs/testing.md)
 - **Warum sieht das Repo so aus?** → [AI-Workflow](docs/ai-workflow.md)
