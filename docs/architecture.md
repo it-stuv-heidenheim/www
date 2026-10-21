@@ -1,16 +1,17 @@
-# Architecture
+# Architektur
 
 Die StuV-Website ([stuv-heidenheim.de](https://stuv-heidenheim.de)) läuft auf
-WordPress mit dem Twenty-Twenty-Five-Block-Theme. Dieses Repo ist die
-**Content-Quelle** — Seiteninhalte, Design-Tokens und Komponenten-CSS liegen als
-Dateien vor und werden per REST-API auf die Live-Site deployt.
+WordPress mit dem Block-Theme Twenty Twenty-Five. Dieses Repo ist ihre
+Content-Quelle: Seiteninhalte, Design-Tokens und Komponenten-CSS liegen hier als
+Dateien, und ein Deploy schreibt sie über die REST-API auf die Live-Site.
 
 ## Verzeichnisstruktur
 
 | Pfad                        | Zweck                                                                                                                                                                |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data/sections/`            | Startseiten-Sektionen, in Dateinamen-Reihenfolge zusammengefügt (Page-ID 10)                                                                                         |
+| `data/sections/`            | Startseiten-Sektionen, in Dateinamen-Reihenfolge zusammengefügt (Page-ID 9)                                                                                          |
 | `data/pages/<slug>/`        | Unterseiten: `ueber-uns`, `events`, `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`                                                                        |
+| `data/patterns/`            | Synchronisierte Muster (Vorsitz), eingebunden per `wp:block`                                                                                                         |
 | `data/header_blocks.html`   | Header-Template-Part                                                                                                                                                 |
 | `data/footer_blocks.html`   | Footer-Template-Part                                                                                                                                                 |
 | `data/global-styles.json`   | Design-Tokens (Layout-Breiten, Farbpalette, Typografie)                                                                                                              |
@@ -20,35 +21,26 @@ Dateien vor und werden per REST-API auf die Live-Site deployt.
 | `data/manifest.json`        | Deploy-Ziele: Name → REST-Endpunkt, ID, Quelldatei                                                                                                                   |
 | `tools/`                    | Generatoren und Hilfsskripte (`docs/tools.md`)                                                                                                                       |
 | `wp-plugin/`                | Drei WordPress-Plugins: `stuv-mensa` (Live-Speiseplan), `stuv-theme` (Dark-Mode-Toggle) und `stuv-dsgvo` (Klick-zum-Laden für die Kalender), siehe `docs/plugins.md` |
-| `docs/`                     | Diese Doku — Quelle für das AStA-Wiki (`wiki.dhbw-asta.de`), Export mit `tools/export_docs_wiki.py`                                                                  |
-| `.claude/skills/`           | Repo-lokale Agent-Verfahren (`docs/ai-workflow.md`)                                                                                                                  |
+| `docs/`                     | Diese Doku, gelesen auf GitHub                                                                                                                                       |
+| `.agents/skills/`           | Repo-lokale Agent-Verfahren (`docs/ai-workflow.md`)                                                                                                                  |
 
-## Was dieses Repo NICHT ist
+## Was nicht in diesem Repo liegt
 
-- **Kein lauffähiges WordPress-Tooling.** Deploy-Skripte, Block-Validator und
-  REST-Client liegen im `wordpress-default-editor`-Skill, hier als
-  [herunterladbarer ZIP-Schnappschuss](/wp-content/uploads/wordpress-default-editor.zip)
-  (entpackt nach `~/.claude/skills/wordpress-default-editor`).
-- **Keine WordPress-Core- oder Theme-Dateien.** Theme (Twenty Twenty-Five) und
-  Plugins sind auf dem Host installiert; `wp-plugin/` versioniert nur den
-  Plugin-Quellcode, die installierten Kopien sind Artefakte.
-- **Kein Drittanbieter-Plugin-Code.** WPForms (Kontakt- und
-  Kummer-Karsten-Formular) läuft komplett auf dem Host, nirgends in diesem
-  Repo versioniert — nur Formular-ID und Wrapper-Markup stehen in den
-  Seiteninhalten (`docs/content-editing.md`), das Aussehen in
-  `data/styles/component.css`.
-- **Kein Build-Schritt.** Content-Dateien werden unverändert per REST-API
-  deployt; es gibt keinen Static-Site-Generator.
+- Lauffähiges WordPress-Tooling. Deploy-Skripte, Block-Validator und
+  REST-Client gehören zum `wordpress-default-editor`-Skill, den es als
+  [ZIP-Schnappschuss zum Herunterladen](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
+  gibt (entpackt nach `~/.claude/skills/wordpress-default-editor`).
+- WordPress-Core und Theme-Dateien. Theme (Twenty Twenty-Five) und Plugins sind
+  auf dem Host installiert. `wp-plugin/` versioniert nur den Quellcode der
+  eigenen Plugins; die installierten Kopien sind Artefakte.
+- Code von Drittanbieter-Plugins. WPForms (Kontakt- und
+  Kummer-Karsten-Formular) läuft komplett auf dem Host. In den Seiteninhalten
+  stehen nur Formular-ID und Wrapper-Markup (`docs/content-editing.md`), das
+  Aussehen steht in `data/styles/component.css`.
+  The SEO Framework liefert Meta-Beschreibung, Open Graph, Twitter Card,
+  JSON-LD und `sitemap.xml`. Beschreibungen und Vorschaubild werden in wp-admin
+  gepflegt und liegen in der Datenbank, nicht in diesem Repo.
+- Ein Build-Schritt. Die Content-Dateien gehen unverändert über die REST-API
+  raus; es gibt keinen Static-Site-Generator.
 
-## Wo steht was
-
-| Thema                               | Doku                      |
-| ----------------------------------- | ------------------------- |
-| Inhalt ändern, deployen             | `docs/content-editing.md` |
-| Neue Seite anlegen                  | `docs/adding-a-page.md`   |
-| Farben, Schrift, Komponenten        | `docs/design-system.md`   |
-| Generatoren (Karten, Icons)         | `docs/tools.md`           |
-| Plugins (`mensa`, `theme`, `dsgvo`) | `docs/plugins.md`         |
-| Prüfen und Testen                   | `docs/testing.md`         |
-| Warum das Repo so aussieht          | `docs/ai-workflow.md`     |
-| Agent-Referenz mit Fallstricken     | `AGENTS.md`               |
+Die übrige Doku ist im [README](../README.md) verlinkt.

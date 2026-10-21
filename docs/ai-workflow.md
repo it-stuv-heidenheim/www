@@ -1,66 +1,62 @@
 # AI-Workflow
 
-Dieses Repo wird überwiegend mit KI-Agents bearbeitet — konkret mit
-[Claude Code](https://claude.com/claude-code). Das erklärt einen Teil der
-Struktur, der sonst willkürlich wirkt: die Datei `AGENTS.md` im
-Wurzelverzeichnis, das Verzeichnis `docs/superpowers/`, und den Umstand, dass
-die Deploy-Skripte nicht in diesem Repo liegen.
+Die meisten Änderungen an diesem Repo macht ein KI-Agent, konkret
+[Claude Code](https://claude.com/claude-code). Das erklärt einige Teile der
+Struktur, die sonst willkürlich wirken: die Datei `AGENTS.md` im
+Wurzelverzeichnis, das Verzeichnis `docs/superpowers/` und die Deploy-Skripte,
+die woanders liegen.
 
-Dieses Dokument **erklärt** das System. Es ist keine Anweisung an den Agent —
-das ist `AGENTS.md`.
+Dieses Dokument erklärt das System. Die Anweisungen an den Agent stehen in
+`AGENTS.md`.
 
 ## Die Rollenverteilung
 
-| Datei             | Adressat    | Sprache  | Zweck                                                                |
-| ----------------- | ----------- | -------- | -------------------------------------------------------------------- |
-| `AGENTS.md`       | der Agent   | Englisch | Anweisung: Konventionen, Deploy-Befehle, Fallstricke                 |
-| `docs/*.md`       | Menschen    | Deutsch  | Erklärung: wie die Site aufgebaut ist, wie man sie bearbeitet        |
-| `CLAUDE.md`       | Claude Code | —        | Einzeiler, der `AGENTS.md` einbindet (Claude Code liest `CLAUDE.md`) |
-| `.claude/skills/` | der Agent   | Englisch | Verfahren: wiederverwendbare Arbeitsabläufe für dieses Repo          |
+| Datei             | Adressat  | Sprache  | Zweck                                                         |
+| ----------------- | --------- | -------- | ------------------------------------------------------------- |
+| `AGENTS.md`       | der Agent | Englisch | Anweisung: Konventionen, Deploy-Befehle, Fallstricke          |
+| `docs/*.md`       | Menschen  | Deutsch  | Erklärung: wie die Site aufgebaut ist, wie man sie bearbeitet |
+| `.agents/skills/` | der Agent | Englisch | Verfahren: wiederverwendbare Arbeitsabläufe für dieses Repo   |
 
-`AGENTS.md` weist an, `docs/` erklärt. Wer beides vermischt, bekommt zwei
-Dokumente über dieselbe Sache, die auseinanderdriften.
+Wer Anweisung und Erklärung mischt, hat am Ende zwei Dokumente über dieselbe
+Sache, die auseinanderdriften.
 
-`AGENTS.md` wird bei jeder Agent-Sitzung automatisch geladen und kostet damit
-Kontext. Es enthält deshalb nur, was ein Agent zwingend wissen muss, um nichts
-kaputtzumachen: Fallstricke, exakte Befehle, harte Regeln. Alles Erklärende
-gehört hierher.
+Der Agent lädt `AGENTS.md` in jeder Sitzung, und jede Zeile darin kostet
+Kontext. Die Datei enthält deshalb nur, was ein Agent wissen muss, um nichts
+kaputtzumachen: Fallstricke, exakte Befehle, harte Regeln. Erklärungen gehören
+nach `docs/`.
 
 ## Warum das Tooling nicht in diesem Repo liegt
 
-Dieses Repo enthält **kein lauffähiges WordPress-Tooling** — kein `deploy.py`,
-keinen REST-Client, keinen Block-Validator. Die liegen im separaten, generischen
-Skill-Repository. Für diese Site steht die Tooling-Fassung als
-[herunterladbarer ZIP-Schnappschuss](/wp-content/uploads/wordpress-default-editor.zip)
-bereit, entpackt nach `~/.claude/skills/`.
+`deploy.py`, der REST-Client und der Block-Validator liegen in einem eigenen,
+generischen Skill-Repository. Für diese Site gibt es davon einen
+[ZIP-Schnappschuss zum Herunterladen](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip),
+entpackt nach `~/.claude/skills/`.
 
-Der Grund ist Wiederverwendbarkeit: Das Tooling ist nicht StuV-spezifisch. Es
-bearbeitet _irgendeine_ WordPress-Site mit dem Block-Editor über die REST-API.
-Läge es hier, wäre es an dieses eine Repo gefesselt. Die Aufteilung ist
-dieselbe wie zwischen einem Programm und seinen Daten:
+Das Tooling ist nicht StuV-spezifisch: Es bearbeitet jede WordPress-Site mit
+Block-Editor über die REST-API. Läge es hier, könnte es nur dieses eine Repo
+nutzen. Die Aufteilung entspricht der zwischen einem Programm und seinen Daten:
 
 ```
 Skill-Repository          →  das Tool (generisch, mehrere Sites)
 dieses Repository         →  der Inhalt   (nur StuV, mehrere Tools)
 ```
 
-Praktische Konsequenz: **Ohne ausgechecktes Skill-Repo kann man hier nichts
-deployen.** Siehe Voraussetzungen in `docs/content-editing.md`.
+Ohne ausgecheckten Skill kannst du hier also nichts deployen (Voraussetzungen in
+`docs/content-editing.md`).
 
 ## Die Skills
 
-Ein „Skill“ ist ein Markdown-Dokument mit einer Anleitung, die der Agent bei
-passender Gelegenheit lädt. Drei Sorten sind hier im Spiel:
+Ein „Skill“ ist ein Markdown-Dokument mit einer Anleitung, die der Agent lädt,
+wenn sie zur Aufgabe passt. Drei Sorten kommen hier vor.
 
-### 1. `wordpress-default-editor` — das Tool
+### 1. `wordpress-default-editor`: das Tool
 
-Extern; als [herunterladbarer ZIP-Schnappschuss](/wp-content/uploads/wordpress-default-editor.zip)
-verfügbar, gepflegt in einem separaten Repository. Enthält alles
-Lauffähige:
+Extern, gepflegt in einem separaten Repository (ZIP-Schnappschuss siehe oben).
+Enthält alles Lauffähige:
 
 | Skript                           | Zweck                                                             |
 | -------------------------------- | ----------------------------------------------------------------- |
-| `wp_block_api.py`                | REST-Client (Auth, Backup, User-Agent für Cloudflare)             |
+| `wp_block_api.py`                | REST-Client (Auth, Backup, eigener User-Agent)                    |
 | `deploy.py`                      | Deployer, gesteuert von `data/manifest.json`                      |
 | `rollback.py`                    | Deploy rückgängig machen (nicht für Medien)                       |
 | `upload_media.py`                | Bild-Upload                                                       |
@@ -68,27 +64,26 @@ Lauffähige:
 | `verify_global_css.py`           | Prüft, ob WordPress das deployte CSS unbeschädigt gespeichert hat |
 | `blockcheck/validate_blocks.cjs` | Gutenberg-Block-Validator                                         |
 
-### 2. `improving-code` — das Verfahren für dieses Repo
+### 2. `improving-code`: das Verfahren für dieses Repo
 
-Repo-lokal, in `.claude/skills/improving-code/`. Beschreibt, was „bessere
-Qualität“ hier konkret heißt (weniger Duplikation, Wiederverwendung
-existierender `.stuv-*`-Klassen und Patterns statt neuer) und schreibt einen
-Nachweis vor: Eine Aufräumaktion muss ein verifizierter No-Op auf dem
-deployten Content sein, oder die Abweichung muss benannt werden.
+Liegt in `.agents/skills/improving-code/`. Der Skill legt fest, was „bessere
+Qualität“ hier heißt (weniger Duplikation, vorhandene `.stuv-*`-Klassen und
+Patterns wiederverwenden statt neue anlegen), und verlangt einen Nachweis: Eine
+Aufräumaktion muss auf dem deployten Content ein verifizierter No-Op sein, oder
+die Abweichung muss benannt werden.
 
-Repo-lokal, weil es Wissen über _diesen_ Content kodiert — Block-HTML,
-`component.css`, Design-Tokens. Für eine andere Site wäre es falsch.
+Er liegt im Repo, weil er Wissen über diesen Content enthält (Block-HTML,
+`component.css`, Design-Tokens). Für eine andere Site wäre er falsch.
 
-### 3. `superpowers` — der Prozess
+### 3. `superpowers`: der Prozess
 
-Global installiert, nicht Teil dieses Repos. Ein Satz allgemeiner Verfahren
-für Softwarearbeit; hier sichtbar wird davon vor allem der Zyklus, der
+Global installiert, nicht Teil dieses Repos. Eine Sammlung allgemeiner Verfahren
+für Softwarearbeit; hier sieht man davon vor allem den Zyklus, der
 `docs/superpowers/` füllt.
 
 ## Der Zyklus: Brainstorm → Spec → Plan → Execute
 
-Größere Änderungen laufen nicht als „Agent, bau mal“, sondern in vier Schritten
-mit Freigaben dazwischen:
+Größere Änderungen laufen in vier Schritten, mit Freigaben dazwischen:
 
 ```
 Brainstorm  →  Spec                  →  Plan                  →  Execute
@@ -96,65 +91,60 @@ Brainstorm  →  Spec                  →  Plan                  →  Execute
                specs/*-design.md       plans/*.md
 ```
 
-1. **Brainstorm** — Dialog über Zweck, Randbedingungen, Alternativen. Ergebnis
-   ist eine Entscheidung, kein Code.
-2. **Spec** (`docs/superpowers/specs/JJJJ-MM-TT-thema-design.md`) — das
-   _Was_ und _Warum_. Wird vor dem Plan freigegeben.
-3. **Plan** (`docs/superpowers/plans/JJJJ-MM-TT-thema.md`) — das _Wie_,
-   aufgeteilt in abhakbare Schritte mit Verifikationsbefehlen.
-4. **Execute** — der Plan wird Schritt für Schritt abgearbeitet.
+1. Brainstorm: Dialog über Zweck, Randbedingungen und Alternativen. Am Ende
+   steht eine Entscheidung; Code entsteht hier noch keiner.
+2. Spec (`docs/superpowers/specs/JJJJ-MM-TT-thema-design.md`): das _Was_ und
+   _Warum_. Wird vor dem Plan freigegeben.
+3. Plan (`docs/superpowers/plans/JJJJ-MM-TT-thema.md`): das _Wie_, aufgeteilt
+   in abhakbare Schritte mit Verifikationsbefehlen.
+4. Execute: Der Agent arbeitet den Plan Schritt für Schritt ab.
 
-Die teuren Fehler entstehen beim Missverstehen, nicht beim Tippen. Spec und
-Plan sind Haltepunkte, an denen ein Missverständnis noch einen Absatz kostet
-und nicht 600 Zeilen.
+Teuer wird es, wenn der Agent die Aufgabe missversteht. An Spec und Plan fällt
+ein Missverständnis auf, solange es einen Absatz kostet statt 600 Zeilen Code.
 
-Nicht jede Änderung braucht das. Ein Tippfehler, ein neuer Termin, ein
-ausgetauschtes Foto — direkt machen. Die Schwelle ist ungefähr: Sobald es eine
-Entscheidung gibt, die man falsch treffen kann, lohnt der Dialog.
+Einen Tippfehler, einen neuen Termin oder ein ausgetauschtes Foto erledigt man
+direkt. Der Dialog lohnt sich ungefähr ab dem Punkt, an dem eine Entscheidung
+ansteht, die man falsch treffen kann.
 
 ### Lebenszyklus von Specs und Plans
 
-**Erledigte Specs und Plans werden aus dem Verzeichnisbaum gelöscht**
-(Präzedenzfall: Commit `6a19d0a`). `docs/superpowers/` listet damit offene
-Arbeit — was dort liegt, ist noch nicht umgesetzt.
+Ist ein Spec oder Plan umgesetzt, wird die Datei aus dem Verzeichnisbaum
+gelöscht (Präzedenzfall: Commit `6a19d0a`). Was in `docs/superpowers/` liegt,
+ist also noch offen.
 
-Gelöscht heißt nicht weg: Die Dateien bleiben in der Git-Historie. Ein Verweis
-auf ein erledigtes Spec wird deshalb als Befehl geschrieben, nicht als Pfad:
+In der Git-Historie bleiben die Dateien erhalten. Einen Verweis auf ein
+erledigtes Spec schreibt man deshalb als Befehl und nicht als Pfad:
 
 ```bash
 git show 6a19d0a^:docs/superpowers/specs/2026-07-13-mensa-live-menu-design.md
 ```
 
-Ein nackter Pfad sieht aus wie eine existierende Datei und verrottet unbemerkt
-— genau das war einmal der Fall: Vier Verweise in `AGENTS.md` und `docs/todo.md`
-zeigten monatelang ins Leere, und ein noch offener Plan (Logo-Umstellung)
-wurde beim Aufräumen mitgelöscht. Deshalb: **vor dem Löschen den Baum nach
-Verweisen durchsuchen.**
+Ein nackter Pfad sähe aus wie eine existierende Datei und liefe unbemerkt ins
+Leere. Vor dem Löschen also den Baum nach Verweisen durchsuchen.
 
 ## Was ein Agent hier nicht ohne Rückfrage darf
 
-Diese Grenzen stehen als harte Regeln in `AGENTS.md`. Sie sind alle aus Schaden
-entstanden:
+Diese Grenzen stehen als harte Regeln in `AGENTS.md`, und jede ist aus einem
+Schaden entstanden:
 
-- **Kein Headless-Browser ohne Freigabe** — Puppeteer/Playwright, auch
-  `tools/export_pdfs.mjs`. Ein Lauf installiert Chrome (mehrere hundert MB)
-  und ruft die Live-Site auf.
-- **Umlaute nie pauschal ersetzen** — ein `ae→ä`-Suchen-und-Ersetzen zerstört
-  `neue` und `Wohnungssuche`. URL-Slugs müssen Digraphen bleiben
+- Headless-Browser (Puppeteer, Playwright) nur mit Freigabe. Ein Lauf
+  installiert oft Chrome (mehrere hundert MB) und ruft die Live-Site auf.
+- Umlaute nie pauschal ersetzen. Ein Suchen-und-Ersetzen `ae→ä` zerstört `neue`
+  und `Wohnungssuche`, und URL-Slugs müssen Digraphen bleiben
   (`?pagename=ueber-uns`).
-- **Generierte Dateien nie von Hand bearbeiten** — die Karten-Blöcke und der
-  Icon-CSS-Abschnitt werden beim nächsten Generatorlauf stillschweigend
-  überschrieben. Siehe `docs/tools.md`.
-- **Kein `--force` bei Medien** — WordPress benennt die Datei um, die alte URL
-  bleibt tot. Siehe `docs/tools.md`.
+- Generierte Dateien nie von Hand bearbeiten. Der nächste Generatorlauf
+  überschreibt die Karten-Blöcke und den Icon-CSS-Abschnitt ohne Meldung
+  (`docs/tools.md`).
+- Kein `--force` bei Medien. WordPress legt dann eine umbenannte Datei an
+  (`karte-…-1.webp`), auf die nichts verweist (`docs/tools.md`).
 
 ## Warum kein CI
 
-Es gibt keine GitHub Action, die bei Push deployt. Ein Deploy ist ein Befehl,
-den ein Mensch auslöst, nach einem Dry-Run und mit Blick auf das Ergebnis.
+Keine GitHub Action deployt bei einem Push. Einen Deploy löst ein Mensch per
+Befehl aus, nach einem Dry-Run und mit Blick auf das Ergebnis.
 
-Die Zielgruppe dieses Repos sind wechselnde StuV-Mitglieder, nicht
-Vollzeit-Entwickler. Ein Auto-Deploy würde bedeuten, dass ein unbedachter
-Commit sofort auf der öffentlichen Seite steht.
+An diesem Repo arbeiten wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler.
+Mit Auto-Deploy stünde jeder unbedachte Commit sofort auf der öffentlichen
+Seite.
 
-Die Prüfungen laufen lokal, von Hand — siehe `docs/testing.md`.
+Geprüft wird lokal und von Hand (`docs/testing.md`).

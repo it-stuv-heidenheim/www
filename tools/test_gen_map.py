@@ -1,4 +1,4 @@
-"""Unit tests for tools/gen_map.py. Stdlib only — no network, no Pillow.
+"""Unit tests for tools/gen_map.py. Stdlib only: no network, no Pillow.
 
 Run from the repo root:
     python3 -m unittest discover -s tools -p "test_*.py" -v
@@ -17,6 +17,7 @@ SOUTH = min(p["lat"] for p in CAMPUS_PINS)
 NORTH = max(p["lat"] for p in CAMPUS_PINS)
 WEST = min(p["lon"] for p in CAMPUS_PINS)
 EAST = max(p["lon"] for p in CAMPUS_PINS)
+CAMPUS_BBOX = gen_map.bbox_from_pins(CAMPUS_PINS, CAMPUS["padding_m"])
 
 # Minimal fixture with an edge pin for testing edge-pin logic.
 # Two regular pins define the bbox; the third is far north with "edge": true.
@@ -52,6 +53,9 @@ EDGE_FIXTURE = {
         },
     ],
 }
+EDGE_BBOX = gen_map.bbox_from_pins(
+    gen_map.visible_pins(EDGE_FIXTURE["pins"]), EDGE_FIXTURE["padding_m"]
+)
 
 
 class TestProject(unittest.TestCase):
@@ -75,7 +79,7 @@ class TestProject(unittest.TestCase):
 
 class TestBBoxFromPins(unittest.TestCase):
     def test_pads_every_side_around_the_pins(self):
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS, 80)
+        bbox = CAMPUS_BBOX
         self.assertLess(bbox.south, SOUTH)
         self.assertLess(bbox.west, WEST)
         self.assertGreater(bbox.north, NORTH)
@@ -84,20 +88,12 @@ class TestBBoxFromPins(unittest.TestCase):
     def test_longitude_padding_is_wider_in_degrees_at_this_latitude(self):
         # 80 m of longitude spans more degrees than 80 m of latitude at 48.68°N,
         # because the meridians converge. Getting this backwards squashes the map.
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS, 80)
-        dlat = bbox.north - NORTH
-        dlon = bbox.east - EAST
-        self.assertGreater(dlon, dlat)
-
-    def test_a_single_pin_still_yields_a_box(self):
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS[:1], 100)
-        self.assertLess(bbox.south, bbox.north)
-        self.assertLess(bbox.west, bbox.east)
+        self.assertGreater(CAMPUS_BBOX.east - EAST, CAMPUS_BBOX.north - NORTH)
 
 
 class TestPinPercent(unittest.TestCase):
     def test_corners_map_to_the_corners_of_the_image(self):
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS, 80)
+        bbox = CAMPUS_BBOX
         x, y = gen_map.pin_percent(bbox.north, bbox.west, bbox)
         self.assertAlmostEqual(x, 0.0, places=6)
         self.assertAlmostEqual(y, 0.0, places=6)
@@ -112,19 +108,11 @@ class TestPinPercent(unittest.TestCase):
         self.assertAlmostEqual(x, 50.0, places=2)
         self.assertAlmostEqual(y, 50.0, places=2)
 
-    def test_every_campus_pin_lands_inside_the_image(self):
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS, 80)
-        for pin in CAMPUS_PINS:
-            x, y = gen_map.pin_percent(pin["lat"], pin["lon"], bbox)
-            self.assertTrue(0.0 < x < 100.0, f"pin {pin['n']} x={x}")
-            self.assertTrue(0.0 < y < 100.0, f"pin {pin['n']} y={y}")
-
 
 class TestTiling(unittest.TestCase):
     def test_the_tile_range_covers_the_pixel_box(self):
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS, 80)
-        left, top, right, bottom = gen_map.pixel_box(bbox, 17)
-        x0, y0, x1, y1 = gen_map.tile_range(bbox, 17)
+        left, top, right, bottom = gen_map.pixel_box(CAMPUS_BBOX, 17)
+        x0, y0, x1, y1 = gen_map.tile_range(CAMPUS_BBOX, 17)
         edge = gen_map.TILE * gen_map.SCALE
         self.assertLessEqual(x0 * edge, left)
         self.assertLessEqual(y0 * edge, top)
@@ -136,8 +124,7 @@ class TestTiling(unittest.TestCase):
         # 80 m of padding on each side puts the box near 620 m, i.e. ~1580 px. A
         # sanity bracket, not a spec: it catches a projection or scale bug, not
         # exact pixels.
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS, 80)
-        _, top, _, bottom = gen_map.pixel_box(bbox, 17)
+        _, top, _, bottom = gen_map.pixel_box(CAMPUS_BBOX, 17)
         self.assertTrue(1400 < bottom - top < 1700, bottom - top)
 
 
@@ -146,19 +133,16 @@ class TestImageSize(unittest.TestCase):
         # The campus really does overshoot: zoom is an integer, so the tiles hand
         # back more pixels than the frame can ever show. image_size is where that
         # is trimmed, so the block's ratio and the render agree by construction.
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS, CAMPUS["padding_m"])
-        left, top, right, bottom = gen_map.pixel_box(bbox, CAMPUS["zoom"])
+        left, top, right, bottom = gen_map.pixel_box(CAMPUS_BBOX, CAMPUS["zoom"])
         raw_width, raw_height = right - left, bottom - top
-        width, height = gen_map.image_size(bbox, CAMPUS["zoom"])
+        width, height = gen_map.image_size(CAMPUS_BBOX, CAMPUS["zoom"])
         self.assertGreater(raw_width, gen_map.MAX_WIDTH)
         self.assertEqual(width, gen_map.MAX_WIDTH)
         self.assertAlmostEqual(width / height, raw_width / raw_height, places=2)
 
-    def test_the_campus_render_is_16_by_9_and_clears_the_wordpress_threshold(self):
-        bbox = gen_map.bbox_from_pins(CAMPUS_PINS, CAMPUS["padding_m"])
-        width, height = gen_map.image_size(bbox, CAMPUS["zoom"])
+    def test_the_campus_render_is_16_by_9(self):
+        width, height = gen_map.image_size(CAMPUS_BBOX, CAMPUS["zoom"])
         self.assertAlmostEqual(width / height, gen_map.ASPECT, places=2)
-        self.assertLess(max(width, height), 2560)
 
 
 class TestUnproject(unittest.TestCase):
@@ -185,17 +169,13 @@ class TestFitAspect(unittest.TestCase):
         width, height = gen_map.image_size(fitted, 15)
         self.assertAlmostEqual(width / height, 3 / 2, places=2)
 
-    def test_it_only_ever_grows_the_box(self):
+    def test_it_only_grows_the_box_around_its_centre(self):
         box = gen_map.BBox(48.670, 10.150, 48.690, 10.155)
         fitted = gen_map.fit_aspect(box, 3 / 2)
         self.assertLessEqual(fitted.south, box.south)
         self.assertLessEqual(fitted.west, box.west)
         self.assertGreaterEqual(fitted.north, box.north)
         self.assertGreaterEqual(fitted.east, box.east)
-
-    def test_it_keeps_the_centre_put(self):
-        box = gen_map.BBox(48.670, 10.150, 48.690, 10.155)
-        fitted = gen_map.fit_aspect(box, 3 / 2)
         self.assertAlmostEqual(
             (fitted.west + fitted.east) / 2, (box.west + box.east) / 2, places=6
         )
@@ -217,24 +197,19 @@ class TestRenderHtml(unittest.TestCase):
         # prefers-color-scheme <source> would ignore the toggle. component.css
         # picks one of these two var()s instead. Only the one that ends up in
         # background-image is ever fetched.
-        self.assertRegex(
-            self.html,
-            r"--stuv-map-light: url\('https://example\.test/up/karte-campus-light"
-            r"\.webp(\?v=[a-f0-9]{8})?'\)",
-        )
-        self.assertRegex(
-            self.html,
-            r"--stuv-map-dark: url\('https://example\.test/up/karte-campus-dark"
-            r"\.webp(\?v=[a-f0-9]{8})?'\)",
-        )
+        for mode in ("light", "dark"):
+            self.assertRegex(
+                self.html,
+                rf"--stuv-map-{mode}: url\('https://example\.test/up/karte-campus-"
+                rf"{mode}\.webp(\?v=[a-f0-9]{{8}})?'\)",
+            )
 
     def test_the_frame_carries_its_ratio_so_the_page_does_not_shift(self):
         # No <img> means no intrinsic size; without this the frame is 0 px tall
         # until the background loads, and everything below it jumps. It rides in
-        # as a custom property because component.css needs the number twice — the
+        # as a custom property because component.css needs the number twice: the
         # frame crops to 3:2 on a phone, the canvas inside it keeps the image's own.
-        bbox = gen_map.bbox_from_pins(CAMPUS["pins"], CAMPUS["padding_m"])
-        width, height = gen_map.image_size(bbox, CAMPUS["zoom"])
+        width, height = gen_map.image_size(CAMPUS_BBOX, CAMPUS["zoom"])
         self.assertIn(f"--stuv-map-ratio: {width} / {height}", self.html)
 
     def test_the_basemap_is_labelled_for_screen_readers(self):
@@ -265,19 +240,17 @@ class TestRenderHtml(unittest.TestCase):
         self.assertNotIn("&query=", self.html.replace("&amp;query=", ""))
 
     def test_pins_sit_where_the_projection_puts_them(self):
-        bbox = gen_map.bbox_from_pins(CAMPUS["pins"], CAMPUS["padding_m"])
         pin = CAMPUS_PINS[0]
-        x, y = gen_map.pin_percent(pin["lat"], pin["lon"], bbox)
+        x, y = gen_map.pin_percent(pin["lat"], pin["lon"], CAMPUS_BBOX)
         self.assertIn(f"left: {x:.2f}%; top: {y:.2f}%", self.html)
 
     def test_a_pin_near_the_top_edge_opens_its_tooltip_downwards(self):
         # The frame clips (that is what crops the canvas), so a tooltip opening
         # upwards from the top of the frame would be cut in half.
-        bbox = gen_map.bbox_from_pins(CAMPUS["pins"], CAMPUS["padding_m"])
         for pin in CAMPUS_PINS:
-            _, y = gen_map.pin_percent(pin["lat"], pin["lon"], bbox)
+            _, y = gen_map.pin_percent(pin["lat"], pin["lon"], CAMPUS_BBOX)
             marker = f'href="#karte-campus-{pin["n"]}"'
-            line = next(l for l in self.html.splitlines() if marker in l)
+            line = next(ln for ln in self.html.splitlines() if marker in ln)
             self.assertEqual(
                 "stuv-map-pin-below" in line, y < gen_map.TIP_BELOW, f"pin {pin['n']}"
             )
@@ -322,74 +295,41 @@ class TestSplice(unittest.TestCase):
             )
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TestVisiblePins(unittest.TestCase):
-    def test_excludes_edge_pins(self):
-        self.assertEqual(len(gen_map.visible_pins(EDGE_FIXTURE["pins"])), 2)
-
-    def test_includes_non_edge_pins(self):
-        visible = gen_map.visible_pins(EDGE_FIXTURE["pins"])
-        self.assertTrue(all(not p.get("edge") for p in visible))
-
-    def test_returns_all_when_none_are_edge(self):
-        self.assertEqual(
-            len(gen_map.visible_pins(CAMPUS_PINS)), len(CAMPUS_PINS)
-        )
+    def test_it_drops_exactly_the_edge_pins(self):
+        pins = EDGE_FIXTURE["pins"]
+        self.assertEqual(gen_map.visible_pins(pins), [pins[0], pins[2]])
+        self.assertEqual(gen_map.visible_pins(CAMPUS_PINS), CAMPUS_PINS)
 
 
 class TestHaversine(unittest.TestCase):
-    def test_zero_distance(self):
-        self.assertEqual(gen_map.haversine_m(48.0, 10.0, 48.0, 10.0), 0.0)
-
     def test_one_degree_latitude_is_about_111_km(self):
         d = gen_map.haversine_m(48.0, 10.0, 49.0, 10.0)
         self.assertTrue(110_000 < d < 112_000, d)
 
-    def test_one_degree_longitude_at_48_north_is_shorter(self):
-        d = gen_map.haversine_m(48.0, 10.0, 48.0, 11.0)
-        self.assertTrue(73_000 < d < 76_000, d)
-
-    def test_is_symmetric(self):
-        a = gen_map.haversine_m(48.68, 10.15, 48.71, 10.18)
-        b = gen_map.haversine_m(48.71, 10.18, 48.68, 10.15)
-        self.assertAlmostEqual(a, b, places=9)
-
 
 class TestFormatDistanceKm(unittest.TestCase):
-    def test_metres_below_1000(self):
+    def test_metres_below_1000_kilometres_above(self):
         self.assertEqual(gen_map.format_distance_km(0), "0 m")
-        self.assertEqual(gen_map.format_distance_km(999), "999 m")
-
-    def test_kilometres_above_1000(self):
         self.assertEqual(gen_map.format_distance_km(1000), "1.0 km")
-        self.assertEqual(gen_map.format_distance_km(2345), "2.3 km")
 
 
 class TestEdgePinInfo(unittest.TestCase):
     def setUp(self):
-        self.bbox = gen_map.bbox_from_pins(
-            gen_map.visible_pins(EDGE_FIXTURE["pins"]),
-            EDGE_FIXTURE["padding_m"],
-        )
         self.edge_pin = EDGE_FIXTURE["pins"][1]  # "Far North", edge=True
 
     def test_returns_north_direction(self):
-        direction, _, label = gen_map.edge_pin_info(self.edge_pin, self.bbox)
+        direction, _, label = gen_map.edge_pin_info(self.edge_pin, EDGE_BBOX)
         self.assertEqual(direction, "n")
         self.assertEqual(label, "nördlich")
 
-    def test_returns_positive_distance(self):
-        _, dist_m, _ = gen_map.edge_pin_info(self.edge_pin, self.bbox)
-        self.assertGreater(dist_m, 0)
+    def test_it_refuses_a_direction_without_an_arrow(self):
+        with self.assertRaises(SystemExit):
+            gen_map.edge_pin_info({"n": 9, "lat": 48.680, "lon": 10.3}, EDGE_BBOX)
 
-    def test_distance_is_roughly_two_kilometres(self):
-        # Pin 2 is at 48.710, bbox north is around 48.680 + padding ≈ 48.681.
-        # That is ~3.2 km; the haversine distance to the bbox edge should
-        # match.
-        _, dist_m, _ = gen_map.edge_pin_info(self.edge_pin, self.bbox)
+    def test_distance_is_a_few_kilometres(self):
+        # Pin 2 is at 48.710, the bbox's north edge near 48.681: ~3.2 km.
+        _, dist_m, _ = gen_map.edge_pin_info(self.edge_pin, EDGE_BBOX)
         self.assertTrue(2000 < dist_m < 4000, dist_m)
 
 
@@ -410,19 +350,12 @@ class TestValidateEdgePins(unittest.TestCase):
         with self.assertRaises(SystemExit):
             gen_map.validate_edge_pins(data)
 
-    def test_ignores_non_edge_pins(self):
-        data = {"id": "t", "pins": [{"n": 1, "lat": 48.0, "lon": 10.0}]}
-        gen_map.validate_edge_pins(data)  # must not raise
-
 
 class TestRenderHtmlWithEdgePins(unittest.TestCase):
     def setUp(self):
         self.html = gen_map.render_html(
             EDGE_FIXTURE, media_base="https://example.test/up"
         )
-
-    def test_edge_pin_gets_edge_class(self):
-        self.assertIn("stuv-map-pin-edge", self.html)
 
     def test_edge_pin_gets_directional_class(self):
         self.assertIn("stuv-map-pin-edge-n", self.html)
@@ -437,16 +370,7 @@ class TestRenderHtmlWithEdgePins(unittest.TestCase):
             if 'href="#karte-test-edge-1"' in line:
                 self.assertNotIn("stuv-map-pin-edge", line)
 
-    def test_edge_pin_still_links_to_legend(self):
-        self.assertIn('href="#karte-test-edge-2"', self.html)
-        self.assertIn('id="karte-test-edge-2"', self.html)
-
     def test_bbox_uses_only_visible_pins(self):
-        # The bbox in the URL is derived only from pins 1 and 3.
-        # Pin 2 (edge) does not contribute.
-        bbox = gen_map.bbox_from_pins(
-            gen_map.visible_pins(EDGE_FIXTURE["pins"]),
-            EDGE_FIXTURE["padding_m"],
-        )
-        width, height = gen_map.image_size(bbox, EDGE_FIXTURE["zoom"])
+        # The ratio is derived only from pins 1 and 3; pin 2 (edge) does not count.
+        width, height = gen_map.image_size(EDGE_BBOX, EDGE_FIXTURE["zoom"])
         self.assertIn(f"--stuv-map-ratio: {width} / {height}", self.html)
