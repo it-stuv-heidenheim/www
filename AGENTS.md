@@ -374,6 +374,12 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
   round-trip). Do **not** rely on it: it holds only because the deploy user is
   an admin and `DISALLOW_UNFILTERED_HTML` is unset. Any hardening would strip
   inline scripts silently, with no error. Ship JS via a plugin enqueue instead.
+- **`has-border-color` is two classes in one.** Gutenberg puts it on any block
+  with a custom border colour, and the palette slug `border` makes TT5 print
+  `.has-border-color{color:var(--wp--preset--color--border) !important}` for
+  it, so that block's own text turns light grey. Nothing visible breaks today
+  only because every child sets its own colour. Prefer the `.stuv-card` border
+  over a block border colour.
 - **Page template**: all pages use the theme's `page-no-title` template. New
   pages created via REST **must** set `"template": "page-no-title"`, or
   WordPress renders a big post-title heading.
