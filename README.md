@@ -1,23 +1,23 @@
 # Website der StuV DHBW Heidenheim
 
-Die WordPress-Site der Studierendenvertretung (StuV) der DHBW Heidenheim basiert auf Gutenberg-Block-HTML, Design-Tokens und Komponenten-CSS. Sie wird über die WordPress-REST-API bereitgestellt.
+Die WordPress-Site der Studierendenvertretung (StuV) der DHBW Heidenheim besteht aus Gutenberg-Block-HTML, Design-Tokens und Komponenten-CSS. Deployt wird über die WordPress-REST-API.
 
-**Anfangen**
+## Anfangen
 
-- **Neu hier?** → [Architektur-Übersicht](docs/architecture.md)
-- **Inhalte bearbeiten** → [Content Editing Guide](docs/content-editing.md)
-- **Neue Seite anlegen** → [Seite hinzufügen](docs/adding-a-page.md)
+- [Architektur-Übersicht](docs/architecture.md), wenn du neu hier bist
+- [Inhalte bearbeiten](docs/content-editing.md)
+- [Neue Seite anlegen](docs/adding-a-page.md)
 
-**Nachschlagen**
+## Nachschlagen
 
-- **Farben, Karten, Buttons** → [Design-System](docs/design-system.md)
-- **Karten, Icons** → [Werkzeuge](docs/tools.md)
-- **Speiseplan, Dark-Mode** → [Plugins](docs/plugins.md)
-- **Was vor dem Deploy prüfen?** → [Prüfen und Testen](docs/testing.md)
-- **Warum sieht das Repo so aus?** → [AI-Workflow](docs/ai-workflow.md)
+- [Design-System](docs/design-system.md): Farben, Schrift, Karten, Buttons
+- [Werkzeuge](docs/tools.md): Landkarten und Icons
+- [Plugins](docs/plugins.md): Speiseplan, Dark Mode, Kalender
+- [Prüfen und Testen](docs/testing.md): was vor einem Deploy zu prüfen ist
+- [AI-Workflow](docs/ai-workflow.md): warum das Repo so aufgebaut ist
 
-**Drumherum**
+## Drumherum
 
-- **Tooling** (Deploy, Rollback, Validierung): `wordpress-default-editor`-Skill — ohne den lässt sich hier nichts deployen
-- **Arbeitsanleitung für Agents**: `AGENTS.md`
-- **Vorgänger** (Next.js-Design-Quelle, archiviert 2026-07-10): separat archiviert
+- Deploy, Rollback und Validierung liegen im `wordpress-default-editor`-Skill. Ohne ihn lässt sich hier nichts deployen.
+- `AGENTS.md` ist die Arbeitsanleitung für Agents.
+- Die Vorgängerseite, eine Next.js-App und Quelle des Designs, ist seit dem 2026-07-10 separat archiviert.

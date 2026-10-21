@@ -1,4 +1,4 @@
-"""Unit tests for tools/build_skill_zip.py. Stdlib only — no network.
+"""Unit tests for tools/build_skill_zip.py. Stdlib only, no network.
 
 Builds against a throwaway git repo fixture rather than the real
 ~/.claude/skills checkout, so the test is hermetic and does not depend on a
@@ -24,7 +24,7 @@ def _make_skill_repo(root):
     """A minimal skills repo: one skill subtree plus gitignored installed deps.
 
     Mirrors the real layout closely enough to prove the two claims the design
-    relies on — SKILL.md ships, gitignored deps do not.
+    relies on: SKILL.md ships, gitignored deps do not.
     """
     _git(root, "init", "-q")
     _git(root, "config", "user.email", "t@t.test")

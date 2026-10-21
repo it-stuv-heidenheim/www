@@ -1,13 +1,13 @@
 # Neue Seite anlegen
 
-So erstellst du eine neue Unterseite auf der StuV-Website — von Null auf live.
+So legst du eine neue Unterseite auf der StuV-Website an und bringst sie live.
 
 ## Voraussetzungen
 
 - Git-Zugriff auf dieses Repo
 - WordPress-Admin-Zugang (zum Anlegen der Seite in wp-admin)
 - `.env`-Datei mit Deploy-Credentials
-- Das `wordpress-default-editor`-Skill unter `~/.claude/skills/wordpress-default-editor`
+- Der `wordpress-default-editor`-Skill unter `~/.claude/skills/wordpress-default-editor`
   (siehe Voraussetzungen in `docs/content-editing.md`)
 - Node.js für `npx prettier` und Block-Validierung
 
@@ -20,9 +20,9 @@ Verzeichnis und erste Datei erstellen:
 mkdir -p data/pages/dein-slug
 ```
 
-`data/pages/dein-slug/01-content.html` mit dem Seiteninhalt befüllen.
-Eine existierende Seite als Vorlage nehmen — z. B.
-`data/pages/kontakt/01-pageheader.html` kopieren und Text ersetzen:
+`data/pages/dein-slug/01-content.html` mit dem Seiteninhalt befüllen. Am
+einfachsten nimmst du eine bestehende Seite als Vorlage, z. B.
+`data/pages/kontakt/01-pageheader.html`, und ersetzt den Text:
 
 ```html
 <!-- wp:group {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","bottom":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
@@ -41,9 +41,9 @@ Eine existierende Seite als Vorlage nehmen — z. B.
 <!-- /wp:group -->
 ```
 
-Jede Datei wird mit ihren Geschwistern zusammengefügt (sortiert nach Dateiname)
-und als eine Seite deployt. Weitere Dateien (`02-weiteres.html`,
-`03-kontakt.html`) nach Bedarf hinzufügen.
+Der Deploy fügt alle Dateien des Verzeichnisses nach Dateinamen sortiert
+zusammen und schreibt sie als eine Seite. Weitere Dateien
+(`02-weiteres.html`, `03-kontakt.html`) nach Bedarf hinzufügen.
 
 ## Schritt 2: Seite ins Manifest eintragen
 
@@ -66,7 +66,8 @@ Zunächst einen Platzhalter eintragen.
 
 1. In wp-admin einloggen.
 2. Seiten → Erstellen.
-3. Titel eingeben (erscheint nicht im Frontend wegen `page-no-title`-Template).
+3. Titel eingeben (erscheint wegen des `page-no-title`-Templates nicht im
+   Frontend).
 4. In der Seiten-Seitenleiste unter „Template“ die Vorlage `page-no-title`
    auswählen.
 5. Veröffentlichen.
@@ -80,7 +81,8 @@ Zunächst einen Platzhalter eintragen.
 npx prettier --write .
 ```
 
-Block-Validierung siehe `docs/testing.md` unter „Block-Validierung“.
+Den Aufruf der Block-Validierung findest du in `docs/testing.md` unter
+„Block-Validierung“.
 
 ## Schritt 5: Deployen
 
@@ -102,6 +104,6 @@ https://stuv-heidenheim.de/dein-slug/
 Für einen Eintrag im Hauptmenü den Header-Block in
 `data/header_blocks.html` bearbeiten und `header` deployen.
 
-Danach die Live-URL besuchen und prüfen, ob die Seite korrekt gerendert wird.
-Ob die Page-ID zur gemeinten WordPress-Seite gehört, zeigt erst der echte
-Deploy plus der Blick auf die Seite — der Dry-Run prüft nur lokal.
+Danach die Live-URL aufrufen und prüfen, ob die Seite richtig aussieht. Der
+Dry-Run prüft nur lokal; ob die Page-ID zur gemeinten WordPress-Seite gehört,
+siehst du erst nach dem echten Deploy auf der Seite selbst.

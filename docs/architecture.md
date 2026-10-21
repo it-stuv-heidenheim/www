@@ -1,9 +1,9 @@
-# Architecture
+# Architektur
 
 Die StuV-Website ([stuv-heidenheim.de](https://stuv-heidenheim.de)) läuft auf
-WordPress mit dem Twenty-Twenty-Five-Block-Theme. Dieses Repo ist die
-**Content-Quelle** — Seiteninhalte, Design-Tokens und Komponenten-CSS liegen als
-Dateien vor und werden per REST-API auf die Live-Site deployt.
+WordPress mit dem Block-Theme Twenty Twenty-Five. Dieses Repo ist ihre
+Content-Quelle: Seiteninhalte, Design-Tokens und Komponenten-CSS liegen hier als
+Dateien, und ein Deploy schreibt sie über die REST-API auf die Live-Site.
 
 ## Verzeichnisstruktur
 
@@ -24,21 +24,20 @@ Dateien vor und werden per REST-API auf die Live-Site deployt.
 | `docs/`                     | Diese Doku, gelesen auf GitHub                                                                                                                                       |
 | `.agents/skills/`           | Repo-lokale Agent-Verfahren (`docs/ai-workflow.md`)                                                                                                                  |
 
-## Was dieses Repo NICHT ist
+## Was nicht in diesem Repo liegt
 
-- **Kein lauffähiges WordPress-Tooling.** Deploy-Skripte, Block-Validator und
-  REST-Client liegen im `wordpress-default-editor`-Skill, hier als
-  [herunterladbarer ZIP-Schnappschuss](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
-  (entpackt nach `~/.claude/skills/wordpress-default-editor`).
-- **Keine WordPress-Core- oder Theme-Dateien.** Theme (Twenty Twenty-Five) und
-  Plugins sind auf dem Host installiert; `wp-plugin/` versioniert nur den
-  Plugin-Quellcode, die installierten Kopien sind Artefakte.
-- **Kein Drittanbieter-Plugin-Code.** WPForms (Kontakt- und
-  Kummer-Karsten-Formular) läuft komplett auf dem Host, nirgends in diesem
-  Repo versioniert — nur Formular-ID und Wrapper-Markup stehen in den
-  Seiteninhalten (`docs/content-editing.md`), das Aussehen in
-  `data/styles/component.css`.
-- **Kein Build-Schritt.** Content-Dateien werden unverändert per REST-API
-  deployt; es gibt keinen Static-Site-Generator.
+- Lauffähiges WordPress-Tooling. Deploy-Skripte, Block-Validator und
+  REST-Client gehören zum `wordpress-default-editor`-Skill, den es als
+  [ZIP-Schnappschuss zum Herunterladen](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
+  gibt (entpackt nach `~/.claude/skills/wordpress-default-editor`).
+- WordPress-Core und Theme-Dateien. Theme (Twenty Twenty-Five) und Plugins sind
+  auf dem Host installiert. `wp-plugin/` versioniert nur den Quellcode der
+  eigenen Plugins; die installierten Kopien sind Artefakte.
+- Code von Drittanbieter-Plugins. WPForms (Kontakt- und
+  Kummer-Karsten-Formular) läuft komplett auf dem Host. In den Seiteninhalten
+  stehen nur Formular-ID und Wrapper-Markup (`docs/content-editing.md`), das
+  Aussehen steht in `data/styles/component.css`.
+- Ein Build-Schritt. Die Content-Dateien gehen unverändert über die REST-API
+  raus; es gibt keinen Static-Site-Generator.
 
 Die übrige Doku ist im [README](../README.md) verlinkt.

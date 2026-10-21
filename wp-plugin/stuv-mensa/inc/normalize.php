@@ -2,7 +2,7 @@
 /**
  * Pure helpers for the StuV Mensa widget.
  *
- * NO WordPress dependencies may be added to this file — it is unit-tested with
+ * NO WordPress dependencies may be added to this file: it is unit-tested with
  * the plain `php` CLI (wp-plugin/tests/test_normalize.php). All date handling
  * lives here so the browser never parses an upstream timestamp.
  */
@@ -25,7 +25,7 @@ const STUV_MENSA_MONTHS = [
 /**
  * Upstream stamps local midnight as UTC ("2026-07-12T22:00:00.000Z" is Monday
  * the 13th in Berlin). Convert to a plain Berlin calendar date. The offset is
- * +2 in summer and +1 in winter, so this must go through a real timezone —
+ * +2 in summer and +1 in winter, so this must go through a real timezone;
  * a fixed shift breaks twice a year.
  */
 function stuv_mensa_berlin_date(string $upstream_ts): string {
@@ -52,7 +52,7 @@ function stuv_mensa_label(string $date): array {
  *
  * Returns a rolling window of the next STUV_MENSA_WINDOW OPEN days from $today.
  * Weekends and holidays are simply absent from the upstream data (they are NOT
- * flagged `closed`), so "no menu today" is expressed by absence — which is why
+ * flagged `closed`), so "no menu today" is expressed by absence. That is why
  * this filters by date rather than trusting the `closed` flag alone.
  *
  * An empty `days` array is a normal response (semester break), not an error.

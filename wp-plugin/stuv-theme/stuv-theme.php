@@ -22,7 +22,7 @@ define('STUV_THEME_VERSION', '1.3.1');
  * round trip for ~700 bytes; a footer script would be far too late.
  *
  * The click handler is delegated from `document` because this runs before the
- * header markup exists — no DOMContentLoaded dance, and the button keeps working
+ * header markup exists. That avoids a DOMContentLoaded dance, and the button keeps working
  * wherever it is moved to.
  */
 function stuv_theme_script(): string {
@@ -61,7 +61,7 @@ function stuv_theme_script(): string {
       buttons[i].setAttribute('aria-label', LABELS[m]);
     }
     // The check mark in the menu is what tells System apart from a fixed
-    // choice — the trigger icon only ever shows the resolved theme.
+    // choice; the trigger icon only ever shows the resolved theme.
     var options = document.querySelectorAll('.stuv-theme-option');
     for (var j = 0; j < options.length; j++) {
       options[j].setAttribute(

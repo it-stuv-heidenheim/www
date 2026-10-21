@@ -1,15 +1,15 @@
 # Inhalte bearbeiten
 
-So änderst du Texte, Namen, Fotos und Links auf der StuV-Website.
-WordPress-, Gutenberg- oder CSS-Wissen ist nicht nötig — Grundkenntnisse in
-Git und der Kommandozeile schon.
+So änderst du Texte, Namen, Fotos und Links auf der StuV-Website. Du brauchst
+dafür kein WordPress-, Gutenberg- oder CSS-Wissen, aber Grundkenntnisse in Git
+und auf der Kommandozeile.
 
 ## Voraussetzungen
 
 - Git-Zugriff auf dieses Repo
 - Node.js (für `npx prettier` und die Block-Validierung)
 - Das `wordpress-default-editor`-Tooling, entpackt nach `~/.claude/skills/`.
-  Lade den ZIP-Schnappschuss herunter und entpacke ihn dorthin — er enthält
+  Lade den ZIP-Schnappschuss herunter und entpacke ihn dorthin. Er enthält
   denselben Stand wie ein frischer Checkout des Skills, nur ohne die
   installierten Abhängigkeiten, die beim ersten Lauf ohnehin neu entstehen:
 
@@ -23,10 +23,10 @@ Git und der Kommandozeile schon.
   (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`,
   `WP_ADDRESS_FAMILY="ipv4"` (Gründe in `AGENTS.md`)
 
-  Falls einmal **jeder** Deploy-Befehl mit `HTTP Error 404` abbricht, obwohl
-  die Website normal läuft: dann fehlen die Rewrite-Regeln für `/wp-json/`.
-  In wp-admin einmal **Einstellungen → Permalinks → Speichern** — mehr ist
-  nicht nötig, es muss nichts geändert werden.
+  Bricht einmal jeder Deploy-Befehl mit `HTTP Error 404` ab, obwohl die Website
+  normal läuft, fehlen die Rewrite-Regeln für `/wp-json/`. Dann in wp-admin
+  einmal **Einstellungen → Permalinks → Speichern** klicken, ohne etwas zu
+  ändern.
 
 ## Die richtige Datei finden
 
@@ -50,10 +50,10 @@ Die Seite ist aus HTML-Dateien in `data/` aufgebaut:
 
 ## Text bearbeiten
 
-1. Öffne die Datei in einem Plain-Text-Editor (VS Code, Sublime — nicht Word
-   oder Pages).
+1. Öffne die Datei in einem Plain-Text-Editor wie VS Code oder Sublime (Word
+   und Pages gehen nicht).
 
-2. Suche den zu ändernden Text. Block-HTML sieht so aus:
+2. Suche den Text, den du ändern willst. Block-HTML sieht so aus:
 
    ```html
    <!-- wp:paragraph -->
@@ -62,38 +62,38 @@ Die Seite ist aus HTML-Dateien in `data/` aufgebaut:
    ```
 
 3. Ändere **nur den Text zwischen den HTML-Tags**. Die `<!-- wp:... -->`-
-   Kommentare sind Gutenberg-Block-Markierungen — nicht anfassen.
+   Kommentare sind Gutenberg-Block-Markierungen und bleiben, wie sie sind.
 
-4. **Umlaute:** ä, ö, ü, ß verwenden (nicht ae, oe, ue, ss) — außer in
-   URL-Slugs wie `?pagename=ueber-uns`.
+4. Umlaute: ä, ö, ü, ß schreiben statt ae, oe, ue, ss. Ausnahme sind URL-Slugs
+   wie `?pagename=ueber-uns`.
 
-5. **Bindestriche in Block-Kommentaren:** Innerhalb der JSON-Strings der
+5. Bindestriche in Block-Kommentaren: In den JSON-Strings der
    `<!-- wp:... -->`-Kommentare ist ein doppelter Bindestrich als `\u002d\u002d`
    escaped (z. B. `var(\u002d\u002dstuv-muted)`), weil `--` in HTML-Kommentaren
-   verboten ist. Das Muster aus der bestehenden Datei unverändert übernehmen —
-   nie zu `--` „korrigieren“.
+   verboten ist. Übernimm das Muster aus der bestehenden Datei unverändert und
+   „korrigiere“ es nie zu `--`.
 
 ## Warum manche Absätze im Editor „ohne Wert“ dastehen
 
-Bei vielen Absätzen stehen Schriftgröße und Farbe nicht am Block, sondern in
-`data/styles/component.css`, an einer Klasse: `.stuv-body-muted` für den grauen Fließtext in Karten und Listen,
-`.stuv-eyebrow` für die kleine Überschrift-Zeile darüber. Der Block trägt nur
-noch die Klasse.
+Bei vielen Absätzen stehen Schriftgröße und Farbe nicht am Block, sondern an
+einer Klasse in `data/styles/component.css`: `.stuv-body-muted` für den grauen
+Fließtext in Karten und Listen, `.stuv-eyebrow` für die kleine
+Überschrift-Zeile darüber. Der Block trägt nur noch die Klasse.
 
-Für alle, die Text ändern, macht das keinen Unterschied. Wer aber im Editor in
-der rechten Seitenleiste unter **Farbe** oder **Typografie** nachsieht, findet
-dort jetzt „kein Wert festgelegt“ — obwohl der Absatz auf der Seite grau und in
-seiner Größe erscheint. Das ist kein Fehler: Der Wert kommt aus dem
-Stylesheet, und die Seitenleiste zeigt nur, was am Block selbst hängt.
+Beim Ändern von Text merkst du davon nichts. Siehst du aber im Editor in der
+rechten Seitenleiste unter **Farbe** oder **Typografie** nach, steht dort „kein
+Wert festgelegt“, obwohl der Absatz auf der Seite grau und in seiner Größe
+erscheint. Der Wert kommt aus dem Stylesheet, und die Seitenleiste zeigt nur,
+was am Block selbst hängt.
 
-Daraus folgt zweierlei:
+Das hat zwei Folgen:
 
-- Die Farbe eines solchen Absatzes lässt sich **nicht mehr über die
-  Seitenleiste** umstellen. Wer sie ändern will, ändert die Klasse in
-  `component.css` — und damit überall gleichzeitig, was genau der Zweck ist.
-- Wird über die Seitenleiste doch eine Farbe gesetzt, gewinnt sie gegen die
-  Klasse und dieser eine Absatz schert aus dem gemeinsamen Bild aus. Im Zweifel
-  die Farbe dort wieder entfernen („zurücksetzen“) statt sie passend zu klicken.
+- Über die Seitenleiste lässt sich die Farbe eines solchen Absatzes nicht mehr
+  umstellen. Wer sie ändern will, ändert die Klasse in `component.css` und
+  damit die Farbe überall auf einmal. Genau dafür gibt es die Klasse.
+- Setzt jemand über die Seitenleiste doch eine Farbe, gewinnt sie gegen die
+  Klasse, und dieser eine Absatz weicht vom Rest ab. Im Zweifel die Farbe dort
+  wieder entfernen („zurücksetzen“), statt eine passende anzuklicken.
 
 ## Namen und Kontaktdaten ändern
 
@@ -121,11 +121,11 @@ lassen.
 ## Ein Bild ersetzen
 
 1. Neues Bild unter einem **neuen Dateinamen** nach `data/media/` legen
-   (bevorzugt `.webp`). Nicht den alten Dateinamen wiederverwenden: der
-   Media-Deploy überspringt bereits hochgeladene Dateinamen stillschweigend
+   (bevorzugt `.webp`). Den alten Dateinamen nicht wiederverwenden: Der
+   Media-Deploy überspringt bereits hochgeladene Dateinamen ohne Meldung
    (Details in `AGENTS.md` unter „Media“).
 
-2. `media` deployen — die Ausgabe zeigt die endgültige URL des Uploads:
+2. `media` deployen. Die Ausgabe zeigt die endgültige URL des Uploads:
 
    ```bash
    source .env
@@ -136,9 +136,9 @@ lassen.
    Ausgabe z. B.:
    `neues-bild.webp -> https://stuv-heidenheim.de/wp-content/uploads/neues-bild.webp (id 123)`
 
-   Den Pfad aus der Ausgabe kopieren, nicht raten — WordPress legt Dateien ohne
-   Monatsordner ab (Einstellung: „Meine Uploads in monats- und jahresbasierten
-   Ordnern organisieren" ist deaktiviert).
+   Den Pfad aus der Ausgabe kopieren statt ihn zu raten. WordPress legt
+   Dateien ohne Monatsordner ab (die Einstellung „Meine Uploads in monats- und
+   jahresbasierten Ordnern organisieren" ist deaktiviert).
 
 3. Bildreferenz in der Seitendatei suchen. Ein Bild-Block sieht so aus:
 
@@ -158,14 +158,14 @@ lassen.
    Bildbeschreibung). **Den Host weglassen**: aus der Ausgabe von Schritt 2 nur
    den Teil ab `/wp-content/` übernehmen. Bild-URLs stehen im Repo
    host-relativ, damit dieselben Blöcke auf der Staging- und auf der
-   Produktions-Domain funktionieren. Alles andere unverändert lassen — nichts
-   wird beim Deploy automatisch umgeschrieben.
+   Produktions-Domain funktionieren. Alles andere unverändert lassen; der
+   Deploy schreibt nichts automatisch um.
 
 5. Die Seite deployen (siehe Abschnitt Deploy).
 
 ## Google-Kalender ändern
 
-Der StuV-Google-Kalender erscheint an drei Stellen, alle über dieselbe
+Der StuV-Google-Kalender erscheint an drei Stellen, alle mit derselben
 Kalender-ID (`c_05fa...@group.calendar.google.com`, URL-encodiert im
 Query-Parameter):
 
@@ -175,34 +175,34 @@ Query-Parameter):
 | Events-Seite                               | `data/pages/events/02-upcoming.html`   | volles Embed, 600px hoch                                               |
 | Events-Seite, Button „Kalender abonnieren" | `data/pages/events/02-upcoming.html`   | Link auf `calendar.google.com/calendar/render?cid=...`                 |
 
-**Kalender wechseln:** Die Kalender-ID steht fünfmal fest verdrahtet — in
+**Kalender wechseln:** Die Kalender-ID steht an fünf Stellen fest im Markup: in
 beiden `<iframe data-stuv-src>`, den beiden Fallback-Links darunter und im
-Abonnieren-Link. Alle fünf Stellen ersetzen, sonst zeigen sie unterschiedliche
-Kalender.
+Abonnieren-Link. Ersetze alle fünf, sonst zeigen sie unterschiedliche Kalender.
 
-Wichtige Embed-Parameter (volle Liste in den Google-Kalender-Einstellungen
-unter „Kalender einbetten"):
+Die wichtigsten Embed-Parameter (die volle Liste steht in den
+Google-Kalender-Einstellungen unter „Kalender einbetten"):
 
-- `ctz=Europe%2FBerlin` — Zeitzone
-- `mode=AGENDA` — Listenansicht statt Monatsraster (nur im kompakten Embed)
-- `showTitle=0&showNav=0&showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0`
-  — Google-eigene UI-Elemente ausgeblendet, damit das Embed wie eine eigene
-  Komponente aussieht statt wie eingebettetes Google-Kalender-Chrome
-- `wkst=2` — Wochenstart Montag
-- `hl=de` — deutsche Sprache
-- `bgcolor=%23fcfcfc&color=%23E2001A` — Hintergrund- und Akzentfarbe. Nicht an
-  `--stuv-*`-Tokens gekoppelt: Google-Kalender liest keine CSS-Variablen des
-  Elternfensters, eine Farbänderung heißt die Hex-Werte direkt in der URL
-  anpassen.
+- `ctz=Europe%2FBerlin`: Zeitzone
+- `mode=AGENDA`: Listenansicht statt Monatsraster (nur im kompakten Embed)
+- `showTitle=0&showNav=0&showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0`:
+  blendet Googles eigene Bedienelemente aus, damit das Embed wie eine Komponente
+  der Seite aussieht und nicht wie ein eingebetteter Google-Kalender
+- `wkst=2`: Wochenstart Montag
+- `hl=de`: deutsche Sprache
+- `bgcolor=%23fcfcfc&color=%23E2001A`: Hintergrund- und Akzentfarbe. Google
+  Kalender liest keine CSS-Variablen des Elternfensters, die Werte hängen also
+  nicht an den `--stuv-*`-Tokens. Für eine andere Farbe die Hex-Werte direkt in
+  der URL ändern.
 
-Beide Iframes sind `wp:html`-Blöcke, keine nativen Gutenberg-Embeds — der
-native Embed-Block schreibt immer ein echtes `src`-Attribut, und genau das darf
-hier nicht im Markup stehen: Der Kalender lädt erst auf Klick über
-`data-stuv-src` (siehe `stuv-dsgvo` in `docs/plugins.md`).
+Beide Iframes sind `wp:html`-Blöcke und keine nativen Gutenberg-Embeds. Der
+native Embed-Block schreibt immer ein echtes `src`-Attribut, und das darf hier
+nicht im Markup stehen: Der Kalender lädt erst auf Klick über `data-stuv-src`
+(siehe `stuv-dsgvo` in `docs/plugins.md`).
 
-Kein `scrolling="no"`: Auf schmalen Viewports staucht Google die Agenda in
-höhere Zeilen, und ohne Scrollen wäre der überlaufende Inhalt unerreichbar.
-Unterhalb von 639px setzt `component.css` zusätzlich eine `min-height`.
+`scrolling="no"` fehlt mit Absicht: Auf schmalen Viewports staucht Google die
+Agenda in höhere Zeilen, und ohne Scrollen käme man an den überlaufenden Inhalt
+nicht heran. Unterhalb von 639px setzt `component.css` zusätzlich eine
+`min-height`.
 
 ## Formular ändern (WPForms)
 
@@ -224,30 +224,29 @@ eine `.stuv-card.stuv-wpforms`-Gruppe:
 | Kontakt        | `data/pages/kontakt/03-form.html`        | 129         |
 | Kummer Karsten | `data/pages/kummer-karsten/02-form.html` | 132         |
 
-WPForms ist ein Drittanbieter-Plugin, installiert auf dem Host — anders als
-`stuv-mensa`/`stuv-theme`/`stuv-dsgvo` nicht Teil von `wp-plugin/` und nicht in
-diesem Repo versioniert (siehe `docs/plugins.md`). Daraus folgt:
+WPForms ist ein Drittanbieter-Plugin auf dem Host. Anders als
+`stuv-mensa`/`stuv-theme`/`stuv-dsgvo` gehört es nicht zu `wp-plugin/` und ist
+nicht in diesem Repo versioniert (siehe `docs/plugins.md`). Daraus folgt:
 
-- **Felder, Pflichtangaben, Bestätigungstext, Benachrichtigungs-E-Mail:**
-  ausschließlich in wp-admin → WPForms → Formular bearbeiten. Nichts davon
-  steht in diesem Repo — ein Feld hinzufügen heißt im WPForms-Builder
-  speichern, nicht diese Seite deployen.
-- **Aussehen** (Card-Rahmen, Eingabefelder, Button): die `.stuv-wpforms`-Regeln
-  in `data/styles/component.css`, deployt über `global-styles` wie jede andere
-  Komponentenklasse.
-- Nur die Formular-ID im Shortcode und die umgebende Karte gehören in dieses
-  Repo — den Rest liefert das Plugin zur Laufzeit aus der Datenbank.
+- Felder, Pflichtangaben, Bestätigungstext und Benachrichtigungs-E-Mail
+  bearbeitest du ausschließlich in wp-admin → WPForms → Formular bearbeiten.
+  Nichts davon steht in diesem Repo: Für ein neues Feld speicherst du im
+  WPForms-Builder und deployst diese Seite nicht.
+- Das Aussehen (Card-Rahmen, Eingabefelder, Button) steht in den
+  `.stuv-wpforms`-Regeln in `data/styles/component.css` und geht wie jede
+  andere Komponentenklasse über `global-styles` raus.
+- In dieses Repo gehören nur die Formular-ID im Shortcode und die umgebende
+  Karte. Den Rest liefert das Plugin zur Laufzeit aus der Datenbank.
 
 **Styling-Eigenheit:** WPForms' eigenes `wpforms-full.min.css` lädt nach
 `component.css` und gewinnt bei gleicher Selektor-Spezifität. Die
 `.stuv-wpforms`-Regeln wiederholen deshalb die volle Ahnenkette
-(`.stuv-wpforms .wpforms-container-full .wpforms-form ...`) statt kurzer
-Selektoren, um WPForms rein über Spezifität zu schlagen, ohne `!important`.
-Wer hier eine neue Regel ergänzt und sie nicht greift, hat meist zu kurz
-selektiert.
+(`.stuv-wpforms .wpforms-container-full .wpforms-form ...`), damit sie WPForms
+allein über die Spezifität schlagen, ohne `!important`. Greift eine neue Regel
+hier nicht, ist der Selektor meist zu kurz.
 
-**Neues Formular hinzufügen:** in wp-admin bauen, ID notieren, das Muster oben
-mit der neuen ID in die Zielseite einsetzen.
+**Neues Formular hinzufügen:** in wp-admin bauen, ID notieren und das Muster
+oben mit der neuen ID in die Zielseite einsetzen.
 
 ## Formatieren
 
@@ -257,18 +256,19 @@ Nach dem Bearbeiten alle Dateien mit Prettier formatieren:
 npx prettier --write .
 ```
 
-Repo-Konvention und Pflicht vor jedem Commit. Dass ein Format-Lauf die Bytes
-aller Deploy-Ziele ändert, ist normal (`docs/testing.md`).
+Das ist Repo-Konvention und vor jedem Commit Pflicht. Ein Format-Lauf ändert
+die Bytes aller Deploy-Ziele; das ist normal (`docs/testing.md`).
 
 ## Blöcke validieren
 
-Gutenberg-Blöcke müssen dem erwarteten Format des Editors entsprechen.
-Geänderte Dateien prüfen — der Aufruf steht in `docs/testing.md` unter
+Gutenberg-Blöcke müssen dem Format entsprechen, das der Editor erwartet. Prüfe
+die geänderten Dateien mit dem Aufruf aus `docs/testing.md` unter
 „Block-Validierung“.
 
 ## Deploy
 
-Vor jedem Deploy zuerst trocken laufen lassen (prüft lokal, ohne Server-Kontakt):
+Vor jedem Deploy erst einen Trockenlauf machen (prüft lokal, ohne den Server zu
+kontaktieren):
 
 ```bash
 source .env
@@ -284,11 +284,11 @@ python3 $SKILL/scripts/deploy.py --manifest data/manifest.json <zielname>
 
 Zielnamen aus `data/manifest.json`: `homepage`, `ueber-uns`, `events`,
 `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`, `header`, `footer`,
-`global-styles`, `media`.
+`global-styles`, `media`, `pattern-vorsitz`.
 
-- **Bild geändert:** zuerst `media`, dann die Seite deployen.
-- **Farben oder Styles geändert:** `global-styles` deployen.
-- **Header/Footer geändert:** `header` oder `footer` deployen.
+- Bild geändert: zuerst `media`, dann die Seite deployen.
+- Farben oder Styles geändert: `global-styles` deployen.
+- Header oder Footer geändert: `header` bzw. `footer` deployen.
 
-Nach dem Deploy die Live-Seite besuchen und die Änderung prüfen. Der gesamte
-Prüfungs-Kanon steht in `docs/testing.md`.
+Nach dem Deploy die Live-Seite aufrufen und die Änderung prüfen. Alle Prüfungen
+stehen in `docs/testing.md`.

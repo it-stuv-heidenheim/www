@@ -2,7 +2,7 @@
 /**
  * Pure cache-decision helpers for the StuV Mensa widget.
  *
- * NO WordPress dependencies — unit-tested with the plain `php` CLI
+ * NO WordPress dependencies: unit-tested with the plain `php` CLI
  * (wp-plugin/tests/test_cache.php).
  */
 
@@ -22,7 +22,7 @@ function stuv_mensa_payload_decision(
     bool $store_present
 ): string {
     if (!$store_present) {
-        return 'fetch'; // cold cache — never block first-ever visitors
+        return 'fetch'; // cold cache: never block first-ever visitors
     }
     if ($fresh) {
         return 'serve';
@@ -40,7 +40,7 @@ function stuv_mensa_payload_decision(
  * type has to be constrained on the way out and not merely at cache time: a
  * text/html body from a hostile or compromised upstream would otherwise run as
  * same-origin script. image/svg+xml is excluded despite being image/* for the
- * same reason — an SVG navigated to directly executes its own script, and
+ * same reason: an SVG navigated to directly executes its own script, and
  * `X-Content-Type-Options: nosniff` does not prevent that; the upstream only
  * ever serves photographs. Anything unrecognised degrades to an inert
  * octet-stream rather than being rejected, so an odd-but-harmless upstream
@@ -58,7 +58,7 @@ function stuv_mensa_safe_image_type(string $type): string {
 /**
  * Guard against caching non-image or oversized 200 responses.
  *
- * Error pages, HTML bodies, truncated and empty responses are never cached —
+ * Error pages, HTML bodies, truncated and empty responses are never cached, so
  * a bad fetch costs one request, not 30 days of wrong bytes. Shares its notion
  * of "an image" with stuv_mensa_safe_image_type() so the cache can never hold
  * bytes the serving path would refuse to label as their own type.

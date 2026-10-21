@@ -9,8 +9,8 @@ of the skill from the local checkout with `git archive`:
 
 `git archive` ships committed files only, so gitignored installed deps
 (`.venv/`, `blockcheck/node_modules/`, `__pycache__/`, `.pytest_cache/`,
-`blockcheck/package-lock.json`) are excluded for free — no manual exclude list
-to maintain — and uncommitted local WIP in the skill never ships.
+`blockcheck/package-lock.json`) are excluded without a manual exclude list to
+maintain, and uncommitted local WIP in the skill never ships.
 `--prefix=wordpress-default-editor/` makes the ZIP extract to
 `wordpress-default-editor/…`, so it drops cleanly into `~/.claude/skills/`.
 
@@ -86,7 +86,7 @@ def main():
         names = zf.namelist()
     print(f"Wrote {output} ({output.stat().st_size} bytes, {len(names)} entries)")
     if f"{SUBTREE}/SKILL.md" not in names:
-        sys.exit(f"error: archive is missing {SUBTREE}/SKILL.md — refusing it")
+        sys.exit(f"error: archive is missing {SUBTREE}/SKILL.md; refusing it")
     print("Now deploy the `media` target, then update the docs download link.")
 
 

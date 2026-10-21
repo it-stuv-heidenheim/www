@@ -1,4 +1,4 @@
-"""Unit tests for tools/gen_map.py. Stdlib only — no network, no Pillow.
+"""Unit tests for tools/gen_map.py. Stdlib only: no network, no Pillow.
 
 Run from the repo root:
     python3 -m unittest discover -s tools -p "test_*.py" -v
@@ -207,7 +207,7 @@ class TestRenderHtml(unittest.TestCase):
     def test_the_frame_carries_its_ratio_so_the_page_does_not_shift(self):
         # No <img> means no intrinsic size; without this the frame is 0 px tall
         # until the background loads, and everything below it jumps. It rides in
-        # as a custom property because component.css needs the number twice — the
+        # as a custom property because component.css needs the number twice: the
         # frame crops to 3:2 on a phone, the canvas inside it keeps the image's own.
         width, height = gen_map.image_size(CAMPUS_BBOX, CAMPUS["zoom"])
         self.assertIn(f"--stuv-map-ratio: {width} / {height}", self.html)
