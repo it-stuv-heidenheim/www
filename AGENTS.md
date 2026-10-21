@@ -39,6 +39,10 @@ the human docs.
 - `data/parked/` — sections pulled out of a page but kept; **no manifest
   target, never deployed** (this is why `sections/` skips `04`).
 - `data/pages/<route>/` — subpages, same join rule.
+- `data/patterns/` — synced patterns (`wp_block`, endpoint `blocks`). The
+  Vorsitz grid is pattern 212, referenced as `<!-- wp:block {"ref":212} /-->`
+  from the homepage and Über uns. Edit it there, deploy `pattern-vorsitz`; a
+  new pattern needs `create_resource("blocks", …)` once to get its id.
 - `data/header_blocks.html`, `data/footer_blocks.html` — template parts
   (`twentytwentyfive//header` / `//footer`).
 - `data/global-styles.json` — theme.json-shaped design tokens (layout widths,

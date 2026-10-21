@@ -11,6 +11,7 @@ Dateien vor und werden per REST-API auf die Live-Site deployt.
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `data/sections/`            | Startseiten-Sektionen, in Dateinamen-Reihenfolge zusammengefügt (Page-ID 9)                                                                                          |
 | `data/pages/<slug>/`        | Unterseiten: `ueber-uns`, `events`, `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`                                                                        |
+| `data/patterns/`            | Synchronisierte Muster (Vorsitz), eingebunden per `wp:block`                                                                                                         |
 | `data/header_blocks.html`   | Header-Template-Part                                                                                                                                                 |
 | `data/footer_blocks.html`   | Footer-Template-Part                                                                                                                                                 |
 | `data/global-styles.json`   | Design-Tokens (Layout-Breiten, Farbpalette, Typografie)                                                                                                              |

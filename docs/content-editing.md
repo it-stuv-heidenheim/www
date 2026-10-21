@@ -36,6 +36,7 @@ Die Seite ist aus HTML-Dateien in `data/` aufgebaut:
 | ------------------------------------ | --------------------------------------------------------------------- |
 | Startseite                           | `data/sections/` (nummerierte Dateien, in Reihenfolge zusammengefügt) |
 | Über uns                             | `data/pages/ueber-uns/`                                               |
+| Vorsitz (Startseite und Über uns)    | `data/patterns/vorsitz.html`                                          |
 | Events                               | `data/pages/events/`                                                  |
 | Studentenleben                       | `data/pages/studentenleben/`                                          |
 | Kontakt                              | `data/pages/kontakt/`                                                 |
@@ -108,6 +109,11 @@ Namen und E-Mails stehen in Paragraph- und Heading-Blöcken. Beispiel aus
 <p><a href="mailto:max@example.com">max@example.com</a></p>
 <!-- /wp:paragraph -->
 ```
+
+Der Vorsitz steht nur einmal, in `data/patterns/vorsitz.html`: ein
+synchronisiertes Muster, das Startseite und Über uns per
+`<!-- wp:block {"ref":212} /-->` einbinden. Nach einer Änderung dort das Ziel
+`pattern-vorsitz` deployen, die beiden Seiten nicht.
 
 Neuen Namen und E-Mail-Adresse eintragen. Das umgebende Markup unverändert
 lassen.
