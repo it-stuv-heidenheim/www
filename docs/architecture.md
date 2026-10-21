@@ -37,6 +37,9 @@ Dateien, und ein Deploy schreibt sie über die REST-API auf die Live-Site.
   Kummer-Karsten-Formular) läuft komplett auf dem Host. In den Seiteninhalten
   stehen nur Formular-ID und Wrapper-Markup (`docs/content-editing.md`), das
   Aussehen steht in `data/styles/component.css`.
+  The SEO Framework liefert Meta-Beschreibung, Open Graph, Twitter Card,
+  JSON-LD und `sitemap.xml`. Beschreibungen und Vorschaubild werden in wp-admin
+  gepflegt und liegen in der Datenbank, nicht in diesem Repo.
 - Ein Build-Schritt. Die Content-Dateien gehen unverändert über die REST-API
   raus; es gibt keinen Static-Site-Generator.
 
