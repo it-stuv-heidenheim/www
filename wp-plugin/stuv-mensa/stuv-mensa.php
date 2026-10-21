@@ -16,7 +16,7 @@ require_once __DIR__ . '/inc/cache.php';
 
 define('STUV_MENSA_VERSION', '1.2.0'); // keep in sync with the header Version above; it cache-busts assets/mensa.js
 define('STUV_MENSA_TTL', 30 * MINUTE_IN_SECONDS);
-define('STUV_MENSA_LOCK_TTL', 60); // stampede lock expires in 60 s
+define('STUV_MENSA_LOCK_TTL', 60);
 define('STUV_MENSA_IMAGE_TTL', 30 * DAY_IN_SECONDS);
 
 /**
@@ -31,23 +31,18 @@ define('STUV_MENSA_IMAGE_TTL', 30 * DAY_IN_SECONDS);
  * upstream is down AND nothing was ever cached.
  */
 function stuv_mensa_payload(): ?array {
-    $store     = get_option('stuv_mensa_payload_stale');
-    $fresh     = get_transient('stuv_mensa_fresh');
-    $lock_held = get_transient('stuv_mensa_refresh_lock') !== false;
-
+    $store    = get_option('stuv_mensa_payload_stale');
     $decision = stuv_mensa_payload_decision(
-        $fresh !== false,
-        $lock_held,
+        get_transient('stuv_mensa_fresh') !== false,
+        get_transient('stuv_mensa_refresh_lock') !== false,
         is_array($store)
     );
-
-    // 'serve' and 'serve_stale' both hand back the stored copy; only the
-    // distinction from 'fetch' changes what happens next.
     if ($decision !== 'fetch') {
         return $store;
     }
 
-    if (!$lock_held && is_array($store)) {
+    // A warm 'fetch' means no lock is held: take it so others serve stale.
+    if (is_array($store)) {
         set_transient('stuv_mensa_refresh_lock', 1, STUV_MENSA_LOCK_TTL);
     }
 
@@ -56,11 +51,9 @@ function stuv_mensa_payload(): ?array {
         'headers' => ['Accept' => 'application/json'],
     ]);
 
-    if (is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)) {
-        return is_array($store) ? $store : null;
-    }
-
-    $upstream = json_decode(wp_remote_retrieve_body($response), true);
+    $upstream = is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)
+        ? null
+        : json_decode(wp_remote_retrieve_body($response), true);
     if (!is_array($upstream)) {
         return is_array($store) ? $store : null;
     }
@@ -136,9 +129,8 @@ function stuv_mensa_image_route(WP_REST_Request $request) {
     $body = wp_remote_retrieve_body($response);
     $type = wp_remote_retrieve_header($response, 'content-type') ?: 'image/webp';
 
-    if (stuv_mensa_image_cacheable(200, $type, $body)) {
-        $encoded = base64_encode($body);
-        set_transient($transient, ['type' => $type, 'body' => $encoded], STUV_MENSA_IMAGE_TTL);
+    if (stuv_mensa_image_cacheable($type, $body)) {
+        set_transient($transient, ['type' => $type, 'body' => base64_encode($body)], STUV_MENSA_IMAGE_TTL);
     }
 
     stuv_mensa_send_image($type, $body);

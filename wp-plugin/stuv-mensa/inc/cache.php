@@ -51,31 +51,22 @@ function stuv_mensa_payload_decision(
 function stuv_mensa_safe_image_type(string $type): string {
     $bare = strtolower(trim(explode(';', $type)[0]));
 
-    if (!str_starts_with($bare, 'image/')) {
+    if (!str_starts_with($bare, 'image/') || $bare === 'image/svg+xml' || $bare === 'image/svg') {
         return 'application/octet-stream';
     }
-    if ($bare === 'image/svg+xml' || $bare === 'image/svg') {
-        return 'application/octet-stream';
-    }
-
     return $bare;
 }
 
 /**
- * Guard against caching non-image or oversized responses.
+ * Guard against caching non-image or oversized 200 responses.
  *
  * Error pages, HTML bodies, truncated and empty responses are never cached —
  * a bad fetch costs one request, not 30 days of wrong bytes. Shares its notion
  * of "an image" with stuv_mensa_safe_image_type() so the cache can never hold
  * bytes the serving path would refuse to label as their own type.
  */
-function stuv_mensa_image_cacheable(
-    int $code,
-    string $type,
-    string $body
-): bool {
-    return $code === 200
-        && stuv_mensa_safe_image_type($type) !== 'application/octet-stream'
+function stuv_mensa_image_cacheable(string $type, string $body): bool {
+    return stuv_mensa_safe_image_type($type) !== 'application/octet-stream'
         && $body !== ''
         && strlen($body) <= STUV_MENSA_IMAGE_MAX_BYTES;
 }
