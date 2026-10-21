@@ -159,6 +159,24 @@ Drei Teile an drei Orten. Wer einen ändert, muss die anderen kennen:
 Nur der erste Teil ist ein Plugin-Upload; die anderen beiden sind normale
 Deploys (`global-styles` bzw. `header`).
 
+### Das Apple-Touch-Icon
+
+Nebenbei tauscht das Plugin das Apple-Touch-Icon aus. Das Website-Icon in
+WordPress ist ein einziges Bild für alle Größen; WordPress liefert das
+transparente `stuv-dhbw-favicon.png` also auch an iOS aus, und iOS füllt
+Transparenz mit Schwarz. Der Filter auf `site_icon_meta_tags` verweist
+stattdessen auf `stuv-dhbw-apple-touch-icon.png` (180 × 180, weißer
+Hintergrund, kommt mit dem `media`-Deploy). Liegt die Datei noch nicht in den
+Uploads, bleibt der Tag von WordPress stehen — kein Link ins Leere.
+
+Erzeugt aus `.stuv-dhbw-favicon.svg`:
+
+```bash
+rsvg-convert -w 132 -h 132 data/media/.stuv-dhbw-favicon.svg |
+  magick - -background white -gravity center -extent 180x180 -alpha off \
+    -strip PNG24:data/media/stuv-dhbw-apple-touch-icon.png
+```
+
 ## `stuv-dsgvo` — die Kalender-Embeds
 
 Die beiden Google-Kalender (Startseite „Anstehende Events“, Events-Seite) würden

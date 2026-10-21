@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: StuV Theme Toggle
- * Description: Schaltet den Dark Mode der Website um (Button in der Kopfzeile) und merkt sich die Wahl im Browser. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Umschalt-Button und die Seite zeigt immer das helle Design. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.2.0
+ * Description: Schaltet den Dark Mode der Website um (Button in der Kopfzeile) und merkt sich die Wahl im Browser. Außerdem liefert es das Apple-Touch-Icon mit weißem Hintergrund aus. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Umschalt-Button, die Seite zeigt immer das helle Design und das Icon auf dem iOS-Home-Bildschirm bekommt einen schwarzen Hintergrund. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
+ * Version: 1.3.0
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUV_THEME_VERSION', '1.2.0');
+define('STUV_THEME_VERSION', '1.3.0');
 
 /**
  * The theme script, inline in <head>.
@@ -127,4 +127,25 @@ add_action('wp_enqueue_scripts', function (): void {
     wp_register_script('stuv-theme', false, [], STUV_THEME_VERSION, false);
     wp_enqueue_script('stuv-theme');
     wp_add_inline_script('stuv-theme', stuv_theme_script());
+});
+
+/**
+ * The site icon is one image for every size, so WordPress also serves the
+ * transparent favicon as the apple-touch-icon, and iOS fills transparency with
+ * black. Point that tag at an opaque copy instead (data/media/
+ * stuv-dhbw-apple-touch-icon.png). Only once it is uploaded: a missing file
+ * keeps core's tag rather than linking a 404.
+ */
+add_filter('site_icon_meta_tags', function (array $tags): array {
+    $uploads = wp_get_upload_dir();
+    $file = '/stuv-dhbw-apple-touch-icon.png';
+    if (!file_exists($uploads['basedir'] . $file)) {
+        return $tags;
+    }
+    foreach ($tags as $i => $tag) {
+        if (str_contains($tag, 'rel="apple-touch-icon"')) {
+            $tags[$i] = sprintf('<link rel="apple-touch-icon" href="%s" />', esc_url($uploads['baseurl'] . $file));
+        }
+    }
+    return $tags;
 });

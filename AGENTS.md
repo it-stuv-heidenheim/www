@@ -293,7 +293,10 @@ active row (`[aria-checked="true"] .stuv-icon-check`, set from JS). And
 in the top layer, where the containing block is the viewport, so it cannot be
 anchored under the trigger without CSS anchor positioning. The price is that
 Escape and outside-click dismissal are hand-rolled in the plugin's `document`
-listeners. Plan: `git show 6a19d0a^:docs/superpowers/plans/2026-07-10-wp-dark-mode-toggle.md`
+listeners. It also filters `site_icon_meta_tags` to point the
+apple-touch-icon at the opaque `stuv-dhbw-apple-touch-icon.png`: the site icon
+is one transparent image for every size, and iOS paints transparency black. The
+filter keeps core's tag until that file is in the uploads. Plan: `git show 6a19d0a^:docs/superpowers/plans/2026-07-10-wp-dark-mode-toggle.md`
 (its inline-script-in-block-HTML approach was rejected for the `unfiltered_html`
 reason below).
 
