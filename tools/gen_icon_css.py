@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Emit the CSS custom properties holding lucide icons as data-URI masks/images.
 
-Reads SVGs from node_modules/lucide-static/icons/ (devDependency: lucide-static)
+Reads SVGs from $LUCIDE_ICON_DIR (default node_modules/lucide-static/icons/)
 and writes a :root { --ico-*: url("data:...") } block into data/styles/component.css,
 between the gen_icon_css markers. The stroke colour is baked to the brand primary
 so the same data-URI works both as a CSS mask (alpha-only; recoloured via
