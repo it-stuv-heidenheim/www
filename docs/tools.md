@@ -39,7 +39,7 @@ Anfrage.
 ```bash
 python3 tools/gen_map.py campus --render --write   # Bilder + Block neu builden
 python3 tools/gen_map.py campus --check            # driftet etwas? (schreibt nichts)
-python3 tools/gen_map.py campus --preview          # PNG mit gesetzten Pins, zur Kontrolle
+python3 tools/gen_map.py campus --preview /tmp/campus.png   # PNG mit Pins, zur Kontrolle
 ```
 
 Karten-IDs: `campus`, `stadtgebiet`, `stadtzentrum` (die Stems der Dateien in
@@ -81,9 +81,9 @@ Betriebssystem und ignoriert den Theme-Schalter der Seite.
 
 **Bilder ersetzen ist eine Falle.** Der `media`-Deploy überspringt existierende
 Dateinamen stillschweigend, und `--force` legt `karte-…-1.webp` an, worauf keine
-CSS-Referenz zeigt. Der Ablauf steht in `AGENTS.md` unter „Deploying“; die
+CSS-Referenz zeigt. Der Ablauf steht in `AGENTS.md` unter „Media“; die
 Kartenbilder sind aber ohnehin mit `--render` reproduzierbar, was der
-einfachere Weg ist. `rollback.py` deckt Medien nicht ab.
+einfachere Weg ist.
 
 ## `gen_icon_css.py` — die Icons
 

@@ -9,7 +9,7 @@ Dateien vor und werden per REST-API auf die Live-Site deployt.
 
 | Pfad                        | Zweck                                                                                                                                                                |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data/sections/`            | Startseiten-Sektionen, in Dateinamen-Reihenfolge zusammengefügt (Page-ID 10)                                                                                         |
+| `data/sections/`            | Startseiten-Sektionen, in Dateinamen-Reihenfolge zusammengefügt (Page-ID 9)                                                                                          |
 | `data/pages/<slug>/`        | Unterseiten: `ueber-uns`, `events`, `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`                                                                        |
 | `data/header_blocks.html`   | Header-Template-Part                                                                                                                                                 |
 | `data/footer_blocks.html`   | Footer-Template-Part                                                                                                                                                 |
@@ -21,7 +21,7 @@ Dateien vor und werden per REST-API auf die Live-Site deployt.
 | `tools/`                    | Generatoren und Hilfsskripte (`docs/tools.md`)                                                                                                                       |
 | `wp-plugin/`                | Drei WordPress-Plugins: `stuv-mensa` (Live-Speiseplan), `stuv-theme` (Dark-Mode-Toggle) und `stuv-dsgvo` (Klick-zum-Laden für die Kalender), siehe `docs/plugins.md` |
 | `docs/`                     | Diese Doku, gelesen auf GitHub                                                                                                                                       |
-| `.claude/skills/`           | Repo-lokale Agent-Verfahren (`docs/ai-workflow.md`)                                                                                                                  |
+| `.agents/skills/`           | Repo-lokale Agent-Verfahren (`docs/ai-workflow.md`)                                                                                                                  |
 
 ## Was dieses Repo NICHT ist
 
@@ -40,15 +40,4 @@ Dateien vor und werden per REST-API auf die Live-Site deployt.
 - **Kein Build-Schritt.** Content-Dateien werden unverändert per REST-API
   deployt; es gibt keinen Static-Site-Generator.
 
-## Wo steht was
-
-| Thema                               | Doku                      |
-| ----------------------------------- | ------------------------- |
-| Inhalt ändern, deployen             | `docs/content-editing.md` |
-| Neue Seite anlegen                  | `docs/adding-a-page.md`   |
-| Farben, Schrift, Komponenten        | `docs/design-system.md`   |
-| Generatoren (Karten, Icons)         | `docs/tools.md`           |
-| Plugins (`mensa`, `theme`, `dsgvo`) | `docs/plugins.md`         |
-| Prüfen und Testen                   | `docs/testing.md`         |
-| Warum das Repo so aussieht          | `docs/ai-workflow.md`     |
-| Agent-Referenz mit Fallstricken     | `AGENTS.md`               |
+Die übrige Doku ist im [README](../README.md) verlinkt.

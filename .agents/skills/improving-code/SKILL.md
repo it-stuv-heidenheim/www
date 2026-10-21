@@ -18,7 +18,7 @@ This repo holds WordPress block HTML, CSS, and design tokens deployed via REST A
 3. **Reuse, don't invent.** Extract to an existing mechanism (existing CSS class, existing section structure), not a new one.
 4. **Validate blocks.** Run the `blockcheck` validator from the `wordpress-default-editor` skill against changed block HTML. A clean edit must not introduce validation errors.
 5. **Verify no-op.** Deploy dry-run, review diffs; any markup/visual difference must be intentional and explained.
-6. **Report.** State the line/rule reduction and verification result. Commit only if asked.
+6. **Report.** State the line/rule reduction and verification result.
 
 ## Where quality problems actually live
 
@@ -40,12 +40,7 @@ This table is a **pointer**, not a second source of truth — where it and
 
 There is no build — changes are deployed live. Verification means:
 
-1. **Block validation** (always run before deploying changed blocks):
-
-```bash
-SKILL=~/.claude/skills/wordpress-default-editor
-node $SKILL/scripts/blockcheck/validate_blocks.cjs data/pages/<page>/<file>.html
-```
+1. **Block validation** of the whole tree — the loop under Commands in `AGENTS.md`.
 
 2. **CSS diff** (for `component.css` changes) — normalize minified output to compare semantically:
 
@@ -53,23 +48,14 @@ node $SKILL/scripts/blockcheck/validate_blocks.cjs data/pages/<page>/<file>.html
 sed 's/}/}\n/g' before.css > b.n; sed 's/}/}\n/g' data/styles/component.css > a.n; diff b.n a.n
 ```
 
-3. **Dry-run deploy** to catch any manifest or structural issues before writing:
+3. **Dry-run deploy** (`AGENTS.md`, Commands) to catch manifest or structural issues before writing.
 
-```bash
-source .env
-python3 $SKILL/scripts/deploy.py --manifest data/manifest.json <target> --dry-run
-```
-
-4. **Visual review** — after deploying, check the affected page(s) at the live URL (`?pagename=<slug>`) in both light and dark mode.
+4. **Visual review** — after deploying, check the affected page(s) at the live URL (`/<slug>/`) in both light and dark mode.
 
 ## Guardrails
 
 - Do **not** edit `data/global-styles.json` design tokens unless the change is explicitly requested — many components depend on palette values.
 - Do **not** rename existing CSS classes (`.stuv-card`, `.stuv-icon-box`, `.stuv-button-*`) without updating every occurrence across all block HTML.
-- Dark mode is **class-driven**: the `:root.dark` token block in
-  `component.css`, set by the `stuv-theme` plugin before first paint. Do **not**
-  add `@media (prefers-color-scheme: dark)` rules — they follow the OS and would
-  ignore the site's own toggle. Prefer redefining a custom property in
-  `:root.dark` over restating a whole rule.
+- Dark mode is **class-driven** (`:root.dark`): no `@media (prefers-color-scheme: dark)` rules. Prefer redefining a custom property in `:root.dark` over restating a whole rule.
 - Commit only when asked. No `Co-Authored-By` trailer. Keep commit messages in repo style.
 - Don't churn the whole repo. Do the clearly-safe, highest-value dedup and verify it; list further candidates rather than mass-editing.

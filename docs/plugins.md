@@ -88,7 +88,6 @@ einzige sein.
 > normal, der Speiseplan ist nur unsichtbar. Erste Prüfung deshalb immer der
 > `curl` unten. Behoben wird das in wp-admin unter **Einstellungen →
 > Permalinks → Speichern**; danach kommt der Speiseplan von allein zurück.
-> (Am 26.07.2026 war genau das der Fall.)
 
 ### Der Cache
 
@@ -198,9 +197,9 @@ Wrapper) und baut stattdessen den Platzhalter.
 
 Die Zustimmung wird pro Gerät gemerkt, in
 `localStorage['stuv-dsgvo-calendar']`. Wer den Kalender einmal geladen hat,
-bekommt ihn auf der anderen Seite und beim nächsten Besuch direkt zu sehen.
-Früher war das bewusst nicht so — ein gespeicherter Klick heißt, dass ein
-späterer Seitenaufruf ohne neue Handlung an Google geht. Getragen wird die
+bekommt ihn auf der anderen Seite und beim nächsten Besuch direkt zu sehen. Ein
+gespeicherter Klick heißt aber, dass ein späterer Seitenaufruf ohne neue
+Handlung an Google geht. Getragen wird die
 Speicherung von ihrem Gegenstück: Unter einem geladenen Kalender steht **immer**
 eine Zeile „Nicht mehr automatisch laden“ (`.stuv-dsgvo-revoke`). Die darf
 weder verschwinden noch hinter einem Menü liegen — der Widerruf muss so einfach
@@ -235,16 +234,6 @@ verlinkte AStA-Datenschutzerklärung (`legal.dhbw-asta.de`) nennt Google
 Analytics, Maps, Forms und Fonts, aber **keinen Google Kalender** — wer sie
 pflegt, sollte einen Absatz dazu ergänzen. Diese Seite liegt außerhalb dieses
 Repos.
-
-## PHP-Formatierung
-
-Prettier formatiert das PHP hier nicht. Es könnte es, aber nur mit
-`@prettier/plugin-php` als echt installierter Abhängigkeit — und das Repo hat
-kein `package.json` (siehe `AGENTS.md`). Den umgebenden Stil von Hand treffen.
-
-`.prettierignore` deckt zusätzlich `wp-plugin/tests/fixtures/` ab: mitgeschnittene
-Antworten von `api.dhbw.app`, die byteweise unverändert bleiben müssen, sonst
-sind sie keine gültigen Fixtures mehr.
 
 ## Plugins auf der Live-Site prüfen
 

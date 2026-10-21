@@ -20,14 +20,13 @@ Git und der Kommandozeile schon.
   ```
 
 - Zum Deployen: git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
-  (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`
+  (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`,
+  `WP_ADDRESS_FAMILY="ipv4"` (Gründe in `AGENTS.md`)
 
   Falls einmal **jeder** Deploy-Befehl mit `HTTP Error 404` abbricht, obwohl
   die Website normal läuft: dann fehlen die Rewrite-Regeln für `/wp-json/`.
   In wp-admin einmal **Einstellungen → Permalinks → Speichern** — mehr ist
-  nicht nötig, es muss nichts geändert werden. (Genau das war am 26.07.2026
-  der Fall, nachdem die Permalinks nach dem Umzug nie gespeichert worden
-  waren.)
+  nicht nötig, es muss nichts geändert werden.
 
 ## Die richtige Datei finden
 
@@ -75,9 +74,8 @@ Die Seite ist aus HTML-Dateien in `data/` aufgebaut:
 
 ## Warum manche Absätze im Editor „ohne Wert“ dastehen
 
-Bei vielen Absätzen standen Schriftgröße und Farbe früher direkt am Block. Seit
-Juli 2026 stehen sie stattdessen in `data/styles/component.css`, an einer
-Klasse: `.stuv-body-muted` für den grauen Fließtext in Karten und Listen,
+Bei vielen Absätzen stehen Schriftgröße und Farbe nicht am Block, sondern in
+`data/styles/component.css`, an einer Klasse: `.stuv-body-muted` für den grauen Fließtext in Karten und Listen,
 `.stuv-eyebrow` für die kleine Überschrift-Zeile darüber. Der Block trägt nur
 noch die Klasse.
 
@@ -119,7 +117,7 @@ lassen.
 1. Neues Bild unter einem **neuen Dateinamen** nach `data/media/` legen
    (bevorzugt `.webp`). Nicht den alten Dateinamen wiederverwenden: der
    Media-Deploy überspringt bereits hochgeladene Dateinamen stillschweigend
-   (Details in `AGENTS.md` unter „Deploying“).
+   (Details in `AGENTS.md` unter „Media“).
 
 2. `media` deployen — die Ausgabe zeigt die endgültige URL des Uploads:
 
@@ -171,9 +169,10 @@ Query-Parameter):
 | Events-Seite                               | `data/pages/events/02-upcoming.html`   | volles Embed, 600px hoch                                               |
 | Events-Seite, Button „Kalender abonnieren" | `data/pages/events/02-upcoming.html`   | Link auf `calendar.google.com/calendar/render?cid=...`                 |
 
-**Kalender wechseln:** Die Kalender-ID steht dreimal fest verdrahtet — in
-beiden `<iframe src>` und im Abonnieren-Link. Alle drei Stellen ersetzen,
-sonst zeigen sie unterschiedliche Kalender.
+**Kalender wechseln:** Die Kalender-ID steht fünfmal fest verdrahtet — in
+beiden `<iframe data-stuv-src>`, den beiden Fallback-Links darunter und im
+Abonnieren-Link. Alle fünf Stellen ersetzen, sonst zeigen sie unterschiedliche
+Kalender.
 
 Wichtige Embed-Parameter (volle Liste in den Google-Kalender-Einstellungen
 unter „Kalender einbetten"):
@@ -195,13 +194,9 @@ native Embed-Block schreibt immer ein echtes `src`-Attribut, und genau das darf
 hier nicht im Markup stehen: Der Kalender lädt erst auf Klick über
 `data-stuv-src` (siehe `stuv-dsgvo` in `docs/plugins.md`).
 
-`scrolling="no"` und `frameborder` trugen die Iframes früher ebenfalls; beide
-sind entfernt. In HTML5 sind sie obsolet, das inline `border: 0` ersetzt
-`frameborder`, und `scrolling="no"` war schädlich: Auf schmalen Viewports
-staucht Google die Agenda in höhere Zeilen, der Inhalt lief aus der festen
-Pixelhöhe heraus, und `scrolling="no"` nahm die einzige Möglichkeit, ihn noch
-zu erreichen. Die Höhe steuert jetzt zusätzlich eine `min-height` in
-`component.css` unterhalb von 639px.
+Kein `scrolling="no"`: Auf schmalen Viewports staucht Google die Agenda in
+höhere Zeilen, und ohne Scrollen wäre der überlaufende Inhalt unerreichbar.
+Unterhalb von 639px setzt `component.css` zusätzlich eine `min-height`.
 
 ## Formular ändern (WPForms)
 
@@ -256,9 +251,8 @@ Nach dem Bearbeiten alle Dateien mit Prettier formatieren:
 npx prettier --write .
 ```
 
-Repo-Konvention und Pflicht vor jedem Commit. Ein Format-Lauf ändert die Bytes
-aller Deploy-Ziele, nicht nur der bearbeiteten Datei — der nächste Deploy
-schreibt deshalb alle Ziele neu. Keine inhaltliche Änderung.
+Repo-Konvention und Pflicht vor jedem Commit. Dass ein Format-Lauf die Bytes
+aller Deploy-Ziele ändert, ist normal (`docs/testing.md`).
 
 ## Blöcke validieren
 

@@ -96,7 +96,7 @@ python3 $SKILL/scripts/deploy.py --manifest data/manifest.json dein-slug
 Navigationslink im Header oder von anderen Seiten aus setzen. Die URL lautet:
 
 ```
-https://stuv-heidenheim.de/?pagename=dein-slug
+https://stuv-heidenheim.de/dein-slug/
 ```
 
 Für einen Eintrag im Hauptmenü den Header-Block in

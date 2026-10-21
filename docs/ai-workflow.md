@@ -11,12 +11,11 @@ das ist `AGENTS.md`.
 
 ## Die Rollenverteilung
 
-| Datei             | Adressat    | Sprache  | Zweck                                                                |
-| ----------------- | ----------- | -------- | -------------------------------------------------------------------- |
-| `AGENTS.md`       | der Agent   | Englisch | Anweisung: Konventionen, Deploy-Befehle, Fallstricke                 |
-| `docs/*.md`       | Menschen    | Deutsch  | Erklärung: wie die Site aufgebaut ist, wie man sie bearbeitet        |
-| `CLAUDE.md`       | Claude Code | —        | Einzeiler, der `AGENTS.md` einbindet (Claude Code liest `CLAUDE.md`) |
-| `.claude/skills/` | der Agent   | Englisch | Verfahren: wiederverwendbare Arbeitsabläufe für dieses Repo          |
+| Datei             | Adressat  | Sprache  | Zweck                                                         |
+| ----------------- | --------- | -------- | ------------------------------------------------------------- |
+| `AGENTS.md`       | der Agent | Englisch | Anweisung: Konventionen, Deploy-Befehle, Fallstricke          |
+| `docs/*.md`       | Menschen  | Deutsch  | Erklärung: wie die Site aufgebaut ist, wie man sie bearbeitet |
+| `.agents/skills/` | der Agent | Englisch | Verfahren: wiederverwendbare Arbeitsabläufe für dieses Repo   |
 
 `AGENTS.md` weist an, `docs/` erklärt. Wer beides vermischt, bekommt zwei
 Dokumente über dieselbe Sache, die auseinanderdriften.
@@ -54,13 +53,12 @@ passender Gelegenheit lädt. Drei Sorten sind hier im Spiel:
 
 ### 1. `wordpress-default-editor` — das Tool
 
-Extern; als [herunterladbarer ZIP-Schnappschuss](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
-verfügbar, gepflegt in einem separaten Repository. Enthält alles
-Lauffähige:
+Extern, gepflegt in einem separaten Repository (ZIP-Schnappschuss siehe oben).
+Enthält alles Lauffähige:
 
 | Skript                           | Zweck                                                             |
 | -------------------------------- | ----------------------------------------------------------------- |
-| `wp_block_api.py`                | REST-Client (Auth, Backup, User-Agent für Cloudflare)             |
+| `wp_block_api.py`                | REST-Client (Auth, Backup, eigener User-Agent)                    |
 | `deploy.py`                      | Deployer, gesteuert von `data/manifest.json`                      |
 | `rollback.py`                    | Deploy rückgängig machen (nicht für Medien)                       |
 | `upload_media.py`                | Bild-Upload                                                       |
@@ -70,7 +68,7 @@ Lauffähige:
 
 ### 2. `improving-code` — das Verfahren für dieses Repo
 
-Repo-lokal, in `.claude/skills/improving-code/`. Beschreibt, was „bessere
+Repo-lokal, in `.agents/skills/improving-code/`. Beschreibt, was „bessere
 Qualität“ hier konkret heißt (weniger Duplikation, Wiederverwendung
 existierender `.stuv-*`-Klassen und Patterns statt neuer) und schreibt einen
 Nachweis vor: Eine Aufräumaktion muss ein verifizierter No-Op auf dem
@@ -125,11 +123,8 @@ auf ein erledigtes Spec wird deshalb als Befehl geschrieben, nicht als Pfad:
 git show 6a19d0a^:docs/superpowers/specs/2026-07-13-mensa-live-menu-design.md
 ```
 
-Ein nackter Pfad sieht aus wie eine existierende Datei und verrottet unbemerkt
-— genau das war einmal der Fall: Vier Verweise in `AGENTS.md` und `docs/todo.md`
-zeigten monatelang ins Leere, und ein noch offener Plan (Logo-Umstellung)
-wurde beim Aufräumen mitgelöscht. Deshalb: **vor dem Löschen den Baum nach
-Verweisen durchsuchen.**
+Ein nackter Pfad sieht aus wie eine existierende Datei und verrottet unbemerkt.
+Deshalb: **vor dem Löschen den Baum nach Verweisen durchsuchen.**
 
 ## Was ein Agent hier nicht ohne Rückfrage darf
 

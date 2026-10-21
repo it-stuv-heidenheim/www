@@ -35,8 +35,8 @@ npx prettier --write .    # korrigieren
 ```
 
 Prettier besitzt die Formatierung von Block-HTML, CSS, JSON, Markdown und JS.
-PHP bräuchte ein installiertes Plugin, und das Repo hat keine npm-Abhängigkeiten
-(`docs/plugins.md`).
+PHP bräuchte `@prettier/plugin-php` als installierte Abhängigkeit, und das Repo
+hat kein `package.json`: PHP-Stil von Hand treffen.
 
 Ein Formatierlauf ändert die Bytes **aller** Deploy-Ziele, nicht nur der
 bearbeiteten Datei — der nächste Deploy schreibt alles neu. Keine inhaltliche
@@ -47,25 +47,11 @@ bearbeiteten Datei — der nächste Deploy schreibt alles neu. Keine inhaltliche
 Gutenberg vergleicht gespeichertes Markup mit dem, was der Block selbst erzeugen
 würde. Weicht es ab, steht im Editor „Dieser Block enthält unerwarteten oder
 ungültigen Inhalt“ — für jemanden, der nur einen Text ändern wollte, eine
-Sackgasse. Der Validator fängt das vorher ab:
-
-```bash
-SKILL=~/.claude/skills/wordpress-default-editor
-node $SKILL/scripts/blockcheck/validate_blocks.cjs data/pages/kontakt/01-pageheader.html
-```
+Sackgasse. Der Validator fängt das vorher ab — die Schleife im Kurzdurchlauf.
 
 `validate_blocks.cjs` liest **nur sein erstes Argument**. Ein Glob übergeben
 heißt: eine Datei wird geprüft, der Rest ignoriert, und die Ausgabe sieht nach
-einem sauberen Durchlauf aus. Für den ganzen Baum eine Schleife, Datei für Datei:
-
-```bash
-SKILL=~/.claude/skills/wordpress-default-editor
-for f in $(git ls-files 'data/*.html'); do
-  node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"
-done | grep -E ': [1-9][0-9]* invalid'
-```
-
-Das Muster `'data/*.html'` ist Absicht: Gits `*` überspringt Schrägstriche
+einem sauberen Durchlauf aus. Deshalb die Schleife, Datei für Datei. Das Muster `'data/*.html'` ist Absicht: Gits `*` überspringt Schrägstriche
 nicht, erfasst also alle Dateien im Baum. `'data/**/*.html'` würde
 `header_blocks.html` und `footer_blocks.html` verfehlen, die in keinem
 Unterverzeichnis liegen.
@@ -136,7 +122,7 @@ abgeschaltetem JavaScript — in allen drei Fällen darf **kein** leerer Kasten
 stehen bleiben und beim Aufbau der Seite darf keine Anfrage an
 `calendar.google.com` gehen (Netzwerk-Tab der Entwicklerwerkzeuge).
 
-Dazu kommt seit der gespeicherten Zustimmung ein vierter Durchgang: Kalender
+Ein vierter Durchgang prüft die gespeicherte Zustimmung: Kalender
 laden, auf die andere Seite wechseln (er lädt jetzt direkt), unter dem Kalender
 „Nicht mehr automatisch laden“ klicken, neu laden — der Platzhalter muss zurück
 sein und wieder darf beim Seitenaufbau nichts an `calendar.google.com` gehen.
@@ -159,8 +145,9 @@ zeigt erst der echte Deploy plus ein Blick auf die Seite.
 
 ### Nach dem `global-styles`-Deploy
 
-WordPress' REST-Sanitizer kann am Custom-CSS schneiden, also gehört diese
-Prüfung zum Deploy dazu — siehe `docs/design-system.md`.
+WordPress' REST-Sanitizer kann am Custom-CSS schneiden, also gehört
+`verify_global_css.py` zum Deploy dazu — Aufruf in `AGENTS.md`, Erklärung in
+`docs/tools.md`.
 
 ## Was keine dieser Prüfungen sieht
 

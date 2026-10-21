@@ -59,7 +59,7 @@ Eckenradius. WordPress übersetzt den camelCase-Namen zu
 
 ## Schicht 2: die Komponenten
 
-`data/styles/component.css`, rund 1400 Zeilen, alle Klassen mit `stuv-`
+`data/styles/component.css`, alle Klassen mit `stuv-`
 vorangestellt. Sie wird ins Custom-CSS-Feld der Global Styles deployt und
 erscheint auf jeder Seite in `<style id="global-styles-inline-css">`.
 
@@ -131,8 +131,9 @@ ungültige Feld einen roten Rahmen.
 
 ## Dark Mode
 
-Klassenbasiert, nicht per Media Query: Das Theme-Skript setzt `.dark` auf
-`<html>`, und `component.css` definiert die Token darunter neu:
+Klassenbasiert, nicht per Media Query (die würde dem Betriebssystem folgen und
+den Schalter der Seite ignorieren, `docs/plugins.md`): Das Theme-Skript setzt
+`.dark` auf `<html>`, und `component.css` definiert die Token darunter neu:
 
 ```css
 :root.dark {
@@ -165,9 +166,6 @@ rechnen sich selbst neu, weil sie auf `--stuv-primary` zeigen.
   Preset selbst in `:root.dark` überschrieben — die hellen 3 % Schwarz wären
   auf dunklem Grund unsichtbar.
 
-Warum keine Media Query: Die würde dem Betriebssystem folgen und den Schalter
-der Seite ignorieren. Details in `docs/plugins.md`.
-
 ## Wohin gehört meine Änderung?
 
 | Vorhaben                            | Ort                                               |
@@ -185,19 +183,10 @@ der Seite ignorieren. Details in `docs/plugins.md`.
   eine Klasse oder die Gutenberg-Farbwahl benutzen.
 - **Erst suchen, dann schreiben.** Es gibt schon viele Klassen. Eine neue, die
   fast dasselbe tut, ist der übliche Weg, wie ein Stylesheet unwartbar wird —
-  siehe `.claude/skills/improving-code/`.
+  siehe `.agents/skills/improving-code/`.
 
 ## Nach dem Deploy
 
-WordPress' REST-Sanitizer kann am Custom-CSS schneiden. Ob es überlebt hat:
-
-```bash
-source .env
-python3 ~/.claude/skills/wordpress-default-editor/scripts/verify_global_css.py \
-  --marker .stuv-card --marker .stuv-icon-box \
-  --marker ":root.dark" --marker .stuv-wpforms \
-  --icon-marker=--ico-calendar
-```
-
-Exit 0 = ok. Exit 2 = Icon-Data-URIs wurden entfernt; der Ausweg steht in
-`AGENTS.md` (sie müssen dann im `core/html`-Block des Headers leben).
+WordPress' REST-Sanitizer kann am Custom-CSS schneiden. Ob es überlebt hat,
+prüft `verify_global_css.py` (Aufruf in `AGENTS.md`, Exit-Codes in
+`docs/tools.md`).

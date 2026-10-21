@@ -1,8 +1,7 @@
 # AGENTS.md
 
 This file provides guidance to Claude Code (claude.ai/code) and other agents
-when working with code in this repository. `CLAUDE.md` is a one-line include of
-it. `docs/*.md` is the German, human-facing explanation of the same system —
+when working with code in this repository. `docs/*.md` is the German, human-facing explanation of the same system —
 **this file instructs, `docs/` explains** (`docs/ai-workflow.md` describes the
 split). It is loaded into every session, so it holds only what is needed to
 avoid breaking something: exact commands, hard rules, and gotchas that cost a
@@ -27,10 +26,8 @@ validator. **Read that SKILL.md before editing content here.**
 so the docs can link a download.
 
 **There is no CI and no build step.** Content files are deployed unchanged, and
-every check below is run by hand, locally, before a deploy. Human docs:
-`docs/architecture.md` (overview), `docs/content-editing.md`,
-`docs/adding-a-page.md`, `docs/design-system.md`, `docs/tools.md`,
-`docs/plugins.md`, `docs/testing.md`.
+every check below is run by hand, locally, before a deploy. `README.md` indexes
+the human docs.
 
 ## Layout
 
@@ -147,33 +144,26 @@ document roots**: WordPress's site URL is the apex, so `dev.` 301s every page
 there, yet nginx still serves `dev.`'s _own_ files for static paths. A REST
 upload through `dev.` therefore writes the file into `dev.`'s folder while the
 attachment URL (shared database) names the apex, which 404s it — nginx's 404,
-not the theme's. That is how `stuv-dhbw-apple-touch-icon.png` went missing on
-2026-10-21; every upload up to 2026-08-05 exists in both roots, so the split
-happened after that. The two roots also drift apart in other ways (core
+not the theme's. The two roots also drift apart in other ways (core
 `readme.html` is 403 on `dev.`, 200 on the apex). Page, template-part and
 global-styles deploys only touch the database and are unaffected. If an upload
 is missing on the apex, delete the attachment and re-upload with `WP_SITE` on
-the apex (see Media). The apex replaced the beta host `stuv.michi.onl`,
-which was a _different_ WordPress instance — page ids, the global-styles id and
-the media library all changed with it. Anything that reads like a fact about
-the old host (`index.php/wp-json`, `?pagename=` URLs, Cloudflare,
-`uploads/<YYYY>/<MM>/`) has been re-verified against the new one below; don't
-reintroduce it from memory or from git history.
+the apex (see Media). The apex replaced the beta host `stuv.michi.onl`, a
+_different_ WordPress instance: don't reintroduce its facts
+(`index.php/wp-json`, `?pagename=` URLs, Cloudflare, `uploads/<YYYY>/<MM>/`, its
+page ids) from memory or git history.
 
 - `WP_REST_ROOT=wp-json` — permalinks are **Beitragsname** (`/%postname%/`) and
   the REST rewrite works; the `index.php/wp-json` fallback the beta host needed
   does not apply (it 301s straight back to `/wp-json/`).
 - **If `/wp-json/` ever 404s again, re-save the permalinks — don't hunt for a
-  firewall.** This host sat with a 404 REST root on 2026-07-26 until
-  **Einstellungen → Permalinks → Speichern** flushed `rewrite_rules`; the
-  structure had never been saved after the migration, so core's `wp-json` rules
-  were never written. Recognise it by the response: `/wp-json/` returns the
-  _theme's_ 404, byte-identical to any unknown slug — the request reached
-  WordPress and matched no rule. A firewall block returns 403/deny instead, so
-  `all-in-one-wp-security-and-firewall` is the wrong suspect (that
-  mis-attribution cost a debugging round). Cross-checks that stayed green:
-  `?rest_route=/` answered 200 unauthenticated, and `/feed/`, `/page/2/`,
-  `/author/<slug>/` all resolved. `WP_REST_ROOT="?rest_route="` is the stopgap
+  firewall.** **Einstellungen → Permalinks → Speichern** flushes
+  `rewrite_rules`; unsaved permalinks leave core's `wp-json` rules unwritten.
+  Recognise it by the response: `/wp-json/` returns the _theme's_ 404,
+  byte-identical to any unknown slug, while `?rest_route=/` answers 200. A
+  firewall block returns 403/deny instead, so
+  `all-in-one-wp-security-and-firewall` is the wrong suspect.
+  `WP_REST_ROOT="?rest_route="` is the stopgap
   that keeps deploys working meanwhile — `wp_block_api.py` handles a `?…` root
   natively.
 - `wps-hide-login` is active, so **`wp-login.php` 404s by design** — wp-admin is
@@ -190,18 +180,16 @@ reintroduce it from memory or from git history.
   the stdlib default.
 - **The host publishes an AAAA record it does not route.** Every IPv6 connection
   attempt hangs. `curl` and browsers hide this behind Happy Eyeballs, so the
-  site feels fine while Python's `urllib` — which gives _each_ candidate address
-  the full timeout — stalled 30s per REST call and made `deploy.py all` run for
-  minutes and get killed part-way. `wp_block_api.py` caps each connect attempt
+  site feels fine while Python's `urllib`, which gives _each_ candidate address
+  the full timeout, stalls 30s per REST call. `wp_block_api.py` caps each connect attempt
   (`WP_CONNECT_TIMEOUT`, default 5s) and caches the address that answered, and
   **`.env` sets `WP_ADDRESS_FAMILY="ipv4"`**, which drops the AAAA candidate
-  before any connect (measured 2026-07-30: first REST call 5.6s → 2.2s, full
-  `verify_deploy.py` 5.4s). `WP_CONNECT_TIMEOUT` is a per-_process_ cap and
+  before any connect. `WP_CONNECT_TIMEOUT` is a per-_process_ cap and
   every script is its own process, so without the pin each command pays it
   again. The pin raises `OSError` if the host ever stops publishing an A record
   — deliberately loud rather than a silent fallback. All three names (`dev.`,
-  `www.`, apex) resolve to A `202.61.233.9` plus the same dead AAAA. If a deploy goes mysteriously slow
-  again, check this first:
+  `www.`, apex) resolve to A `202.61.233.9` plus the same dead AAAA. If a
+  deploy goes mysteriously slow again, check this first:
 
   ```bash
   HOST="$(printf '%s' "$WP_SITE" | sed -E 's#^https?://##')"
@@ -251,9 +239,7 @@ against. That URL stability is what makes delete-then-re-upload safe
 here. If month/year folders are ever re-enabled, `MEDIA_BASE` has to change with
 them and the "URL only survives within the same month" caveat comes back.
 
-Toggling that setting mid-migration is how the library ended up with two
-attachments per filename (`uploads/2026/07/jan.jpg` **and** `uploads/jan.jpg`);
-the stale set was deleted 2026-07-26. `find_media_by_filename` takes the newest
+`find_media_by_filename` takes the newest
 match and warns on stderr when a name is ambiguous — if that warning appears,
 stop and clean up the library before deploying.
 
@@ -272,10 +258,6 @@ content REST API.
   argument builds all three)
 - Install: wp-admin → Plugins → Installieren → Plugin hochladen → Aktivieren
 
-They are normal plugins rather than `mu-plugins` only because there is no shell
-access to the host; if SSH is ever set up, moving them to
-`wp-content/mu-plugins/` is a strict improvement and needs no code change.
-
 **`stuv-mensa`** — the live Mensa menu needs a server-side proxy: `api.dhbw.app`
 sends **no CORS headers**, so the browser cannot call it directly. Deactivating
 it removes the Speiseplan from the Studentenleben page. Design:
@@ -293,21 +275,14 @@ which is what makes the control visible — `component.css` hides
 `.stuv-theme-switch` by default, so **deactivating the plugin freezes the site
 in light mode and removes the control** rather than leaving a dead one behind
 (same for visitors with JS disabled).
-The control is a `<details>` dropdown with three rows (Hell / Dunkel / System),
-not a one-click cycle. Two things are deliberate: the `<summary>` icon keys off
-`.dark`, i.e. the _resolved_ theme, so System shows sun or moon and never a
-monitor glyph — which mode is set is signalled only by the check mark on the
-active row (`[aria-checked="true"] .stuv-icon-check`, set from JS). And
-`<details>` was chosen over the `popover` attribute because an open popover sits
-in the top layer, where the containing block is the viewport, so it cannot be
-anchored under the trigger without CSS anchor positioning. The price is that
-Escape and outside-click dismissal are hand-rolled in the plugin's `document`
-listeners. It also filters `site_icon_meta_tags` to point the
-apple-touch-icon at the opaque `stuv-dhbw-apple-touch-icon.png`: the site icon
-is one transparent image for every size, and iOS paints transparency black. The
-filter keeps core's tag until that file is in the uploads. Plan: `git show 6a19d0a^:docs/superpowers/plans/2026-07-10-wp-dark-mode-toggle.md`
-(its inline-script-in-block-HTML approach was rejected for the `unfiltered_html`
-reason below).
+The control is a `<details>` dropdown (Hell / Dunkel / System), not a
+`popover`: an open popover sits in the top layer, whose containing block is the
+viewport, so it cannot be anchored under the trigger without CSS anchor
+positioning. Escape and outside-click dismissal are therefore hand-rolled in the
+plugin's `document` listeners. The `<summary>` icon keys off `.dark` (the
+_resolved_ theme), so System shows sun or moon, never a monitor glyph. The
+plugin also points the apple-touch-icon at the opaque
+`stuv-dhbw-apple-touch-icon.png` (`docs/plugins.md`).
 
 **`stuv-dsgvo`** — click-to-load for the two Google Calendar embeds (homepage
 `sections/02-was-wir-bieten.html`, `pages/events/02-upcoming.html`). **The
@@ -326,11 +301,8 @@ visitor clicks — plugin off and JS off included. Don't "fix" that back to a re
   `data-stuv-src` (`stuv_dsgvo_has_embed()`). An embed moved into a template
   part, widget or reusable block would never load — drop the check if that
   happens.
-- Consent **is** persisted per device in `localStorage['stuv-dsgvo-calendar']`
-  (since 2026-07-30; it deliberately was not before, because a remembered click
-  sends a later pageview to Google without a fresh action — but re-consenting on
-  every navigation between homepage and Events page was the reported pain
-  point). What makes that defensible is the counterpart: a loaded embed
+- Consent **is** persisted per device in `localStorage['stuv-dsgvo-calendar']`.
+  What makes that defensible is the counterpart: a loaded embed
   **always** renders a `.stuv-dsgvo-revoke` line under it. Don't remove it and
   don't hide it behind a hover or a toggle — the DSGVO wants withdrawal as easy
   as consent, and this is the only route out. Revoking swaps the iframe for an
@@ -386,7 +358,7 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
   argument** — passing it a glob silently checks one file and prints a clean
   pass, so sweep the tree with the loop under Commands. The pattern
   `'data/*.html'` is deliberate: git's `*` spans slashes, so it matches every
-  block-HTML file in the tree (40 today), while `'data/**/*.html'` would miss
+  block-HTML file in the tree, while `'data/**/*.html'` would miss
   `header_blocks.html` / `footer_blocks.html` (no subdirectory).
 - **`"style":{}` is not stable across a save.** An empty JSON object in a block
   comment comes back from WordPress as `"style":[]` — PHP decodes `{}` to an
@@ -428,8 +400,8 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
   `flexWrap:nowrap` and at 360px held ~350px of content in ~300px: the logo is
   168px on its own (`.stuv-logo-mark` is `height:2.5rem` and the mark is
   1342x320, so its width is a _consequence_ of its height — easy to miss when
-  reading the CSS). Fixed 2026-07-30 in the `max-width:639px` block. The numbers
-  there are the smaller half of the fix; the load-bearing half is `min-width:0`
+  reading the CSS). The fix is in the `max-width:639px` block; its numbers are
+  the smaller half of the fix; the load-bearing half is `min-width:0`
   on the logo group plus `max-width:100%` on the mark, which lets the logo
   shrink instead of the row overflowing at widths nobody measured. Keep that
   when touching the header. Diagnose by filtering
@@ -438,16 +410,15 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
 - **Fluid typography is off; a size ships exactly as written.**
   `data/global-styles.json` sets `settings.typography.fluid: false` and declares
   its own static `fontSizes` presets (`small` 0.875, `medium` 1, `large` 1.125,
-  `x-large` 1.875, `xx-large` 3rem). Before 2026-07-30 TT5's fluid typography
-  rewrote _every_ block-level `"fontSize"` into a `clamp()` floored at
-  `minFontSize`, collapsing all eight inline sizes in use — `0.75rem` through
-  `2rem` — to the **same 16px** at a 320px viewport. Do not re-enable it: the
+  `x-large` 1.875, `xx-large` 3rem). TT5's fluid typography rewrites _every_
+  block-level `"fontSize"` into a `clamp()` floored at `minFontSize`, collapsing
+  the inline sizes in use (`0.75rem` to `2rem`) to the **same 16px** at a 320px
+  viewport. Do not re-enable it: the
   responsive steps live in `component.css` media queries (`.stuv-hero-title`,
   `.stuv-h2`), where a breakpoint-based scale belongs and which fluid typography
   never touched anyway. Declaring the presets explicitly is **not** optional —
   with `fluid:false` an undeclared preset falls back to TT5's own `size` field.
-  `p.stuv-section-intro` owns its size in CSS with `!important` (to beat the
-  blocks' inline `font-size`). Verify a size change on the served HTML, not with
+  Verify a size change on the served HTML, not with
   `--dry-run` or the block validator — neither reads rendered CSS.
 
 ## Generated files — never hand-edit
@@ -476,10 +447,7 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
 
 `docs/*.md` is human-readable documentation, written in German, and is read
 **on GitHub** (the repo is public), so a docs edit is done once it is pushed.
-They are no longer published on the WordPress site: `/docs/` was trashed and the
-footer link removed on 2026-08-14. A BookStack wiki at `wiki.dhbw-asta.de` was
-planned and is **not set up**; its exporter was removed (`git show
-410069d:tools/export_docs_wiki.py`). Links must work on GitHub: other docs
+Links must work on GitHub: other docs
 relative (`testing.md`), site files absolute (`https://stuv-heidenheim.de/…`) —
 a root-relative `/wp-content/…` resolves against github.com. Nothing in `docs/`
 may contain secrets. Do not re-add a `docs` deploy target to
@@ -500,12 +468,6 @@ maintainer's explicit approval each time.
 
 ## Repo-local skills
 
-`.claude/skills/improving-code/` — the refactoring procedure for this repo's
+`.agents/skills/improving-code/` — the refactoring procedure for this repo's
 block HTML, component CSS and design tokens. Its rule: a cleanup must be a
 **verified no-op** on deployed content, or the difference must be stated.
-
-## History
-
-Full pre-split history (Next.js app, migration scripts, parity-verification era)
-is archived in the predecessor repository (2026-07-10). Rationale:
-`git show 6a19d0a^:docs/superpowers/specs/2026-07-10-repo-split-design.md`.
