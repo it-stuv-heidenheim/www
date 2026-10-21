@@ -360,6 +360,7 @@ a {
 a.stuv-button-primary,
 .wp-block-button.stuv-button-primary .wp-block-button__link,
 a.stuv-button-outline,
+button.stuv-button-outline,
 a.stuv-button-link,
 a.stuv-button-overlay,
 .wp-block-button.stuv-button-overlay .wp-block-button__link {
@@ -393,16 +394,22 @@ a.stuv-button-primary:hover,
   background: color-mix(in srgb, var(--stuv-primary-surface) 90%, #000);
 }
 
-a.stuv-button-outline {
+button.stuv-button-outline {
+  font-family: inherit;
+}
+a.stuv-button-outline,
+button.stuv-button-outline {
   background: transparent;
   color: var(--stuv-foreground);
   border-color: var(--stuv-border);
 }
-a.stuv-button-outline:hover {
+a.stuv-button-outline:hover,
+button.stuv-button-outline:hover {
   border-color: var(--stuv-primary);
   color: var(--stuv-primary);
 }
-a.stuv-button-outline:active {
+a.stuv-button-outline:active,
+button.stuv-button-outline:active {
   background: var(--stuv-accent);
 }
 
@@ -1335,7 +1342,7 @@ summary:focus-visible,
   .stuv-linktree-subtitle {
     font-size: 0.875rem;
   }
-  .stuv-card + .stuv-card {
+  .stuv-linktree-list .stuv-card + .stuv-card {
     margin-top: var(--space-2);
   }
 
@@ -1378,6 +1385,9 @@ summary:focus-visible,
 .stuv-mensa-tabs {
   display: flex;
   gap: var(--space-1);
+}
+.stuv-mensa-tabs[hidden] {
+  display: none;
 }
 
 .stuv-mensa-tab {
