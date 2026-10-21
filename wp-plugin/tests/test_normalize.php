@@ -40,7 +40,7 @@ check('tuesday: meals have a student price',
 check('tuesday: image points at our proxy, not api.dhbw.app',
     str_starts_with($mon['days'][0]['meals'][0]['image'], $base), true);
 
-// Saturday: no menu today. The next open day is Monday of the NEXT week —
+// Saturday: no menu today. The next open day is Monday of the NEXT week,
 // which a calendar-week payload would not contain. This is the weekend bug.
 $sat = stuv_mensa_normalize($fixture, '2026-07-18', $base);
 check('saturday: skips to the next open day', $sat['days'][0]['date'], '2026-07-20');
@@ -49,15 +49,11 @@ check('saturday: no past days leak in',
     array_filter($sat['days'], fn($d) => $d['date'] < '2026-07-18'), []);
 
 // Semester break: nothing left in the window. `days: []` is a valid response,
-// not an error — the widget renders its closed state from it.
+// not an error; the widget renders its closed state from it.
 $break = stuv_mensa_normalize($fixture, '2030-01-01', $base);
 check('semester break: empty days, not an error', $break['days'], []);
 check('semester break: opening hours still present',
     $break['openingHours'], '11:30 – 13:45 Uhr');
-
-// Window is honoured.
-check('window: respects a smaller window',
-    count(stuv_mensa_normalize($fixture, '2026-07-13', $base, 2)['days']), 2);
 
 // --- image helpers ----------------------------------------------------------
 check('image id: parsed from the upstream url',

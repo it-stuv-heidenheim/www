@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Emit the CSS custom properties holding lucide icons as data-URI masks/images.
 
-Reads SVGs from node_modules/lucide-static/icons/ (devDependency: lucide-static)
+Reads SVGs from $LUCIDE_ICON_DIR (default node_modules/lucide-static/icons/)
 and writes a :root { --ico-*: url("data:...") } block into data/styles/component.css,
 between the gen_icon_css markers. The stroke colour is baked to the brand primary
 so the same data-URI works both as a CSS mask (alpha-only; recoloured via
@@ -13,8 +13,8 @@ prints inline in <style id="global-styles-inline-css"> on every page view and ne
 HTTP-caches. This icon set is the largest single thing in it, so the encoding is
 kept as tight as it can be while staying safe:
 
-  * lucide's @license comment and its class='lucide lucide-x' attribute are dropped
-    — neither can match anything inside a mask, and together they cost ~4 KB.
+  * lucide's @license comment and its class='lucide lucide-x' attribute are dropped:
+    neither can match anything inside a mask, and together they cost ~4 KB.
   * whitespace is collapsed; lucide pretty-prints its SVGs and the old encoder
     turned every newline+indent into a run of %20.
   * only %, #, " and the angle brackets are percent-escaped. Spaces, apostrophes,
@@ -23,7 +23,7 @@ kept as tight as it can be while staying safe:
     post, and a raw <svg ...> in the payload is exactly what a KSES pass would
     mangle. That risk is not worth the 2 bytes.
 
-Usage (from repo root; this repo has no node_modules — install lucide-static ad hoc):
+Usage (from repo root; this repo has no node_modules, so install lucide-static ad hoc):
     npm install --prefix /tmp/lucide lucide-static@0.577.0
     export LUCIDE_ICON_DIR=/tmp/lucide/node_modules/lucide-static/icons
     python3 tools/gen_icon_css.py            # print the block to stdout

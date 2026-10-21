@@ -92,7 +92,7 @@ ENHANCE = {
 }
 
 TILE_URL = "https://a.basemaps.cartocdn.com/{style}/{z}/{x}/{y}@2x.png"
-# CARTO's tile servers ban the stdlib default User-Agent and CARTO bans the stdlib default UA outright.
+# CARTO's tile servers ban the stdlib default User-Agent.
 USER_AGENT = "stuv-map-render/1.0 (+https://stuv-heidenheim.de)"
 
 # A pin this far down (in % of the frame) has room for a tooltip above it; one
@@ -294,16 +294,8 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-DIR_LABELS = {
-    "n": "nördlich",
-    "ne": "nordöstlich",
-    "e": "östlich",
-    "se": "südöstlich",
-    "s": "südlich",
-    "sw": "südwestlich",
-    "w": "westlich",
-    "nw": "nordwestlich",
-}
+# component.css draws an edge arrow only for these directions.
+DIR_LABELS = {"n": "nördlich", "s": "südlich"}
 
 
 def format_distance_km(m: float) -> str:
@@ -318,38 +310,26 @@ def edge_pin_info(pin: dict, bbox: BBox) -> tuple[str, float, str]:
     The pin's percentage position relative to the rendered bbox decides only
     which side(s) it lies beyond -- any value outside [0, 100] means the pin is
     off that edge of the frame. Where the pin is actually drawn is a separate,
-    hand-placed edge_x/edge_y (see render_html and SAFE_ZONE_MIN/MAX); this
+    hand-placed edge_x/edge_y (see render_html and SAFE_ZONE_X/Y); this
     function never returns a screen position.
     """
     x, y = pin_percent(pin["lat"], pin["lon"], bbox)
-
-    beyond_n = y < 0
-    beyond_s = y > 100
-    beyond_w = x < 0
-    beyond_e = x > 100
-
-    dirs = []
-    if beyond_n:
-        dirs.append("n")
-    if beyond_s:
-        dirs.append("s")
-    if beyond_w:
-        dirs.append("w")
-    if beyond_e:
-        dirs.append("e")
-    direction = "".join(dirs) if dirs else "center"
+    ns = "n" if y < 0 else "s" if y > 100 else ""
+    we = "w" if x < 0 else "e" if x > 100 else ""
+    direction = ns + we or "center"
 
     # Closest point on the bbox perimeter. Each axis clamps independently, which
-    # covers the diagonals for free: beyond_n/beyond_s cannot both hold, nor can
-    # beyond_e/beyond_w, so "center" falls out as the both-unclamped case.
+    # covers the diagonals for free.
     lat, lon = pin["lat"], pin["lon"]
-    closest_lat = bbox.north if beyond_n else bbox.south if beyond_s else lat
-    closest_lon = bbox.east if beyond_e else bbox.west if beyond_w else lon
+    closest_lat = {"n": bbox.north, "s": bbox.south}.get(ns, lat)
+    closest_lon = {"w": bbox.west, "e": bbox.east}.get(we, lon)
 
-    dist_m = haversine_m(lat, lon, closest_lat, closest_lon)
-    label = DIR_LABELS.get(direction, "außerhalb")
-
-    return direction, dist_m, label
+    if direction not in DIR_LABELS:
+        sys.exit(
+            f"pin {pin['n']} lies {direction} of the map, but component.css only "
+            f"draws {'/'.join(DIR_LABELS)} edge arrows: add .stuv-map-pin-edge-{direction}"
+        )
+    return direction, haversine_m(lat, lon, closest_lat, closest_lon), DIR_LABELS[direction]
 
 
 def media_name(map_id: str, style: str) -> str:
@@ -413,10 +393,6 @@ def webp_bytes(image) -> bytes:
     buffer = io.BytesIO()
     image.save(buffer, format="WEBP", quality=84, method=6)
     return buffer.getvalue()
-
-
-def render_webps(data: dict) -> dict[str, bytes]:
-    return {style: webp_bytes(render_image(data, style)) for style in STYLES}
 
 
 def write_preview(data: dict, style: str, path: pathlib.Path) -> None:
@@ -526,19 +502,18 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
     for pin in data["pins"]:
         if pin.get("edge"):
             direction, dist_m, dir_label = edge_pin_info(pin, bbox)
-            dist = format_distance_km(dist_m)
             edge_cls = f" stuv-map-pin-edge stuv-map-pin-edge-{direction}"
+            edge_tip = f"<br />{format_distance_km(dist_m)} {dir_label}"
             x, y = pin["edge_x"], pin["edge_y"]
         else:
             x, y = pin_percent(pin["lat"], pin["lon"], bbox)
-            edge_cls = ""
+            edge_cls = edge_tip = ""
 
         below = " stuv-map-pin-below" if y < TIP_BELOW else ""
-
-        tip_parts = [f'<strong>{esc(pin["name"])}</strong><br />{esc(pin["detail"])}']
-        if pin.get("edge"):
-            tip_parts.append(f"<br />{dist} {dir_label.lower()}")
-        tip = f'<span class="stuv-map-tip">{"".join(tip_parts)}</span>'
+        tip = (
+            f'<span class="stuv-map-tip"><strong>{esc(pin["name"])}</strong>'
+            f'<br />{esc(pin["detail"])}{edge_tip}</span>'
+        )
 
         # Every pin links to its own legend entry below the map.
         href = f' href="#karte-{map_id}-{pin["n"]}"'
@@ -646,15 +621,9 @@ def prettify(text: str, path: pathlib.Path) -> str:
 
 
 def rendered_target(
-    data: dict, path: pathlib.Path, media_base: str, current: str | None = None
+    data: dict, path: pathlib.Path, media_base: str, current: str
 ) -> str:
-    """`path` with a freshly generated map block spliced in, formatted as committed.
-
-    `current` is the file's existing text; callers that have already read it
-    pass it in rather than making this read the same file a second time.
-    """
-    if current is None:
-        current = path.read_text(encoding="utf-8")
+    """`current` (the text of `path`) with a fresh map block spliced in, formatted."""
     block = render_html(data, media_base)
     return prettify(splice(current, block, data["id"]), path)
 
@@ -683,7 +652,7 @@ def check(data: dict, media_base: str) -> int:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Render a static StuV map")
-    parser.add_argument("map_id", help="stem of a file in data/maps/ (campus, stadt)")
+    parser.add_argument("map_id", help="stem of a file in data/maps/")
     parser.add_argument(
         "--render",
         action="store_true",
@@ -720,15 +689,17 @@ def main(argv: list[str]) -> int:
     if args.check:
         return check(data, args.media_base)
     if args.render:
-        for style, blob in render_webps(data).items():
+        for style in STYLES:
+            blob = webp_bytes(render_image(data, style))
             path = MEDIA_DIR / media_name(args.map_id, style)
             path.write_bytes(blob)
             print(f"wrote {path.relative_to(REPO)} ({len(blob):,} bytes)")
     if args.write:
         for target in data["targets"]:
             path = REPO / target
+            current = path.read_text(encoding="utf-8")
             path.write_text(
-                rendered_target(data, path, args.media_base), encoding="utf-8"
+                rendered_target(data, path, args.media_base, current), encoding="utf-8"
             )
             print(f"spliced the {args.map_id} block into {target}")
     if not (args.render or args.write):

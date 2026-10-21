@@ -9,21 +9,18 @@ of the skill from the local checkout with `git archive`:
 
 `git archive` ships committed files only, so gitignored installed deps
 (`.venv/`, `blockcheck/node_modules/`, `__pycache__/`, `.pytest_cache/`,
-`blockcheck/package-lock.json`) are excluded for free — no manual exclude list
-to maintain — and uncommitted local WIP in the skill never ships. The output is
-deterministic. `--prefix=wordpress-default-editor/` makes the ZIP extract to
+`blockcheck/package-lock.json`) are excluded without a manual exclude list to
+maintain, and uncommitted local WIP in the skill never ships.
+`--prefix=wordpress-default-editor/` makes the ZIP extract to
 `wordpress-default-editor/…`, so it drops cleanly into `~/.claude/skills/`.
 
 The built ZIP is committed to this repo, matching the generated map images in
-data/media/. The ZIP rides the `media` manifest target; because the attachment
-URL carries the upload month, a ZIP change and the docs change that links to it
-deploy together (see the runbook in the design spec / docs/content-editing.md).
+data/media/, and rides the `media` manifest target (replacing it: AGENTS.md, Media).
 
 If the checkout is not a git repo or the skill subtree is absent, the script
 errors non-zero rather than writing a partial or empty ZIP.
 """
 
-import argparse
 import subprocess
 import sys
 import zipfile
@@ -83,32 +80,13 @@ def build_zip(skills_root, subtree, output):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--skills-root",
-        default=str(SKILLS_ROOT),
-        help=f"skills repo checkout (default: {SKILLS_ROOT})",
-    )
-    parser.add_argument(
-        "--subtree",
-        default=SUBTREE,
-        help=f"skill subtree to archive (default: {SUBTREE})",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        default=str(OUTPUT),
-        help=f"output ZIP path (default: {OUTPUT.relative_to(REPO)})",
-    )
-    args = parser.parse_args()
-
-    output = build_zip(args.skills_root, args.subtree, args.output)
+    output = build_zip(SKILLS_ROOT, SUBTREE, OUTPUT)
 
     with zipfile.ZipFile(output) as zf:
         names = zf.namelist()
     print(f"Wrote {output} ({output.stat().st_size} bytes, {len(names)} entries)")
-    if f"{args.subtree}/SKILL.md" not in names:
-        sys.exit(f"error: archive is missing {args.subtree}/SKILL.md — refusing it")
+    if f"{SUBTREE}/SKILL.md" not in names:
+        sys.exit(f"error: archive is missing {SUBTREE}/SKILL.md; refusing it")
     print("Now deploy the `media` target, then update the docs download link.")
 
 

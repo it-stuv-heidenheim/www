@@ -4,16 +4,15 @@
  * Loaded as a classic script by wp_enqueue_script; also exports under
  * CommonJS so the pure helpers can be tested with `node --test`.
  *
- * Never parses an upstream timestamp — the REST route hands us plain
+ * Never parses an upstream timestamp: the REST route hands us plain
  * 'YYYY-MM-DD' dates and ready-made German labels.
  */
-(function (root, factory) {
+(function (factory) {
   var api = factory();
-  root.StuvMensa = api;
   if (typeof module === "object" && module.exports) {
     module.exports = api;
   }
-})(typeof self !== "undefined" ? self : globalThis, function () {
+})(function () {
   "use strict";
 
   var priceFormat = new Intl.NumberFormat("de-DE", {
@@ -36,12 +35,9 @@
 
   /**
    * Index of the day to show first: today if the Mensa is open today,
-   * otherwise the next open day. -1 when there are no open days at all.
+   * otherwise the next open day. Only called with at least one day.
    */
   function pickInitialDay(days, todayIso) {
-    if (!days || days.length === 0) {
-      return -1;
-    }
     var index = days.findIndex(function (day) {
       return day.date === todayIso;
     });
@@ -52,17 +48,17 @@
    * Drop days that are already over.
    *
    * The payload is normalised against the date it was fetched on, and the REST
-   * route serves the stale store indefinitely whenever api.dhbw.app is down —
-   * there is no upper bound on its age. During a prolonged outage the widget
+   * route serves the stale store indefinitely whenever api.dhbw.app is down,
+   * with no upper bound on its age. During a prolonged outage the widget
    * would therefore keep offering days that are now in the past, and select()
-   * would label one of them "Nächster Speiseplan · Montag, 13. Juli" — a stale
-   * menu presented as an upcoming one. Serving stale data is the right default;
+   * would label one of them "Nächster Speiseplan · Montag, 13. Juli", presenting a
+   * stale menu as an upcoming one. Serving stale data is the right default;
    * mislabelling it is not. Filtering on read rather than only at fetch time
    * lets an expired payload fall through to the existing "Zurzeit ist kein
    * Speiseplan verfügbar." terminal state instead.
    *
-   * ISO 'YYYY-MM-DD' strings compare correctly with >=, so no Date parsing —
-   * the same reason the rest of this file never touches a timestamp.
+   * ISO 'YYYY-MM-DD' strings compare correctly with >=, so no Date parsing,
+   * for the same reason the rest of this file never touches a timestamp.
    */
   function dropPastDays(days, todayIso) {
     if (!days) {
@@ -187,7 +183,7 @@
     function select(index) {
       var day = days[index];
 
-      // A day that is not today must say so plainly — a highlighted tab alone
+      // A day that is not today must say so plainly: a highlighted tab alone
       // would be read as "today's food".
       lead.textContent =
         day.date === today ? day.label : "Nächster Speiseplan · " + day.label;
@@ -235,7 +231,5 @@
     pickInitialDay,
     dropPastDays,
     todayInBerlin,
-    render,
-    init,
   };
 });

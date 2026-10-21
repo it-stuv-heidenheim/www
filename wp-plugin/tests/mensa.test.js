@@ -28,10 +28,6 @@ test("pickInitialDay falls back to the first open day on a weekend", () => {
   assert.equal(pickInitialDay(days, "2026-07-18"), 0);
 });
 
-test("pickInitialDay returns -1 when there are no open days", () => {
-  assert.equal(pickInitialDay([], "2026-07-18"), -1);
-});
-
 test("dropPastDays keeps today and everything after it", () => {
   const days = [
     { date: "2026-07-13" },

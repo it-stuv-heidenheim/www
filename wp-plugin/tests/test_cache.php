@@ -26,26 +26,23 @@ check('cold cache, lock held — still fetch (never block first visitors)',
 
 // --- stuv_mensa_image_cacheable --------------------------------------------
 check('cacheable: valid image response',
-    stuv_mensa_image_cacheable(200, 'image/webp', str_repeat('x', 50000)),
+    stuv_mensa_image_cacheable('image/webp', str_repeat('x', 50000)),
     true);
 
 check('cacheable: empty body — no',
-    stuv_mensa_image_cacheable(200, 'image/webp', ''), false);
-
-check('cacheable: non-200 status — no',
-    stuv_mensa_image_cacheable(500, 'image/webp', 'bytes'), false);
+    stuv_mensa_image_cacheable('image/webp', ''), false);
 
 check('cacheable: text/html Content-Type — no',
-    stuv_mensa_image_cacheable(200, 'text/html', '<html>'), false);
+    stuv_mensa_image_cacheable('text/html', '<html>'), false);
 
 check('cacheable: application/octet-stream — no',
-    stuv_mensa_image_cacheable(200, 'application/octet-stream', 'bytes'), false);
+    stuv_mensa_image_cacheable('application/octet-stream', 'bytes'), false);
 
 check('cacheable: image/svg+xml — no (executes script same-origin)',
-    stuv_mensa_image_cacheable(200, 'image/svg+xml', '<svg></svg>'), false);
+    stuv_mensa_image_cacheable('image/svg+xml', '<svg></svg>'), false);
 
 check('cacheable: Content-Type with charset parameter — yes',
-    stuv_mensa_image_cacheable(200, 'image/webp; charset=binary', 'bytes'), true);
+    stuv_mensa_image_cacheable('image/webp; charset=binary', 'bytes'), true);
 
 // --- stuv_mensa_safe_image_type --------------------------------------------
 check('safe type: image/webp passes through',
@@ -64,9 +61,9 @@ check('safe type: empty neutralized',
     stuv_mensa_safe_image_type(''), 'application/octet-stream');
 
 check('cacheable: exactly at 2 MB — yes',
-    stuv_mensa_image_cacheable(200, 'image/webp', str_repeat('x', 2 * 1024 * 1024)),
+    stuv_mensa_image_cacheable('image/webp', str_repeat('x', 2 * 1024 * 1024)),
     true);
 
 check('cacheable: one byte over 2 MB — no',
-    stuv_mensa_image_cacheable(200, 'image/webp', str_repeat('x', 2 * 1024 * 1024 + 1)),
+    stuv_mensa_image_cacheable('image/webp', str_repeat('x', 2 * 1024 * 1024 + 1)),
     false);

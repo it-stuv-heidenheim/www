@@ -9,7 +9,6 @@ cd "$(dirname "$0")"
 # plugin is a directory holding its own <name>.php entry point, which is what
 # keeps tests/ and any other helper directory out of the list.
 if [ "$#" -eq 0 ]; then
-  set --
   for dir in */; do
     name="${dir%/}"
     [ -f "$name/$name.php" ] && set -- "$@" "$name"

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: StuV DSGVO Embeds
- * Description: Lädt die eingebetteten Google Kalender erst auf Klick statt automatisch und zeigt vorher einen Datenschutz-Hinweis. Die Zustimmung wird auf Wunsch im Browser des Geräts gemerkt und lässt sich unter dem Kalender jederzeit widerrufen. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Kalender und an seiner Stelle steht ein Link zu Google — die Embeds tragen keine eigene src, es wird also nie ungefragt bei Google geladen. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.1.0
+ * Description: Lädt die eingebetteten Google Kalender erst auf Klick statt automatisch und zeigt vorher einen Datenschutz-Hinweis. Die Zustimmung wird auf Wunsch im Browser des Geräts gemerkt und lässt sich unter dem Kalender jederzeit widerrufen. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Kalender und an seiner Stelle steht ein Link zu Google. Die Embeds tragen keine eigene src, also lädt nie etwas ungefragt von Google. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
+ * Version: 1.1.1
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUV_DSGVO_VERSION', '1.1.0');
+define('STUV_DSGVO_VERSION', '1.1.1');
 
 /**
  * The click-to-load script.
@@ -20,15 +20,15 @@ define('STUV_DSGVO_VERSION', '1.1.0');
  * nothing reaches Google until a visitor asks for it. That also decides the
  * failure mode: with this plugin off (or JavaScript off) the iframe stays empty
  * forever, so the markup ships a visible `.stuv-dsgvo-fallback` link that this
- * script hides again once it has taken over. Fail-closed in both directions —
- * never a silent empty box, never an unasked-for request to Google.
+ * script hides again once it has taken over. It fails closed both ways:
+ * no silent empty box, and no request to Google that nobody asked for.
  *
  * Delegated from `document` rather than bound per button, so a placeholder that
  * is built after this runs still works.
  *
  * The consent is remembered per device in localStorage, so moving between the
  * homepage and the Events page does not ask again. That is only defensible with
- * a way back out, so a loaded embed always carries a visible revoke link — the
+ * a way back out, so a loaded embed always carries a visible revoke link: the
  * DSGVO wants withdrawing to be as easy as giving. Revoking replaces the iframe
  * with a fresh, src-less clone rather than clearing `src`, because clearing it
  * leaves the already-loaded Google document running in the frame.
@@ -48,7 +48,7 @@ function stuv_dsgvo_script(): string {
 
   // Safari in private mode and "block all cookies" settings make localStorage
   // throw on access, not just on write. A device that cannot remember the
-  // consent simply falls back to asking every time — never to an exception that
+  // consent simply falls back to asking every time, never to an exception that
   // takes the whole click handler down with it.
   function consentGiven() {
     try {
@@ -87,7 +87,7 @@ function stuv_dsgvo_script(): string {
     placeholder.innerHTML =
       ICON +
       '<p class="stuv-dsgvo-notice"></p>' +
-      '<p class="stuv-dsgvo-note">Aus Datenschutzgründen wird der Kalender nicht automatisch geladen. Beim Laden werden Daten wie deine IP-Adresse an Server von Google in den USA übertragen — siehe die <a href="' +
+      '<p class="stuv-dsgvo-note">Aus Datenschutzgründen wird der Kalender nicht automatisch geladen. Beim Laden werden Daten wie deine IP-Adresse an Server von Google in den USA übertragen. Mehr dazu in der <a href="' +
       GOOGLE_PRIVACY +
       '" target="_blank" rel="noopener noreferrer">Datenschutzerklärung von Google</a>.</p>' +
       '<button type="button" class="stuv-button-outline stuv-dsgvo-load-btn">Kalender laden</button>';
@@ -179,9 +179,8 @@ function stuv_dsgvo_script(): string {
       var fresh = buildPlaceholder(reset);
       reset.parentNode.insertBefore(fresh, reset);
 
-      // Same focus reasoning as above — the button that was clicked is gone.
-      var loadAgain = fresh.querySelector('.stuv-dsgvo-load-btn');
-      if (loadAgain) loadAgain.focus();
+      // Same focus reasoning as above: the button that was clicked is gone.
+      fresh.querySelector('.stuv-dsgvo-load-btn').focus();
     }
   });
 })();

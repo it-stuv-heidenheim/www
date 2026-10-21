@@ -2,13 +2,11 @@
 /**
  * Pure cache-decision helpers for the StuV Mensa widget.
  *
- * NO WordPress dependencies — unit-tested with the plain `php` CLI
+ * NO WordPress dependencies: unit-tested with the plain `php` CLI
  * (wp-plugin/tests/test_cache.php).
  */
 
-if (!defined('STUV_MENSA_IMAGE_MAX_BYTES')) {
-    define('STUV_MENSA_IMAGE_MAX_BYTES', 2 * 1024 * 1024); // 2 MB
-}
+const STUV_MENSA_IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 
 /**
  * Decide whether to fetch a fresh payload or serve what we already have.
@@ -24,7 +22,7 @@ function stuv_mensa_payload_decision(
     bool $store_present
 ): string {
     if (!$store_present) {
-        return 'fetch'; // cold cache — never block first-ever visitors
+        return 'fetch'; // cold cache: never block first-ever visitors
     }
     if ($fresh) {
         return 'serve';
@@ -42,7 +40,7 @@ function stuv_mensa_payload_decision(
  * type has to be constrained on the way out and not merely at cache time: a
  * text/html body from a hostile or compromised upstream would otherwise run as
  * same-origin script. image/svg+xml is excluded despite being image/* for the
- * same reason — an SVG navigated to directly executes its own script, and
+ * same reason: an SVG navigated to directly executes its own script, and
  * `X-Content-Type-Options: nosniff` does not prevent that; the upstream only
  * ever serves photographs. Anything unrecognised degrades to an inert
  * octet-stream rather than being rejected, so an odd-but-harmless upstream
@@ -51,31 +49,22 @@ function stuv_mensa_payload_decision(
 function stuv_mensa_safe_image_type(string $type): string {
     $bare = strtolower(trim(explode(';', $type)[0]));
 
-    if (!str_starts_with($bare, 'image/')) {
+    if (!str_starts_with($bare, 'image/') || $bare === 'image/svg+xml' || $bare === 'image/svg') {
         return 'application/octet-stream';
     }
-    if ($bare === 'image/svg+xml' || $bare === 'image/svg') {
-        return 'application/octet-stream';
-    }
-
     return $bare;
 }
 
 /**
- * Guard against caching non-image or oversized responses.
+ * Guard against caching non-image or oversized 200 responses.
  *
- * Error pages, HTML bodies, truncated and empty responses are never cached —
+ * Error pages, HTML bodies, truncated and empty responses are never cached, so
  * a bad fetch costs one request, not 30 days of wrong bytes. Shares its notion
  * of "an image" with stuv_mensa_safe_image_type() so the cache can never hold
  * bytes the serving path would refuse to label as their own type.
  */
-function stuv_mensa_image_cacheable(
-    int $code,
-    string $type,
-    string $body
-): bool {
-    return $code === 200
-        && stuv_mensa_safe_image_type($type) !== 'application/octet-stream'
+function stuv_mensa_image_cacheable(string $type, string $body): bool {
+    return stuv_mensa_safe_image_type($type) !== 'application/octet-stream'
         && $body !== ''
         && strlen($body) <= STUV_MENSA_IMAGE_MAX_BYTES;
 }
