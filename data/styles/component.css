@@ -263,7 +263,7 @@ a {
 .stuv-dsgvo-fallback {
   margin: 0;
   padding: var(--space-8) var(--space-6);
-  text-align: center;
+  text-align: left;
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--stuv-muted-foreground);
@@ -276,10 +276,10 @@ a {
 .stuv-dsgvo-placeholder {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-8) var(--space-6);
-  text-align: center;
+  text-align: left;
 }
 
 .stuv-dsgvo-icon {
@@ -315,7 +315,7 @@ a {
   font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--stuv-muted-foreground);
-  text-align: center;
+  text-align: left;
 }
 
 .stuv-dsgvo-revoke-btn {
