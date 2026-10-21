@@ -177,10 +177,8 @@ add_action('wp_enqueue_scripts', function (): void {
         true
     );
 
-    // Always let rest_url() resolve the REST root — the script must never build
-    // this URL itself. The staging host serves /wp-json/ under Beitragsname
-    // permalinks, but the beta host needed index.php/wp-json and a host with a
-    // broken rewrite falls back to ?rest_route=; rest_url() tracks all three.
+    // The script must never build this URL itself: rest_url() tracks /wp-json/,
+    // index.php/wp-json and the ?rest_route= fallback alike.
     wp_localize_script('stuv-mensa', 'stuvMensaConfig', [
         'endpoint' => rest_url('stuv/v1/mensa'),
     ]);
