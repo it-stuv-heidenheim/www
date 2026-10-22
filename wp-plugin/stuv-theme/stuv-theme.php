@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: StuV Theme Toggle
- * Description: Schaltet den Dark Mode der Website um (Button in der Kopfzeile) und merkt sich die Wahl im Browser. Außerdem liefert es das Apple-Touch-Icon mit weißem Hintergrund aus. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Umschalt-Button, die Seite zeigt immer das helle Design und das Icon auf dem iOS-Home-Bildschirm bekommt einen schwarzen Hintergrund. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.3.1
+ * Description: Schaltet den Dark Mode der Website um (Button in der Kopfzeile) und merkt sich die Wahl im Browser. Außerdem liefert es das Apple-Touch-Icon mit weißem Hintergrund aus und hält die Jahreszahl im Copyright der Fußzeile aktuell. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Umschalt-Button, die Seite zeigt immer das helle Design und das Icon auf dem iOS-Home-Bildschirm bekommt einen schwarzen Hintergrund. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
+ * Version: 1.4.0
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUV_THEME_VERSION', '1.3.1');
+define('STUV_THEME_VERSION', '1.4.0');
 
 /**
  * The theme script, inline in <head>.
@@ -148,3 +148,23 @@ add_filter('site_icon_meta_tags', function (array $tags): array {
     }
     return $tags;
 });
+
+/**
+ * Keeps the footer's copyright year current.
+ *
+ * The template part stores a real year, so the footer still reads correctly
+ * with the plugin off; it only goes stale. On render the first four-digit
+ * number after the © is replaced, and only inside a paragraph carrying the
+ * stuv-copyright class (tools/test_content.py fails on a © year outside one).
+ */
+function stuv_theme_copyright_year(string $html, string $year): string {
+    return preg_replace('/©\s*\K\d{4}/u', $year, $html, 1) ?? $html;
+}
+
+add_filter('render_block_core/paragraph', function (string $content, array $block): string {
+    $classes = explode(' ', $block['attrs']['className'] ?? '');
+    if (!in_array('stuv-copyright', $classes, true)) {
+        return $content;
+    }
+    return stuv_theme_copyright_year($content, wp_date('Y'));
+}, 10, 2);

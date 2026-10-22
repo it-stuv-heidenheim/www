@@ -176,6 +176,17 @@ rsvg-convert -w 132 -h 132 data/media/.stuv-dhbw-favicon.svg |
     -strip PNG24:data/media/stuv-dhbw-apple-touch-icon.png
 ```
 
+### Die Jahreszahl im Copyright
+
+Im Footer steht „© 2026 StuV DHBW Heidenheim“. Damit die Zahl nicht jeden
+Januar veraltet, ersetzt `stuv-theme` beim Ausliefern die erste Jahreszahl nach
+dem `©` durch das aktuelle Jahr, und zwar nur in einem Absatz mit der Klasse
+`stuv-copyright`. Die Zahl im Template-Part ist der Rückfall bei deaktiviertem
+Plugin: Dann steht dort das Jahr des letzten Deploys, aber kein leerer
+Platzhalter. Ein Jahr nach einem `©` ohne diese Klasse lässt
+`tools/test_content.py` durchfallen. Der Page-Cache von WP-Optimize liefert die
+alte Zahl aus, bis er nach dem Jahreswechsel abläuft.
+
 ## `stuv-dsgvo`: die Kalender-Embeds
 
 Die beiden Google-Kalender (Startseite „Anstehende Events“, Events-Seite) würden
