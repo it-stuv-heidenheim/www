@@ -1,0 +1,58 @@
+# Runs the local checks from docs/testing.md on every push and pull request.
+# Checks only: nothing here deploys, and no secret is needed. A deploy stays a
+# manual step (docs/ai-workflow.md, "Warum kein Auto-Deploy").
+name: Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Pinned so a Prettier release cannot turn a clean tree red overnight.
+      # Raise it deliberately, run `npx prettier@<new> --write .`, commit both.
+      - name: Formatting
+        run: npx --yes prettier@3.9.10 --check .
+
+      - name: Site rules and tool tests
+        run: python3 -m unittest discover -s tools -p "test_*.py" -v
+
+      - name: Plugin tests
+        run: |
+          php wp-plugin/tests/test_normalize.php
+          php wp-plugin/tests/test_cache.php
+          php wp-plugin/tests/test_theme.php
+          TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
+
+      # The skill lives in a private repository; its committed snapshot in
+      # data/media/ carries the validator.
+      - name: Block validation
+        run: |
+          unzip -q data/media/wordpress-default-editor.zip -d "$RUNNER_TEMP/skill"
+          BLOCKCHECK="$RUNNER_TEMP/skill/wordpress-default-editor/scripts/blockcheck"
+          npm install --prefix "$BLOCKCHECK" --silent --no-audit --no-fund
+          for f in $(git ls-files 'data/*.html'); do
+            node "$BLOCKCHECK/validate_blocks.cjs" "$f"
+          done | tee "$RUNNER_TEMP/blockcheck.log"
+          # One summary line per file, or the validator crashed on one.
+          test "$(grep -c '^===' "$RUNNER_TEMP/blockcheck.log")" \
+            -eq "$(git ls-files 'data/*.html' | wc -l)"
+          ! grep -E ': [1-9][0-9]* invalid' "$RUNNER_TEMP/blockcheck.log"
+
+      - name: Icon CSS matches lucide
+        run: |
+          npm install --prefix "$RUNNER_TEMP/lucide" --silent lucide-static@0.577.0
+          LUCIDE_ICON_DIR="$RUNNER_TEMP/lucide/node_modules/lucide-static/icons" \
+            python3 tools/gen_icon_css.py --check

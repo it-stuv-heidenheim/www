@@ -1,8 +1,9 @@
 # Prüfen und Testen
 
-Es gibt kein CI: Kein GitHub-Actions-Lauf prüft einen Push, und kein Hook
-deployt automatisch (die Gründe stehen in `docs/ai-workflow.md`). Alles hier
-läuft von Hand und lokal, vor dem Deploy.
+Alles hier läuft lokal, vor dem Deploy. Dieselben Prüfungen (ohne Dry-Run und
+ohne die Schritte nach dem Deploy) laufen außerdem bei jedem Push in GitHub
+Actions (`.github/workflows/checks.yml`). Deployt wird dort nichts; die Gründe
+stehen in `docs/ai-workflow.md`.
 
 ## Der Kurzdurchlauf
 
@@ -10,6 +11,7 @@ Vor jedem Commit:
 
 ```bash
 npx prettier --check .
+python3 -m unittest discover -s tools -p "test_*.py"
 ```
 
 Vor jedem Deploy zusätzlich:
@@ -93,6 +95,23 @@ python3 -m unittest discover -s tools -p "test_*.py" -v
   außerhalb des Bildes oder einem Render, der so groß ist, dass WordPress ihn
   beim Upload herunterrechnet. Dann zeigt die `source_url` nicht mehr auf das
   Bild, das wir gebaut haben. Beides fängt diese Datei ab.
+- `test_content.py` prüft das Block-HTML aller Deploy-Ziele auf das, was der
+  Gutenberg-Validator durchlässt: interne Links und Anker, die es nicht gibt;
+  Linktexte wie „Zur Seite“ oder gleicher Text mit verschiedenen Zielen; Block-
+  JSON, das etwas anderes sagt als das `style`-Attribut daneben (der Editor
+  übernimmt beim nächsten Öffnen den JSON-Wert, und die Seite sieht plötzlich
+  anders aus); unbalancierte Tags; `stuv-`-Klassen, die `component.css` nicht
+  kennt; Kontaktadressen, die nicht in der Liste `CONTACTS` stehen (ein
+  vertippter Instagram-Name oder eine falsche Krisennummer fällt so auf); und
+  den Krisenhinweis, der auf Kummer Karsten vor dem Formular stehen muss. Eine
+  neue Kontaktadresse trägst du dort in `CONTACTS` ein.
+- `test_styles.py` rechnet die Farbtoken aus `component.css` und
+  `global-styles.json` so aus wie der Browser und prüft die Kontraste, die
+  Besucher sehen: Text auf Seite, Band und Karte, Fokusring, Formularränder,
+  hell und dunkel. Dazu Regeln für `component.css` selbst: kein
+  `outline: none`, Fokus als Outline statt Schatten (den entfernt der
+  Windows-Kontrastmodus), ein Fokusring auf der Karte für jede Klasse eines
+  kartenfüllenden Links, keine abgeschnittenen Texte mit `…`.
 - `test_build_skill_zip.py` prüft den ZIP-Build des Tooling-Skills. Mit einem
   Wegwerf-Git-Repo als Fixture stellt es sicher, dass `SKILL.md` unter dem
   Prefix landet, installierte Abhängigkeiten (`node_modules/`, `.venv/`, …)
@@ -105,6 +124,7 @@ Ohne Abhängigkeiten, ohne Netz, ohne WordPress:
 ```bash
 php wp-plugin/tests/test_normalize.php
 php wp-plugin/tests/test_cache.php
+php wp-plugin/tests/test_theme.php
 TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 ```
 
@@ -117,8 +137,9 @@ Die Fixtures in `wp-plugin/tests/fixtures/` sind mitgeschnittene Antworten von
 `api.dhbw.app`. Sie stehen in `.prettierignore` und müssen Byte für Byte
 unverändert bleiben, sonst sind sie keine Aufzeichnung mehr.
 
-Die Tests decken nur `stuv-mensa` ab. `stuv-theme` und `stuv-dsgvo` bestehen aus
-Browser-Code, den du von Hand prüfst. `stuv-dsgvo` testest du dreimal: mit
+`test_theme.php` deckt die Jahreszahl im Copyright der Fußzeile ab, die
+`stuv-theme` beim Ausliefern aktualisiert. Der Rest von `stuv-theme` und
+`stuv-dsgvo` ist Browser-Code, den du von Hand prüfst. `stuv-dsgvo` testest du dreimal: mit
 aktivem Plugin (Platzhalter, ein Klick lädt den Kalender), mit deaktiviertem
 Plugin und mit abgeschaltetem JavaScript. In keinem der drei Fälle darf ein
 leerer Kasten stehen bleiben oder beim Seitenaufbau eine Anfrage an
@@ -169,12 +190,15 @@ in `docs/tools.md`).
 
 ## Was keine dieser Prüfungen sieht
 
-Alle Prüfungen oben sind syntaktisch; einen Test für das Aussehen gibt es
-nicht. Ob die Seite gut aussieht, der Kontrast im Dark Mode reicht und die Karte
-auf das Handy passt, siehst du nur, wenn du hinschaust:
+Die Prüfungen oben lesen Quelltext; gerendert wird nichts. Kontraste rechnet
+`test_styles.py` aus, aber ob die Seite gut aussieht und auf ein Handy passt,
+siehst du nur, wenn du hinschaust:
 
 - Seite aufrufen, hell **und** dunkel.
-- Ein schmales Fenster ausprobieren.
+- Das Fenster auf 360px Breite ziehen: Nichts darf seitlich scrollen, Buttons
+  stehen untereinander und berühren sich nicht.
+- Einmal mit der Tab-Taste durch die Seite: Jeder Link, auch jede ganze Karte,
+  zeigt einen sichtbaren Ring.
 - Bei Kartenänderungen die drei Deploy-Ziele zusammen deployen, sonst liegt das
   alte Bild unter der neuen Geometrie (`docs/tools.md`).
 

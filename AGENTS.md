@@ -25,9 +25,13 @@ validator. **Read that SKILL.md before editing content here.**
 `data/media/wordpress-default-editor.zip`, which ships with the `media` target
 so the docs can link a download.
 
-**There is no CI and no build step.** Content files are deployed unchanged, and
-every check below is run by hand, locally, before a deploy. `README.md` indexes
-the human docs.
+**There is no build step and no auto-deploy.** Content files are deployed
+unchanged. `.github/workflows/checks.yml` runs the checks below (all but the
+dry-run and the post-deploy steps) on every push and deploys nothing; run them
+locally before a deploy anyway. CI takes `blockcheck` from the committed
+`data/media/wordpress-default-editor.zip` (the skills repo is private), so
+rebuild that zip with `tools/build_skill_zip.py` after a validator change.
+`README.md` indexes the human docs.
 
 ## Layout
 
@@ -81,7 +85,8 @@ done | grep -E ': [1-9][0-9]* invalid'    # silent = everything valid
 ```
 
 ```bash
-# Tools: stdlib-only unit tests, no network, no Pillow.
+# Tools and site rules: stdlib-only unit tests, no network, no Pillow.
+# Run before every commit: test_content.py and test_styles.py check data/.
 python3 -m unittest discover -s tools -p "test_*.py" -v
 python3 -m unittest discover -s tools -p "test_gen_map.py"   # one module
 ```
@@ -94,6 +99,7 @@ tools.test_gen_map` fails with an import error.
 # Plugins: no dependencies, no network, no WordPress.
 php wp-plugin/tests/test_normalize.php
 php wp-plugin/tests/test_cache.php
+php wp-plugin/tests/test_theme.php
 TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 ```
 
@@ -286,7 +292,9 @@ positioning. Escape and outside-click dismissal are therefore hand-rolled in the
 plugin's `document` listeners. The `<summary>` icon keys off `.dark` (the
 _resolved_ theme), so System shows sun or moon, never a monitor glyph. The
 plugin also points the apple-touch-icon at the opaque
-`stuv-dhbw-apple-touch-icon.png` (`docs/plugins.md`).
+`stuv-dhbw-apple-touch-icon.png` (`docs/plugins.md`), and on render replaces
+the year after `©` in the footer paragraph classed `stuv-copyright`; the stored
+year is only the plugin-off fallback.
 
 **`stuv-dsgvo`**: click-to-load for the two Google Calendar embeds (homepage
 `sections/02-was-wir-bieten.html`, `pages/events/02-upcoming.html`). **The
@@ -363,7 +371,10 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
   pass, so sweep the tree with the loop under Commands. The pattern
   `'data/*.html'` is deliberate: git's `*` spans slashes, so it matches every
   block-HTML file in the tree, while `'data/**/*.html'` would miss
-  `header_blocks.html` / `footer_blocks.html` (no subdirectory).
+  `header_blocks.html` / `footer_blocks.html` (no subdirectory). The validator
+  passes a block whose JSON `style` disagrees with its inline `style` (a
+  `"fontWeight":"500"` over `font-weight: 400`); the editor then re-saves the
+  JSON value and the look changes. `tools/test_content.py` catches that drift.
 - **`"style":{}` is not stable across a save.** An empty JSON object in a block
   comment comes back from WordPress as `"style":[]`, because PHP decodes `{}` to an
   empty array and re-encodes it as `[]`. It renders fine and still validates,
@@ -430,6 +441,30 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
   with `fluid:false` an undeclared preset falls back to TT5's own `size` field.
   Verify a size change on the served HTML, not with
   `--dry-run` or the block validator, since neither reads rendered CSS.
+
+## Site rules the tests enforce
+
+`tools/test_content.py` and `tools/test_styles.py` encode the site's
+accessibility and consistency rules; a failure names the rule, and each test's
+comment says why it exists. Change a rule there, in one place. The ones that
+need an edit beyond the content itself:
+
+- **Contact links** (`tel:`, `mailto:`, Instagram, WhatsApp, Google Forms) must
+  appear in `CONTACTS` in `test_content.py`. Add a new address there
+  deliberately; the canonical Instagram handle is `@stuvheidenheim`.
+- **Whole-card links** use `.stuv-card-cover`, `.stuv-quicklink` or
+  `.stuv-linktree-card`, listed in `CARD_LINK_CLASSES` in `tools/sitecheck.py`.
+  The card draws the hover border and focus ring through `.stuv-card:has(…)`;
+  a new card-link class goes into both places.
+- **Section labels** are a paragraph with `.stuv-kicker` and no inline style.
+- **Kummer Karsten** keeps the `.stuv-crisis` notice (112 and both
+  Telefonseelsorge numbers) before the form.
+- **Colours**: a token change must keep the contrast pairs in `test_styles.py`
+  green in light and dark mode. Focus is `outline: 2px solid var(--stuv-ring)`;
+  `box-shadow` rings vanish in Windows High Contrast.
+
+Rendering is out of the tests' reach: check 360px width (no sideways scroll,
+stacked buttons) and a keyboard Tab pass by eye, per `docs/testing.md`.
 
 ## Generated files: never hand-edit
 

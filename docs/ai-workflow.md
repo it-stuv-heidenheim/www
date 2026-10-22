@@ -138,7 +138,7 @@ Schaden entstanden:
 - Kein `--force` bei Medien. WordPress legt dann eine umbenannte Datei an
   (`karte-…-1.webp`), auf die nichts verweist (`docs/tools.md`).
 
-## Warum kein CI
+## Warum kein Auto-Deploy
 
 Keine GitHub Action deployt bei einem Push. Einen Deploy löst ein Mensch per
 Befehl aus, nach einem Dry-Run und mit Blick auf das Ergebnis.
@@ -147,4 +147,7 @@ An diesem Repo arbeiten wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler.
 Mit Auto-Deploy stünde jeder unbedachte Commit sofort auf der öffentlichen
 Seite.
 
-Geprüft wird lokal und von Hand (`docs/testing.md`).
+Geprüft wird dagegen auch automatisch: `.github/workflows/checks.yml` führt bei
+jedem Push die Prüfungen aus `docs/testing.md` aus. Der Lauf liest nur, braucht
+kein Secret und schreibt nichts auf die Seite. Ein roter Lauf heißt: erst
+reparieren, dann deployen.
