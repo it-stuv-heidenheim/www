@@ -69,8 +69,8 @@ python3 tools/gen_map.py campus --check
 python3 tools/gen_map.py stadtgebiet --check
 python3 tools/gen_map.py stadtzentrum --check
 
-npm install --prefix /tmp/lucide lucide-static@0.577.0 >/dev/null
-LUCIDE_ICON_DIR=/tmp/lucide/node_modules/lucide-static/icons \
+npm install --prefix /tmp/phosphor @phosphor-icons/core@2.1.1 >/dev/null
+PHOSPHOR_ICON_DIR=/tmp/phosphor/node_modules/@phosphor-icons/core/assets/regular \
   python3 tools/gen_icon_css.py --check
 ```
 

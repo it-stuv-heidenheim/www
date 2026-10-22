@@ -115,8 +115,8 @@ only proves that if the machine is somewhere else.
 ```bash
 # Generated files still match their sources (exit 0, no output).
 python3 tools/gen_map.py campus --check        # also stadtgebiet, stadtzentrum
-npm install --prefix /tmp/lucide lucide-static@0.577.0 >/dev/null
-LUCIDE_ICON_DIR=/tmp/lucide/node_modules/lucide-static/icons \
+npm install --prefix /tmp/phosphor @phosphor-icons/core@2.1.1 >/dev/null
+PHOSPHOR_ICON_DIR=/tmp/phosphor/node_modules/@phosphor-icons/core/assets/regular \
   python3 tools/gen_icon_css.py --check
 ```
 
@@ -490,7 +490,9 @@ stacked buttons) and a keyboard Tab pass by eye, per `docs/testing.md`.
   to a tile host).
 - **The icon CSS is generated.** The `:root { --ico-*: url("data:…") }` block in
   `component.css` sits between the `gen_icon_css:` markers and comes from
-  `tools/gen_icon_css.py` (pinned to `lucide-static@0.577.0`). It is the largest
+  `tools/gen_icon_css.py` (Phosphor regular, pinned to
+  `@phosphor-icons/core@2.1.1`; the `--ico-*` token names are still the old
+  lucide names, mapped in `ICONS`). It is the largest
   single thing in the inline global CSS, so its encoding is deliberately tight.
   Read the module docstring before touching the escaping.
 

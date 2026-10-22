@@ -18,7 +18,7 @@ Betroffen sind:
 | `data/pages/studentenleben/02-campus-karte.html`                             | `gen_map.py`      | `data/maps/campus.json`                                     |
 | Karten-Blöcke in `.../09-freizeit.html`                                      | `gen_map.py`      | `data/maps/stadtgebiet.json`, `data/maps/stadtzentrum.json` |
 | `data/media/karte-*.webp` (6 Bilder)                                         | `gen_map.py`      | `data/maps/*.json`                                          |
-| Abschnitt zwischen den `gen_icon_css`-Markern in `data/styles/component.css` | `gen_icon_css.py` | lucide-static-SVGs                                          |
+| Abschnitt zwischen den `gen_icon_css`-Markern in `data/styles/component.css` | `gen_icon_css.py` | Phosphor-SVGs                                               |
 
 Beide Generatoren haben ein `--check`, das neu rendert und vergleicht, ohne
 etwas zu schreiben. Exit-Code 1 heißt, die committete Datei passt nicht mehr zu
@@ -88,7 +88,7 @@ und das ist der einfachere Weg.
 ## `gen_icon_css.py`: die Icons
 
 Das Skript schreibt die `--ico-*`-Custom-Properties in
-`data/styles/component.css`: [lucide](https://lucide.dev/)-Icons, als Data-URI
+`data/styles/component.css`: [Phosphor](https://phosphoricons.com/)-Icons (Gewicht „regular“), als Data-URI
 eingebettet. Sie liegen zwischen zwei Markern:
 
 ```css
@@ -100,18 +100,25 @@ eingebettet. Sie liegen zwischen zwei Markern:
 Nur dieser Abschnitt gehört dem Generator. Den Rest von `component.css`
 schreiben wir von Hand.
 
-Die lucide-Version ist gepinnt, weil ein Versionssprung Pfade neu zeichnet und
+Die Phosphor-Version ist gepinnt, weil ein Versionssprung Pfade neu zeichnet und
 sich dann jedes Icon auf der Seite auf einmal ändert. Das Repo hat kein
-`node_modules` (siehe `AGENTS.md`), lucide wird also bei Bedarf installiert:
+`node_modules` (siehe `AGENTS.md`), Phosphor wird also bei Bedarf installiert:
 
 ```bash
-npm install --prefix /tmp/lucide lucide-static@0.577.0
-export LUCIDE_ICON_DIR=/tmp/lucide/node_modules/lucide-static/icons
+npm install --prefix /tmp/phosphor @phosphor-icons/core@2.1.1
+export PHOSPHOR_ICON_DIR=/tmp/phosphor/node_modules/@phosphor-icons/core/assets/regular
 python3 tools/gen_icon_css.py --write
 python3 tools/gen_icon_css.py --check    # driftet etwas? (schreibt nichts)
 ```
 
-Ohne `LUCIDE_ICON_DIR` sucht das Skript in `node_modules/lucide-static/icons`.
+Ohne `PHOSPHOR_ICON_DIR` sucht das Skript in
+`node_modules/@phosphor-icons/core/assets/regular`.
+
+Die Namen der `--ico-*`-Tokens stammen noch aus lucide (`--ico-utensils`,
+`--ico-alert-circle`, …), weil Block-HTML, Karten-JSON und `component.css` sie
+verwenden. `ICONS` im Skript ordnet jedem Token das Phosphor-Icon zu, das ihn
+zeichnet; ein anderes Icon ist damit eine Zeile im Skript statt einer
+Umbenennung im ganzen Inhalt.
 
 Die Markenfarbe ist fest in den Data-URI eingebacken. So funktioniert dasselbe
 Bild als CSS-Maske (dort zählt nur der Alphakanal, die Farbe kommt aus

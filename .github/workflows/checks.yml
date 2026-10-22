@@ -51,8 +51,8 @@ jobs:
             -eq "$(git ls-files 'data/*.html' | wc -l)"
           ! grep -E ': [1-9][0-9]* invalid' "$RUNNER_TEMP/blockcheck.log"
 
-      - name: Icon CSS matches lucide
+      - name: Icon CSS matches Phosphor
         run: |
-          npm install --prefix "$RUNNER_TEMP/lucide" --silent lucide-static@0.577.0
-          LUCIDE_ICON_DIR="$RUNNER_TEMP/lucide/node_modules/lucide-static/icons" \
+          npm install --prefix "$RUNNER_TEMP/phosphor" --silent @phosphor-icons/core@2.1.1
+          PHOSPHOR_ICON_DIR="$RUNNER_TEMP/phosphor/node_modules/@phosphor-icons/core/assets/regular" \
             python3 tools/gen_icon_css.py --check
