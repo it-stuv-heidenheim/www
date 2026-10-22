@@ -1,0 +1,126 @@
+# Deploys data/ to the live site. Starts on a push to main that touches the
+# content or the deploy scripts, or by hand (Actions → Deploy → Run workflow).
+# Either way the deploy job waits for a required reviewer of the `production`
+# environment before it writes: docs/ai-workflow.md, "Deploy per GitHub Action".
+# Needs that environment with the secrets WP_USER and WP_APP_PASS and the
+# variable WP_SITE (with https://).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - ".agents/skills/wordpress-default-editor/scripts/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "changed, all, or target names from data/manifest.json (space-separated)"
+        default: changed
+        required: true
+
+# One deploy at a time; a second run waits instead of interleaving writes. Of
+# several waiting runs GitHub keeps only the newest; with `changed` it covers
+# the pushes before it.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+
+  deploy:
+    needs: checks
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.WP_SITE }}
+    env:
+      WP_SITE: ${{ vars.WP_SITE }}
+      WP_USER: ${{ secrets.WP_USER }}
+      WP_APP_PASS: ${{ secrets.WP_APP_PASS }}
+      WP_REST_ROOT: wp-json
+      # The host publishes an AAAA record it does not route (AGENTS.md).
+      WP_ADDRESS_FAMILY: ipv4
+      # Through env, never `${{ }}` inside a script: no shell injection.
+      # A push has no inputs and deploys what differs from the live site.
+      TARGET: ${{ inputs.target || 'changed' }}
+      MANIFEST: data/manifest.json
+      SKILL_SCRIPTS: .agents/skills/wordpress-default-editor/scripts
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configuration present
+        run: |
+          for v in WP_SITE WP_USER WP_APP_PASS; do
+            [ -n "${!v}" ] || { echo "::error::$v is not set in the production environment"; exit 1; }
+          done
+
+      - name: Dry run
+        run: python3 "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" all --dry-run
+
+      # `changed` deploys every target whose live content differs from the
+      # repo, which also overwrites edits made in wp-admin: the diff below is
+      # what gets replaced. The approval comes before this step, so the
+      # reviewer does not see this diff; after edits in wp-admin, run
+      # verify_deploy.py --diff locally before approving. Media cannot be
+      # diffed and always runs; it only uploads files that are not in the
+      # library yet.
+      - name: Pick targets
+        run: |
+          if [ "$TARGET" = changed ]; then
+            set +e
+            out=$(python3 "$SKILL_SCRIPTS/verify_deploy.py" --manifest "$MANIFEST" --diff)
+            rc=$?
+            set -e
+            echo "$out"
+            [ "$rc" -le 1 ] || { echo "::error::live site not readable"; exit 1; }
+            names="media $(echo "$out" | awk '$1 == "DIFF" { print $2 }')"
+          else
+            names="$TARGET"
+          fi
+          set -f  # no glob expansion of the input
+          names=$(echo $names)
+          case "$names" in *[!a-z0-9\ -]*) echo "::error::bad target list: $names"; exit 1 ;; esac
+          echo "NAMES=$names" >> "$GITHUB_ENV"
+          echo "Deploying: $names" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy
+        run: |
+          for n in $NAMES; do
+            python3 "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" "$n"
+          done
+
+      - name: Verify
+        run: |
+          case " $NAMES " in
+            *" all "*) python3 "$SKILL_SCRIPTS/verify_deploy.py" --manifest "$MANIFEST" --diff ;;
+            *) for n in $NAMES; do
+                 python3 "$SKILL_SCRIPTS/verify_deploy.py" --manifest "$MANIFEST" --diff "$n"
+               done ;;
+          esac
+
+      - name: Verify global CSS
+        if: contains(format(' {0} ', env.NAMES), ' global-styles ') || contains(format(' {0} ', env.NAMES), ' all ')
+        run: |
+          python3 "$SKILL_SCRIPTS/verify_global_css.py" \
+            --marker .stuv-card --marker .stuv-icon-box \
+            --marker ":root.dark" --marker .stuv-wpforms \
+            --marker .stuv-body-muted \
+            --icon-marker=--ico-calendar
+
+      # The runner's /tmp is gone after the run; keep the pre-write backups
+      # so rollback.py can still restore from them (docs/testing.md).
+      - name: Keep backups
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wp-backup-${{ github.run_number }}
+          path: /tmp/wp_backup
+          if-no-files-found: ignore
+          retention-days: 30

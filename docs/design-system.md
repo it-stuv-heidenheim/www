@@ -17,7 +17,7 @@ Beide Dateien gehen zusammen raus, als ein einziges Deploy-Ziel:
 
 ```bash
 source .env
-python3 ~/.claude/skills/wordpress-default-editor/scripts/deploy.py \
+python3 .agents/skills/wordpress-default-editor/scripts/deploy.py \
   --manifest data/manifest.json global-styles
 ```
 
@@ -51,7 +51,36 @@ WordPress macht daraus automatisch CSS-Variablen: aus `primary` wird
 sind die Standardbreiten jeder Seite. Eine Sektion über die volle
 Fensterbreite braucht `align:full` im Block.
 
-**Die Schrift:** Inter, mit den üblichen System-Fallbacks.
+**Die Schrift:** Überschriften (`h1` bis `h6`) setzt Fraunces, eine
+Serifenschrift, über `styles.elements.heading` in den Tokens. Der Fließtext steht
+auf Inter mit System-Fallbacks; Inter wird nirgends geladen, sichtbar ist also
+die Systemschrift (San Francisco, Segoe UI …).
+
+Fraunces hat neben Gewicht und optischer Größe zwei eigene Achsen, die
+`component.css` in der `h1`–`h6`-Regel per `font-variation-settings` setzt:
+`SOFT 50` rundet die Serifen halb ab, `WONK 1` schaltet die schräg gestellten
+Buchstaben (h, m, n) und schiefen Serifen ein, die Fraunces ihren Charakter
+geben. Der Hero-Titel (`.stuv-hero-title`) ist eine leichte Display-Zeile:
+Gewicht 300, optische Größe fest auf 144 (höchster Kontrast), engere Laufweite
+und bis zu 4.5rem groß. Darunter folgt die übliche Regel für Display-Serifen:
+`.stuv-h2`, `.stuv-h3` und `.stuv-h3-sm` stehen auf Gewicht 400, die optische
+Größe stellt der Browser selbst nach der Schriftgröße ein. Kleine Überschriften
+sind dadurch schon kräftiger gezeichnet und wirken bei mehr als 400 fett.
+
+Fraunces liegt selbst gehostet auf dem Server, nicht bei Google: Ein Abruf von
+`fonts.googleapis.com` schickt bei jedem Seitenaufruf die IP-Adresse an Google,
+und das ist ohne Einwilligung nicht DSGVO-konform. Die Datei ist der variable
+Latin-Schnitt mit allen vier Achsen (Gewichte 100 bis 900, 121 KB, deckt
+Umlaute, ß, € und Typografie-Zeichen ab; Quelle `@fontsource-variable/fraunces`
+5.3.0, `fraunces-latin-full-normal.woff2`) und liegt mit ihrer Lizenz (SIL OFL)
+unter `data/fonts/`. Der Schnitt ohne `SOFT`-Achse wäre 67 KB groß, hätte aber
+nur die spitzen Serifen.
+Auf dem Server liegt sie in der Font Library von WordPress unter
+`/wp-content/uploads/fonts/`; der `fontFace`-Eintrag in `data/global-styles.json` zeigt
+dorthin, und WordPress druckt daraus selbst die `@font-face`-Regel. Die Datei
+geht mit keinem Deploy-Ziel raus. Einmal hochgeladen wird sie über die
+REST-Route `wp/v2/font-families/<id>/font-faces`. Fehlt die Datei, fallen die Überschriften auf
+Georgia zurück.
 
 **Eigene Tokens** (`settings.custom`): bisher nur der Eckenradius
 `stuvRadius: 0.5rem`. WordPress übersetzt den camelCase-Namen zu
@@ -68,12 +97,18 @@ Die Familien:
 | Präfix                                   | Wofür                                                     |
 | ---------------------------------------- | --------------------------------------------------------- |
 | `.stuv-section`                          | Vollbreiter Sektionsstreifen                              |
+| `.stuv-section-continued`                | Sektion ohne Abstand oben, setzt die vorige fort          |
+| `.stuv-section-primary`                  | Roter Streifen mit weißer Schrift (Events)                |
 | `.stuv-page-header`                      | Linksbündiger Seitenkopf der Unterseiten                  |
-| `.stuv-card`, `.stuv-card-*`             | Karten samt Cover und Hover-Pfeil                         |
-| `.stuv-button-*`                         | Buttons (`primary`, `outline`, `link`, `overlay`)         |
+| `.stuv-card`, `.stuv-card-*`             | Karten samt Cover-Link, Hover und Fokusring               |
+| `.stuv-button-*`                         | Buttons außerhalb von Button-Blöcken, siehe unten         |
 | `.stuv-icon-box`, `.stuv-ico-*`          | Icons; `--ico-*` ist generiert, siehe `docs/tools.md`     |
 | `.stuv-h2`, `.stuv-h3`                   | Überschriften-Größen                                      |
-| `.stuv-badge*`, `.stuv-eyebrow`          | Pillen und Etiketten                                      |
+| `.stuv-badge*`, `.stuv-chip*`            | Pillen; Chips als Sprungleiste (Über uns)                 |
+| `.stuv-kicker`                           | Rote Zeile über einer Überschrift, die eine Sektionsart   |
+| `.stuv-crisis`, `.stuv-topic-list`       | Krisenhinweis und Themenliste (Kummer Karsten)            |
+| `.stuv-steps`                            | Nummerierte Schritte als `<ol>` (Kummer Karsten)          |
+| `.stuv-schedule`                         | Liste aus Name und Termin (Hochschulsport, Startseite)    |
 | `.stuv-map-*`                            | Kartenrahmen, Pins, Legende                               |
 | `.stuv-mensa-*`                          | Speiseplan-Widget                                         |
 | `.stuv-wpforms`                          | WPForms-Formularstyling (siehe `docs/content-editing.md`) |
@@ -95,7 +130,7 @@ Ganz oben in `component.css`:
   --stuv-primary: var(--wp--preset--color--primary, #e2001a);
   --stuv-radius: var(--wp--custom--stuv-radius, 0.5rem);
   --stuv-radius-sm: calc(var(--stuv-radius) - 0.125rem);
-  --stuv-ring: color-mix(in srgb, var(--stuv-primary) 50%, transparent);
+  --stuv-ring: var(--stuv-primary);
   --stuv-accent: var(--stuv-muted);
 }
 ```
@@ -107,8 +142,9 @@ Preset fehlt. Die Palette bleibt die einzige Quelle.
 Der Zwischenschritt bringt drei Dinge:
 
 1. **Abgeleitete Werte, die keine Palette-Einträge sein sollen.** `--stuv-ring`
-   (der Fokusring) ist die Markenfarbe zu 50 % transparent, `--stuv-radius-sm`
-   ist der Radius minus 2px. Als Palette-Einträge wären das Farbkleckse im
+   (der Fokusring) ist die Markenfarbe unter eigenem Namen, `--stuv-radius-sm`
+   ist der Radius minus 2px, `--stuv-card` und `--stuv-card-border` sind
+   Fläche und Rand der Karten. Als Palette-Einträge wären das Farbkleckse im
    Editor, die niemand anklicken soll.
 2. **Aliasse.** `--stuv-accent` ist dasselbe Grau wie `muted` und folgt jeder
    Änderung der Palette.
@@ -206,6 +242,37 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
   nacktes `.stuv-ico-<name>` würde die `.stuv-icon-box` selbst maskieren.
 - **Mobil-Breakpoint** ist `max-width: 639px`, nie 640px: Bei genau 640px greift
   schon `min-width: 640px`.
+- **Fokus ist eine Outline, kein Schatten.** 2px `--stuv-ring` mit 2px Abstand,
+  auf Weiß 4,94:1, auf Dunkel 5,16:1. Ein `box-shadow`-Ring entfällt im
+  Windows-Kontrastmodus ersatzlos, und ein Ring mit 50 % Deckkraft lag unter
+  3:1. `tools/test_styles.py` schlägt bei `outline: none` an.
+- **Ganze Karten als Link.** Drei Klassen machen eine Karte klickbar:
+  `.stuv-card-cover` (ein Link in der Karte, dessen `::after` die Karte
+  überdeckt), `.stuv-quicklink` und `.stuv-linktree-card` (der Link füllt eine
+  `.stuv-clip`-Karte). In einer `.stuv-clip`-Karte schneidet `overflow: hidden`
+  den Fokusring des Links ab, deshalb zeichnet die Karte selbst Ring und
+  Hover-Rand, über `.stuv-card:has(…)`. Eine Karte ohne einen dieser Links
+  reagiert nicht und sieht damit auch nicht klickbar aus. Eine neue solche
+  Klasse gehört in `CARD_LINK_CLASSES` in `tools/sitecheck.py` und in diese
+  Regeln; die Tests prüfen beides.
+- **Links im Fließtext sind unterstrichen**, alle `a` in `p` und `li` innerhalb
+  von `.wp-block-post-content`. Ausgenommen sind Buttons, Karten-Cover-Links und
+  Chips; Kopf- und Fußzeile liegen außerhalb. Rot in grauem Text hat zu Grau
+  nur rund 1:1 Kontrast, die Farbe allein markiert den Link also nicht.
+- **Buttons sind Button-Blöcke** (`wp:buttons` mit `wp:button`), keine Links in
+  einem Absatz. Die Variante ist der Block-Stil: ohne Stil (oder „Füllen“) rot
+  gefüllt, `is-style-outline` mit Kontur, `is-style-overlay` halbtransparent für
+  Hero-Bild und rote Streifen (angemeldet von `stuv-theme`, siehe
+  `plugins.md`). `stuv-button-lg` macht einen Button größer (Hero). Ein Icon ist
+  ein `<span class="stuv-ico stuv-ico-…">` im Link, vor oder nach dem Text; es
+  nimmt die Schriftfarbe des Buttons an. Dieselben Varianten gibt es als
+  Klassen `stuv-button-primary`, `-outline`, `-overlay` für ein `<a>` oder
+  `<button>` außerhalb eines Button-Blocks, etwa im Markup eines Plugins.
+  `stuv-button-link` ist ein Textlink mit Pfeil oder Icon im Fließtext, kein
+  Button-Block. Mobil stehen die Buttons eines Blocks untereinander in voller
+  Breite, und ein langer Text bricht im Button um, statt herauszuragen.
+- **Sektions-Kicker** ist immer `.stuv-kicker` am Absatz, ohne Inline-Stil.
+  Nur das Hero-Cover setzt zusätzlich Weiß als Blockfarbe.
 - **WPForms** (zusätzlich zur Ahnenketten-Regel in `docs/content-editing.md`):
   - Die Textfarbe steht bei `:focus` und `:focus:invalid` noch einmal, weil
     WPForms dort eigene Farben setzt (`textarea:focus` mit 0,3,2,
@@ -236,8 +303,7 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
   überlebt keinen Palette-Wechsel und kennt keinen Dark Mode. Nimm stattdessen
   eine Klasse oder die Gutenberg-Farbwahl.
 - Erst suchen, dann schreiben. Es gibt schon viele Klassen, und mit jeder
-  neuen, die fast dasselbe tut, wird das Stylesheet schwerer zu pflegen (siehe
-  `.agents/skills/improving-code/`).
+  neuen, die fast dasselbe tut, wird das Stylesheet schwerer zu pflegen.
 
 ## Nach dem Deploy
 

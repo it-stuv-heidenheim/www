@@ -228,9 +228,19 @@ class TestRenderHtml(unittest.TestCase):
                 self.assertNotIn("google.com", line)
         self.assertIn("In Karten öffnen", self.html)
 
-    def test_the_outbound_link_points_at_the_pin_coordinates(self):
+    def test_the_outbound_link_searches_for_the_place_not_its_coordinates(self):
         for pin in CAMPUS_PINS:
-            self.assertIn(f"query={pin['lat']:.5f},{pin['lon']:.5f}", self.html)
+            self.assertNotIn(f"{pin['lat']:.5f},{pin['lon']:.5f}", self.html)
+        url = gen_map.maps_url({"name": "Café Curt", "detail": "Hauptstraße 13, 89522 Heidenheim"})
+        self.assertEqual(
+            url,
+            "https://www.google.com/maps/search/?api=1"
+            "&query=Caf%C3%A9%20Curt,%20Hauptstra%C3%9Fe%2013,%2089522%20Heidenheim",
+        )
+
+    def test_a_maps_query_overrides_name_and_address(self):
+        pin = {"name": "Digitalcampus", "detail": "x", "maps_query": "DHBW Heidenheim"}
+        self.assertTrue(gen_map.maps_url(pin).endswith("query=DHBW%20Heidenheim"))
 
     def test_the_attribution_is_rendered_on_the_page(self):
         self.assertIn("© OpenStreetMap-Mitwirkende, © CARTO", self.html)

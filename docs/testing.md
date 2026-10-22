@@ -1,8 +1,11 @@
 # Prüfen und Testen
 
-Es gibt kein CI: Kein GitHub-Actions-Lauf prüft einen Push, und kein Hook
-deployt automatisch (die Gründe stehen in `docs/ai-workflow.md`). Alles hier
-läuft von Hand und lokal, vor dem Deploy.
+Alles hier läuft lokal, vor dem Deploy. Dieselben Prüfungen (ohne Dry-Run und
+ohne die Schritte nach dem Deploy) laufen außerdem bei jedem Push in GitHub
+Actions (`.github/workflows/checks.yml`). Die Deploy-Action
+(`.github/workflows/deploy.yml`) führt sie vor jedem Deploy aus, dazu den
+Dry-Run und die Prüfungen nach dem Deploy (`docs/ai-workflow.md`). Die Befehle
+unten brauchst du für lokale Läufe.
 
 ## Der Kurzdurchlauf
 
@@ -10,13 +13,14 @@ Vor jedem Commit:
 
 ```bash
 npx prettier --check .
+python3 -m unittest discover -s tools -p "test_*.py"
 ```
 
 Vor jedem Deploy zusätzlich:
 
 ```bash
 source .env
-SKILL=~/.claude/skills/wordpress-default-editor
+SKILL=.agents/skills/wordpress-default-editor
 for f in $(git ls-files 'data/*.html'); do
   node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"
 done | grep -E ': [1-9][0-9]* invalid'
@@ -67,8 +71,8 @@ python3 tools/gen_map.py campus --check
 python3 tools/gen_map.py stadtgebiet --check
 python3 tools/gen_map.py stadtzentrum --check
 
-npm install --prefix /tmp/lucide lucide-static@0.577.0 >/dev/null
-LUCIDE_ICON_DIR=/tmp/lucide/node_modules/lucide-static/icons \
+npm install --prefix /tmp/phosphor @phosphor-icons/core@2.1.1 >/dev/null
+PHOSPHOR_ICON_DIR=/tmp/phosphor/node_modules/@phosphor-icons/core/assets/regular \
   python3 tools/gen_icon_css.py --check
 ```
 
@@ -93,10 +97,36 @@ python3 -m unittest discover -s tools -p "test_*.py" -v
   außerhalb des Bildes oder einem Render, der so groß ist, dass WordPress ihn
   beim Upload herunterrechnet. Dann zeigt die `source_url` nicht mehr auf das
   Bild, das wir gebaut haben. Beides fängt diese Datei ab.
-- `test_build_skill_zip.py` prüft den ZIP-Build des Tooling-Skills. Mit einem
-  Wegwerf-Git-Repo als Fixture stellt es sicher, dass `SKILL.md` unter dem
-  Prefix landet, installierte Abhängigkeiten (`node_modules/`, `.venv/`, …)
-  draußen bleiben und nur der eine Skill im ZIP landet.
+- `test_content.py` prüft das Block-HTML aller Deploy-Ziele auf das, was der
+  Gutenberg-Validator durchlässt: interne Links und Anker, die es nicht gibt;
+  Linktexte wie „Zur Seite“ oder gleicher Text mit verschiedenen Zielen; Block-
+  JSON, das etwas anderes sagt als das `style`-Attribut daneben (der Editor
+  übernimmt beim nächsten Öffnen den JSON-Wert, und die Seite sieht plötzlich
+  anders aus); unbalancierte Tags; `stuv-`-Klassen, die `component.css` nicht
+  kennt; Kontaktadressen, die nicht in der Liste `CONTACTS` stehen (ein
+  vertippter Instagram-Name oder eine falsche Krisennummer fällt so auf); und
+  den Krisenhinweis, der auf Kummer Karsten vor dem Formular stehen muss. Eine
+  neue Kontaktadresse trägst du dort in `CONTACTS` ein.
+- `test_styles.py` rechnet die Farbtoken aus `component.css` und
+  `global-styles.json` so aus wie der Browser und prüft die Kontraste, die
+  Besucher sehen: Text auf Seite, Band und Karte, Fokusring, Formularränder,
+  hell und dunkel. Dazu Regeln für `component.css` selbst: kein
+  `outline: none`, Fokus als Outline statt Schatten (den entfernt der
+  Windows-Kontrastmodus), ein Fokusring auf der Karte für jede Klasse eines
+  kartenfüllenden Links, keine abgeschnittenen Texte mit `…`.
+
+### Der Skill
+
+Die Tests des Deploy-Toolings brauchen als Einzige in diesem Repo Pakete
+außerhalb der Standardbibliothek: `pytest` und `flask`, Letzteres für einen
+nachgebauten WordPress-Server, gegen den `deploy.py` und der REST-Client
+schreiben. Am einfachsten in einer virtuellen Umgebung:
+
+```bash
+cd .agents/skills/wordpress-default-editor
+python3 -m venv .venv && .venv/bin/pip install -r tests/requirements.txt
+.venv/bin/python -m pytest -q
+```
 
 ### Die Plugins
 
@@ -105,6 +135,7 @@ Ohne Abhängigkeiten, ohne Netz, ohne WordPress:
 ```bash
 php wp-plugin/tests/test_normalize.php
 php wp-plugin/tests/test_cache.php
+php wp-plugin/tests/test_theme.php
 TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 ```
 
@@ -117,8 +148,9 @@ Die Fixtures in `wp-plugin/tests/fixtures/` sind mitgeschnittene Antworten von
 `api.dhbw.app`. Sie stehen in `.prettierignore` und müssen Byte für Byte
 unverändert bleiben, sonst sind sie keine Aufzeichnung mehr.
 
-Die Tests decken nur `stuv-mensa` ab. `stuv-theme` und `stuv-dsgvo` bestehen aus
-Browser-Code, den du von Hand prüfst. `stuv-dsgvo` testest du dreimal: mit
+`test_theme.php` deckt die Jahreszahl im Copyright der Fußzeile ab, die
+`stuv-theme` beim Ausliefern aktualisiert. Der Rest von `stuv-theme` und
+`stuv-dsgvo` ist Browser-Code, den du von Hand prüfst. `stuv-dsgvo` testest du dreimal: mit
 aktivem Plugin (Platzhalter, ein Klick lädt den Kalender), mit deaktiviertem
 Plugin und mit abgeschaltetem JavaScript. In keinem der drei Fälle darf ein
 leerer Kasten stehen bleiben oder beim Seitenaufbau eine Anfrage an
@@ -135,7 +167,7 @@ die Seite jedes Mal neu, aber in der Konsole darf keine Exception erscheinen.
 
 ```bash
 source .env
-python3 ~/.claude/skills/wordpress-default-editor/scripts/deploy.py \
+python3 .agents/skills/wordpress-default-editor/scripts/deploy.py \
   --manifest data/manifest.json all --dry-run
 ```
 
@@ -150,7 +182,7 @@ dem echten Deploy.
 
 ```bash
 source .env
-python3 ~/.claude/skills/wordpress-default-editor/scripts/verify_deploy.py \
+python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
   --manifest data/manifest.json
 ```
 
@@ -169,21 +201,30 @@ in `docs/tools.md`).
 
 ## Was keine dieser Prüfungen sieht
 
-Alle Prüfungen oben sind syntaktisch; einen Test für das Aussehen gibt es
-nicht. Ob die Seite gut aussieht, der Kontrast im Dark Mode reicht und die Karte
-auf das Handy passt, siehst du nur, wenn du hinschaust:
+Die Prüfungen oben lesen Quelltext; gerendert wird nichts. Kontraste rechnet
+`test_styles.py` aus, aber ob die Seite gut aussieht und auf ein Handy passt,
+siehst du nur, wenn du hinschaust:
 
 - Seite aufrufen, hell **und** dunkel.
-- Ein schmales Fenster ausprobieren.
+- Das Fenster auf 360px Breite ziehen: Nichts darf seitlich scrollen, Buttons
+  stehen untereinander und berühren sich nicht.
+- Einmal mit der Tab-Taste durch die Seite: Jeder Link, auch jede ganze Karte,
+  zeigt einen sichtbaren Ring.
 - Bei Kartenänderungen die drei Deploy-Ziele zusammen deployen, sonst liegt das
   alte Bild unter der neuen Geometrie (`docs/tools.md`).
 
 Wenn etwas schiefgegangen ist:
 
 ```bash
-python3 ~/.claude/skills/wordpress-default-editor/scripts/rollback.py <id> \
+python3 .agents/skills/wordpress-default-editor/scripts/rollback.py <id> \
   --endpoint pages
 ```
 
 Vor jedem Schreibvorgang legt der Client ein Backup unter
 `/tmp/wp_backup/<site-slug>/` ab. Medien deckt `rollback.py` nicht ab.
+
+Nach einem Deploy über die Action liegen die Backups im Artefakt
+`wp-backup-<Nummer>` des Laufs. Entpackt nach `/tmp/wp_backup/` findet
+`rollback.py` sie, sofern `WP_SITE` in der `.env` genau so lautet wie in der
+Action. Meist einfacher: den Commit mit `git revert` zurücknehmen und die Action
+erneut starten.

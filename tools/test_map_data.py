@@ -41,10 +41,11 @@ class TestMapData(unittest.TestCase):
                 with self.subTest(map=map_id, pin=pin["n"]):
                     for field in ("name", "lat", "lon", "detail"):
                         self.assertIn(field, pin)
-                    # The outbound link is derived from the coordinates, so a pin
-                    # carrying its own would be silently ignored, not honoured.
+                    # The outbound link is built from maps_query or name and
+                    # address, so a pin carrying its own would be silently
+                    # ignored, not honoured.
                     self.assertNotIn("link", pin)
-                    self.assertIn(
+                    self.assertNotIn(
                         f"{pin['lat']:.5f},{pin['lon']:.5f}", gen_map.maps_url(pin)
                     )
 

@@ -39,7 +39,7 @@ function stuv_dsgvo_script(): string {
   var GOOGLE_PRIVACY = 'https://policies.google.com/privacy?hl=de';
   var STORAGE_KEY = 'stuv-dsgvo-calendar';
   var ICON =
-    '<svg class="stuv-dsgvo-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>';
+    '<svg class="stuv-dsgvo-icon" width="32" height="32" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/></svg>';
 
   // Which iframe a placeholder or revoke line belongs to. The old version
   // walked nextElementSibling, which turns the button into a silent no-op the

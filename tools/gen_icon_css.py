@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Emit the CSS custom properties holding lucide icons as data-URI masks/images.
+"""Emit the CSS custom properties holding Phosphor icons as data-URI masks/images.
 
-Reads SVGs from $LUCIDE_ICON_DIR (default node_modules/lucide-static/icons/)
-and writes a :root { --ico-*: url("data:...") } block into data/styles/component.css,
-between the gen_icon_css markers. The stroke colour is baked to the brand primary
+Reads SVGs from $PHOSPHOR_ICON_DIR (default
+node_modules/@phosphor-icons/core/assets/regular/) and writes a
+:root { --ico-*: url("data:...") } block into data/styles/component.css, between
+the gen_icon_css markers. The fill colour is baked to the brand primary
 so the same data-URI works both as a CSS mask (alpha-only; recoloured via
 `background: var(--stuv-primary)`) and as a background-image (shows the baked
 primary). Stdlib only.
@@ -13,25 +14,32 @@ prints inline in <style id="global-styles-inline-css"> on every page view and ne
 HTTP-caches. This icon set is the largest single thing in it, so the encoding is
 kept as tight as it can be while staying safe:
 
-  * lucide's @license comment and its class='lucide lucide-x' attribute are dropped:
-    neither can match anything inside a mask, and together they cost ~4 KB.
-  * whitespace is collapsed; lucide pretty-prints its SVGs and the old encoder
-    turned every newline+indent into a run of %20.
+  * comments and class attributes are dropped (Phosphor's regular set ships
+    neither today; the strip is a guard against a release that adds them):
+    neither can match anything inside a mask.
+  * whitespace is collapsed, so a pretty-printed SVG doesn't turn every
+    newline+indent into a run of %20.
   * only %, #, " and the angle brackets are percent-escaped. Spaces, apostrophes,
     '=' and ':' are legal inside a quoted CSS url() and cost 3 bytes each escaped.
     The angle brackets stay escaped on purpose: this CSS is stored in a WordPress
     post, and a raw <svg ...> in the payload is exactly what a KSES pass would
     mangle. That risk is not worth the 2 bytes.
 
-Usage (from repo root; this repo has no node_modules, so install lucide-static ad hoc):
-    npm install --prefix /tmp/lucide lucide-static@0.577.0
-    export LUCIDE_ICON_DIR=/tmp/lucide/node_modules/lucide-static/icons
+Usage (from repo root; this repo has no node_modules, so fetch the package ad hoc):
+    npm install --prefix /tmp/phosphor @phosphor-icons/core@2.1.1
+    export PHOSPHOR_ICON_DIR=/tmp/phosphor/node_modules/@phosphor-icons/core/assets/regular
     python3 tools/gen_icon_css.py            # print the block to stdout
     python3 tools/gen_icon_css.py --write    # splice it into component.css
     python3 tools/gen_icon_css.py --check    # diff against component.css; writes nothing
 
-Pin the lucide version: a bump redraws paths, and every icon on the site changes
+Pin the Phosphor version: a bump redraws paths, and every icon on the site changes
 shape with no diff anywhere but here.
+
+The token names (--ico-calendar, --ico-utensils, ...) predate Phosphor: they are
+the lucide names the site was built with, and block HTML, data/maps/*.json and
+component.css reference them. ICONS maps each token to the Phosphor icon that
+draws it, so swapping a glyph is a one-line change here instead of a rename
+across the content.
 """
 
 import argparse
@@ -46,37 +54,79 @@ CSS = REPO / "data" / "styles" / "component.css"
 
 PRIMARY = "#E2001A"
 ICON_DIR = pathlib.Path(
-    os.environ.get("LUCIDE_ICON_DIR", "node_modules/lucide-static/icons")
+    os.environ.get(
+        "PHOSPHOR_ICON_DIR", "node_modules/@phosphor-icons/core/assets/regular"
+    )
 )
 
 START = "/* gen_icon_css:start — erzeugt von tools/gen_icon_css.py; nicht von Hand bearbeiten */"
 END = "/* gen_icon_css:end */"
 
-# Every name here must be reachable from a rule in component.css or from a
+# token -> Phosphor icon. Every token here must be reachable from a rule in component.css or from a
 # var(--ico-*) in the block HTML; an unreachable one is ~150 bytes on every page
 # view for nothing.
-ICONS = [
+ICONS = {
     # Referate
-    "banknote", "megaphone", "party-popper", "monitor", "dumbbell", "leaf",
-    "graduation-cap", "heart", "map-pin", "globe", "landmark",
+    "banknote": "money",
+    "megaphone": "megaphone",
+    "party-popper": "confetti",
+    "monitor": "monitor",
+    "dumbbell": "barbell",
+    "leaf": "leaf",
+    "graduation-cap": "graduation-cap",
+    "heart": "heart",
+    "map-pin": "map-pin",
+    "globe": "globe",
+    "landmark": "bank",
     # Was wir bieten / Werde aktiv
-    "calendar", "calendar-days", "coffee", "trophy", "home", "utensils-crossed",
-    "ticket", "clock", "instagram", "message-circle", "link-2",
-    "users", "mail", "external-link",
+    "calendar": "calendar-blank",
+    "calendar-days": "calendar-dots",
+    "coffee": "coffee",
+    "trophy": "trophy",
+    "home": "house",
+    "utensils-crossed": "fork-knife",
+    "ticket": "ticket",
+    "clock": "clock",
+    "instagram": "instagram-logo",
+    "message-circle": "chat-circle",
+    "link-2": "link-simple",
+    "users": "users",
+    "mail": "envelope-simple",
+    "external-link": "arrow-square-out",
     # Wir hören zu / form
-    "message-circle-heart", "send",
+    "message-circle-heart": "hand-heart",
+    "send": "paper-plane-tilt",
     # UI
-    "chevron-down",
+    "chevron-down": "caret-down",
     # Subpages
-    "alert-circle", "book-open", "lock", "phone", "shield",
-    "sparkles", "utensils",
+    "alert-circle": "warning-circle",
+    "book-open": "book-open",
+    "lock": "lock",
+    "phone": "phone",
+    "shield": "shield",
+    "sparkles": "sparkle",
+    "utensils": "fork-knife",
     # Kummer Karsten categories / hilfsangebote card headings
-    "briefcase", "lightbulb", "moon",
+    "briefcase": "briefcase",
+    "lightbulb": "lightbulb",
+    "moon": "moon",
     # Stadt map icons
-    "beer", "binoculars", "bus", "castle", "film", "flower",
-    "ice-cream-cone", "mountain", "music", "palette", "pizza",
-    "train-front", "tree-pine", "waves", "wine",
-]
+    "beer": "beer-stein",
+    "binoculars": "binoculars",
+    "bus": "bus",
+    "castle": "castle-turret",
+    "film": "film-strip",
+    "flower": "flower",
+    "ice-cream-cone": "ice-cream",
+    "mountain": "mountains",
+    "music": "music-notes",
+    "palette": "palette",
+    "pizza": "pizza",
+    "train-front": "train",
+    "tree-pine": "tree-evergreen",
+    "waves": "waves",
+    "wine": "wine",
+}
 
 # Characters that must not survive raw inside url("data:image/svg+xml,…"):
 #   %  is the escape character itself
@@ -89,8 +139,8 @@ SAFE = "".join(chr(c) for c in range(0x21, 0x7F) if chr(c) not in UNSAFE + '"')
 
 def clean_svg(svg: str) -> str:
     """Strip what a mask can never use, then collapse the whitespace."""
-    svg = re.sub(r"<!--.*?-->", "", svg, flags=re.DOTALL)  # lucide's @license
-    svg = re.sub(r"\s+class=(['\"])lucide[^'\"]*\1", "", svg)
+    svg = re.sub(r"<!--.*?-->", "", svg, flags=re.DOTALL)
+    svg = re.sub(r"\s+class=(['\"])[^'\"]*\1", "", svg)
     svg = re.sub(r"\s+", " ", svg).strip()
     svg = svg.replace("currentColor", PRIMARY)
     return svg.replace('"', "'").replace("> <", "><")
@@ -101,16 +151,16 @@ def to_data_uri(svg: str) -> str:
 
 
 def render_css() -> str:
-    missing = [n for n in ICONS if not (ICON_DIR / f"{n}.svg").exists()]
+    missing = sorted({n for n in ICONS.values() if not (ICON_DIR / f"{n}.svg").exists()})
     if missing:
         sys.exit(
-            f"missing lucide-static icons: {', '.join(missing)}\n"
-            f"(looked in {ICON_DIR}; set LUCIDE_ICON_DIR)"
+            f"missing Phosphor icons: {', '.join(missing)}\n"
+            f"(looked in {ICON_DIR}; set PHOSPHOR_ICON_DIR)"
         )
     lines = [START, ":root {"]
-    for name in ICONS:
+    for token, name in ICONS.items():
         svg = (ICON_DIR / f"{name}.svg").read_text(encoding="utf-8")
-        lines.append(f"  --ico-{name}: {to_data_uri(svg)};")
+        lines.append(f"  --ico-{token}: {to_data_uri(svg)};")
     lines += ["}", END]
     return "\n".join(lines) + "\n"
 

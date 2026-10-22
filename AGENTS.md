@@ -1,483 +1,55 @@
 # AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) and other agents
-when working with code in this repository. `docs/*.md` is the German, human-facing explanation of the same system:
-this file instructs, `docs/` explains (`docs/ai-workflow.md` describes the
-split). It is loaded into every session, so it holds only what is needed to
-avoid breaking something: exact commands, hard rules, and gotchas that cost a
-debugging round to find.
+Content source of the live WordPress site of StuV DHBW Heidenheim (`stuv-heidenheim.de`, Twenty Twenty-Five
+block theme): block HTML, design tokens, component CSS, three plugins, map and icon generators. This file
+instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` lists every check command.
 
-## Project
+## Tooling, deploy, host
 
-German-language website of StuV DHBW Heidenheim (student representative
-body). This repo is the content source of the live WordPress site (Twenty
-Twenty-Five block theme) at the `WP_SITE` host: Gutenberg block HTML, design
-tokens, component CSS, three WordPress plugins, and the generators for the maps
-and the icon CSS. Deployment is over the WordPress REST API.
-
-**No runnable WP tooling lives here.** Everything runnable is in the
-`wordpress-default-editor` skill (checkout: `~/.claude/skills/wordpress-default-editor`,
-maintained in a separate skills repository): REST client `wp_block_api.py`,
-`deploy.py`, `verify_deploy.py`, `rollback.py`, `upload_media.py`,
-`fix_has_text_color.py`, `verify_global_css.py`, and the `blockcheck` Gutenberg
-validator. **Read that SKILL.md before editing content here.**
-`tools/build_skill_zip.py` snapshots the skill's committed state into
-`data/media/wordpress-default-editor.zip`, which ships with the `media` target
-so the docs can link a download.
-
-**There is no CI and no build step.** Content files are deployed unchanged, and
-every check below is run by hand, locally, before a deploy. `README.md` indexes
-the human docs.
-
-## Layout
-
-- `data/manifest.json`: deploy targets (name → REST endpoint, id, source).
-  **Source paths are relative to `data/`.** Page ids: homepage 9, ueber-uns 10,
-  events 11, studentenleben 12, kontakt 13, linktree 14, kummer-karsten 16.
-- `data/sections/`: homepage sections, joined in filename order. `deploy.py`
-  globs `*.html` non-recursively, so ordering is the numeric filename prefix.
-- `data/parked/`: sections pulled out of a page but kept; **no manifest
-  target, never deployed** (this is why `sections/` skips `04`).
-- `data/pages/<route>/`: subpages, same join rule.
-- `data/patterns/`: synced patterns (`wp_block`, endpoint `blocks`). The
-  Vorsitz grid is pattern 212, referenced as `<!-- wp:block {"ref":212} /-->`
-  from the homepage and Über uns. Edit it there, deploy `pattern-vorsitz`; a
-  new pattern needs `create_resource("blocks", …)` once to get its id.
-- `data/header_blocks.html`, `data/footer_blocks.html`: template parts
-  (`twentytwentyfive//header` / `//footer`).
-- `data/global-styles.json`: theme.json-shaped design tokens (layout widths,
-  palette, typography).
-- `data/styles/component.css`: ~110 KB of component classes (`.stuv-card`,
-  `.stuv-icon-box`, `.stuv-button-*`, `.stuv-wpforms`) plus the `:root.dark`
-  overrides; deployed into the global-styles custom-CSS field, which WordPress
-  prints inline in `<style id="global-styles-inline-css">` on **every** page
-  view and never HTTP-caches, so its size adds to the weight of every page.
-- `data/media/`: images uploaded via the `media` target. `deploy.py` skips
-  dot-prefixed files, which is why `.stuv-dhbw-logo.svg` and
-  `.stuv-dhbw-favicon.svg` sit there as local-only sources.
-- `data/maps/`: map definitions (pins, zoom, padding) for `tools/gen_map.py`.
-- `tools/`: site-specific utilities with no WP REST access: `gen_icon_css.py`,
-  `gen_map.py`, `build_skill_zip.py`, plus their `test_*.py`.
-- `wp-plugin/`: source of truth for the three plugins; the copies on the host
-  are artifacts.
-
-## Commands
-
-Run from the repo root. `source .env` first for anything that talks to the host
-(`.env` is git-ignored and holds `WP_SITE`, `WP_USER`, `WP_APP_PASS`,
-`WP_REST_ROOT`, `WP_ADDRESS_FAMILY`).
-
-```bash
-npx prettier --check .        # before every commit
-npx prettier --write .
-```
-
-```bash
-# Block validation — the whole tree, one file per invocation (see below).
-SKILL=~/.claude/skills/wordpress-default-editor
-for f in $(git ls-files 'data/*.html'); do
-  node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"
-done | grep -E ': [1-9][0-9]* invalid'    # silent = everything valid
-```
-
-```bash
-# Tools: stdlib-only unit tests, no network, no Pillow.
-python3 -m unittest discover -s tools -p "test_*.py" -v
-python3 -m unittest discover -s tools -p "test_gen_map.py"   # one module
-```
-
-A single module goes through `discover` too: the tests do `import gen_map`,
-which only resolves with `tools/` on `sys.path`, so `-m unittest
-tools.test_gen_map` fails with an import error.
-
-```bash
-# Plugins: no dependencies, no network, no WordPress.
-php wp-plugin/tests/test_normalize.php
-php wp-plugin/tests/test_cache.php
-TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
-```
-
-The `TZ` is deliberate: the Mensa menu computes in Europe/Berlin, and the test
-only proves that if the machine is somewhere else.
-
-```bash
-# Generated files still match their sources (exit 0, no output).
-python3 tools/gen_map.py campus --check        # also stadtgebiet, stadtzentrum
-npm install --prefix /tmp/lucide lucide-static@0.577.0 >/dev/null
-LUCIDE_ICON_DIR=/tmp/lucide/node_modules/lucide-static/icons \
-  python3 tools/gen_icon_css.py --check
-```
-
-```bash
-source .env
-SKILL=~/.claude/skills/wordpress-default-editor
-python3 $SKILL/scripts/deploy.py --manifest data/manifest.json --list
-python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run   # before every deploy
-python3 $SKILL/scripts/deploy.py --manifest data/manifest.json <target>
-python3 $SKILL/scripts/verify_deploy.py --manifest data/manifest.json          # after every deploy
-python3 $SKILL/scripts/rollback.py <id> [--endpoint pages|template-parts]      # undo
-```
-
-`--dry-run` validates sources locally (files present, markup balanced, byte
-counts) and **never contacts the server**, so it cannot tell you a page is empty
-or that an id points at the wrong page. `verify_deploy.py` fetches every target
-and diffs it against its source; it is the only step that proves the site
-serves what this repo says (exit 0 match / 1 drift / 2 unfetchable, `--diff`
-shows what changed). Writes are gated: backup to `/tmp/wp_backup/<site-slug>/`,
-`confirm=True`, balanced-markup check.
-
-After a `global-styles` deploy, confirm REST sanitization kept the CSS:
-
-```bash
-python3 $SKILL/scripts/verify_global_css.py \
-  --marker .stuv-card --marker .stuv-icon-box \
-  --marker ":root.dark" --marker .stuv-wpforms \
-  --marker .stuv-body-muted \
-  --icon-marker=--ico-calendar
-```
-
-Exit 2 means the icon data-URIs were stripped; they would then have to live in
-the header `core/html` block's `--ico-*` `:root` rules (that block currently
-carries no inline CSS at all).
-
-## Host facts
-
-**The live host is `stuv-heidenheim.de`, and `WP_SITE` must point at it.**
-`dev.stuv-heidenheim.de` and the apex are one WordPress database but **two
-document roots**: WordPress's site URL is the apex, so `dev.` 301s every page
-there, yet nginx still serves `dev.`'s _own_ files for static paths. A REST
-upload through `dev.` therefore writes the file into `dev.`'s folder while the
-attachment URL (shared database) names the apex, which 404s it (nginx's 404,
-not the theme's). The two roots also drift apart in other ways (core
-`readme.html` is 403 on `dev.`, 200 on the apex). Page, template-part and
-global-styles deploys only touch the database and are unaffected. If an upload
-is missing on the apex, delete the attachment and re-upload with `WP_SITE` on
-the apex (see Media). The apex replaced the beta host `stuv.michi.onl`, a
-_different_ WordPress instance: don't reintroduce its facts
-(`index.php/wp-json`, `?pagename=` URLs, Cloudflare, `uploads/<YYYY>/<MM>/`, its
-page ids) from memory or git history.
-
-- `WP_REST_ROOT=wp-json`: permalinks are **Beitragsname** (`/%postname%/`) and
-  the REST rewrite works; the `index.php/wp-json` fallback the beta host needed
-  does not apply (it 301s straight back to `/wp-json/`).
-- **If `/wp-json/` ever 404s again, re-save the permalinks; don't hunt for a
-  firewall.** **Einstellungen → Permalinks → Speichern** flushes
-  `rewrite_rules`; unsaved permalinks leave core's `wp-json` rules unwritten.
-  Recognise it by the response: `/wp-json/` returns the _theme's_ 404,
-  byte-identical to any unknown slug, while `?rest_route=/` answers 200. A
-  firewall block returns 403/deny instead, so
-  `all-in-one-wp-security-and-firewall` is the wrong suspect.
-  `WP_REST_ROOT="?rest_route="` is the stopgap
-  that keeps deploys working meanwhile; `wp_block_api.py` handles a `?…` root
-  natively.
-- `wps-hide-login` is active, so **`wp-login.php` 404s by design**: wp-admin is
-  reachable only via its custom slug. Unrelated to the above; don't "fix" it.
-- The REST `settings` endpoint does **not** expose `permalink_structure`, because core
-  never registers that field, so `null` there is evidence of nothing. Judge
-  permalinks by whether pretty URLs resolve.
-- Front-end subpage URLs are `/<slug>/`; `?pagename=<slug>` still works as a
-  fallback. Page permalinks are unaffected by a REST-root breakage.
-- **No Cloudflare.** Plain nginx, accepts the default `python-urllib/3.x`
-  User-Agent, so the beta host's `403 / error code: 1010` trap does not apply.
-  The skill's client still sends `User-Agent: wp-default-editor/1.0` and
-  `tools/gen_map.py` still needs its own UA, because CARTO's tile servers do ban
-  the stdlib default.
-- **The host publishes an AAAA record it does not route.** Every IPv6 connection
-  attempt hangs. `curl` and browsers hide this behind Happy Eyeballs, so the
-  site feels fine while Python's `urllib`, which gives _each_ candidate address
-  the full timeout, stalls 30s per REST call. `wp_block_api.py` caps each connect attempt
-  (`WP_CONNECT_TIMEOUT`, default 5s) and caches the address that answered, and
-  **`.env` sets `WP_ADDRESS_FAMILY="ipv4"`**, which drops the AAAA candidate
-  before any connect. `WP_CONNECT_TIMEOUT` is a per-_process_ cap and
-  every script is its own process, so without the pin each command pays it
-  again. The pin raises `OSError` if the host ever stops publishing an A record.
-  That failure is meant to be loud. All three names (`dev.`,
-  `www.`, apex) resolve to A `202.61.233.9` plus the same dead AAAA. If a
-  deploy goes mysteriously slow again, check this first:
-
-  ```bash
-  HOST="$(printf '%s' "$WP_SITE" | sed -E 's#^https?://##')"
-  curl -6 -sS -o /dev/null -m 8 -w 'v6 %{http_code} %{time_total}\n' "https://$HOST/wp-json/"
-  curl -4 -sS -o /dev/null -m 8 -w 'v4 %{http_code} %{time_total}\n' "https://$HOST/wp-json/"
-  ```
-
-- **`WP_SITE` already includes the `https://` scheme.** The skill's client
-  normalizes it, ad-hoc `curl` does not: `curl "https://$WP_SITE/..."` builds
-  `https://https://…` and fails with `HTTP 000`, which reads like a network
-  outage rather than a typo. Strip the scheme first, as above.
-- **The host runs WP-Optimize page caching.** A fetch can return a stale,
-  minified copy of a page (`x-cache-status: HIT`) whose _inline_ global-styles
-  CSS predates the deploy. Bust it with a query string when verifying a CSS
-  change. `verify_deploy.py` is unaffected because it reads the REST API, not the
-  front end.
+- All WP tooling (REST client, `deploy.py`, `verify_deploy.py`, `rollback.py`, `blockcheck`) is in the
+  `wordpress-default-editor` skill in this repo (`SKILL=.agents/skills/wordpress-default-editor`, paths relative to
+  the repo root); read its SKILL.md first. Its tests: `pytest` in that directory (needs `flask`, `pytest`).
+- No build step, no root `package.json` (Prettier runs via `npx`; PHP is formatted by hand).
+  `source .env` before talking to the host; `WP_SITE` includes `https://`, so strip it for ad-hoc `curl`.
+- Before every commit: `npx prettier --check .` and `python3 -m unittest discover -s tools -p "test_*.py"`.
+- `validate_blocks.cjs` reads only its first argument; sweep the tree after every edit or Prettier pass:
+  `for f in $(git ls-files 'data/*.html'); do node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"; done | grep -E ': [1-9][0-9]* invalid'` (silent = valid)
+- Deploy runs as `.github/workflows/deploy.yml` on `main`: on a push touching `data/**` or the skill's scripts, or
+  by `workflow_dispatch`; environment `production`, scripts from the same commit. Every run waits for a required
+  reviewer of `production`; never remove that gate or deploy from another branch. Pushing to `main` therefore
+  starts a deploy: push only what may go live. Locally:
+  `deploy.py --manifest data/manifest.json all --dry-run` (no server), `deploy.py … <target>`, then
+  `verify_deploy.py --manifest data/manifest.json`, the only proof the site serves this repo. Undo:
+  `rollback.py <id>`. After a `global-styles` deploy:
+  `verify_global_css.py --marker .stuv-card --marker .stuv-icon-box --marker ":root.dark" --marker .stuv-wpforms --marker .stuv-body-muted --icon-marker=--ico-calendar`
+- Manifest source paths are relative to `data/`; a page is its directory's `*.html` joined in filename order.
+  `data/parked/` is never deployed. The Vorsitz grid is synced pattern 212 (`pattern-vorsitz`).
+- Generated regions, edit only their sources: maps between `gen_map:` markers (`data/maps/*.json`, then
+  `tools/gen_map.py <id> --render --write`) and `--ico-*` between `gen_icon_css:` markers (`tools/gen_icon_css.py`).
+- Fonts live in the WP Font Library at `/wp-content/uploads/fonts/`; `fontFace` `src` stays self-hosted (DSGVO).
+- `wp-login.php` 404s by design. `/wp-json/` 404 with `?rest_route=/` 200: re-save Permalinks; meanwhile
+  `WP_REST_ROOT="?rest_route="`. WP-Optimize caches pages: add a query string when checking front-end CSS.
 
 ## Media
 
-**Deploying the `media` target does not update a changed image.** `deploy.py
-media` calls `upload_media(reuse_existing=True)`, which returns the existing
-attachment with the _same filename_ untouched. Re-running is a no-op that keeps
-the old bytes (deliberate: it stops duplicate uploads). `upload_media.py
---force` doesn't help either: WordPress uniquifies the name to
-`karte-…-1.webp`, a new URL that nothing references, orphaning the upload. To
-replace an image at its existing URL, **delete the old attachment, then
-re-upload the same filename**:
+- `deploy.py media` keeps an existing attachment of the same filename; `--force` orphans a `-1` copy. Replace at
+  the same URL: `wp.delete_resource("media", wp.find_media_by_filename(n)["id"], force=True)`, then
+  `wp.upload_media(path, reuse_existing=False)`, assert no `-1`. An ambiguity warning means clean up first.
+  A map change deploys together: images, `global-styles`, `studentenleben`.
 
-```bash
-python3 - <<'PY'
-import sys, os; sys.path.insert(0, os.path.expanduser("~/.claude/skills/wordpress-default-editor/scripts"))
-import wp_block_api as wp
-for n in ["karte-campus-light.webp", "karte-campus-dark.webp"]:
-    old = wp.find_media_by_filename(n)
-    if old: wp.delete_resource("media", old["id"], force=True)
-    new = wp.upload_media(f"data/media/{n}", reuse_existing=False)
-    assert new["source_url"].endswith("/" + n), new["source_url"]  # no -1 suffix
-    print(n, "->", new["source_url"])
-PY
-```
+## Plugins (`wp-plugin/`, see `docs/plugins.md`)
 
-**Uploads are flat on this host.** Month/year folders are switched off, so files
-land at `uploads/<name>` and `MEDIA_BASE` in `gen_map.py` is the root-relative
-`/wp-content/uploads`, root-relative on purpose so the same markup renders on
-every host name instead of pinning every map to the one it was generated
-against. That stable URL is why delete-then-re-upload is safe
-here. If month/year folders are ever re-enabled, `MEDIA_BASE` has to change with
-them and the "URL only survives within the same month" caveat comes back.
+- Shipped as zips (`./wp-plugin/build.sh`, upload in wp-admin), never by `deploy.py`.
+- `stuv-dsgvo`: calendar iframes carry `data-stuv-src` and no `src`, so nothing reaches Google before a click;
+  a loaded embed always shows `.stuv-dsgvo-revoke`. Deploy together: zip, `global-styles`, `homepage`, `events`.
 
-`find_media_by_filename` takes the newest
-match and warns on stderr when a name is ambiguous. If that warning appears,
-stop and clean up the library before deploying.
+## Block content
 
-`rollback.py` does not cover media; the map images are regenerable with
-`gen_map.py --render`. The map images are CSS backgrounds coupled to
-`component.css` and the `studentenleben` page HTML, so a map change is a
-**three-part deploy** (images, `global-styles`, `studentenleben`) that must go
-together or the maps render with the old image under the new geometry.
-
-## The plugins (`wp-plugin/`)
-
-Three plugins. `deploy.py` deploys none of them, because plugins do not travel
-over the content REST API.
-
-- Build: `./wp-plugin/build.sh [plugin …]` → `wp-plugin/<plugin>.zip` (no
-  argument builds all three)
-- Install: wp-admin → Plugins → Installieren → Plugin hochladen → Aktivieren
-
-**`stuv-mensa`**: the live Mensa menu needs a server-side proxy: `api.dhbw.app`
-sends **no CORS headers**, so the browser cannot call it directly. Deactivating
-it removes the Speiseplan from the Studentenleben page. Design:
-`git show 6a19d0a^:docs/superpowers/specs/2026-07-13-mensa-live-menu-design.md`.
-
-**`stuv-theme`**: the dark-mode toggle. Prints an inline `<script>` in `<head>`
-(src-less `wp_register_script` handle + `wp_add_inline_script`) that puts `.dark`
-on `<html>` from `localStorage['stuv-theme']`, falling back to the OS
-`prefers-color-scheme`, then delegates clicks on `.stuv-theme-option` from
-`document`. It is inline and in `<head>` because the class must land before the
-first paint or dark-mode visitors get a white flash. The matching CSS is the
-`:root.dark` block in `component.css`; the markup is a `wp:html` block in
-`data/header_blocks.html`. The script also sets `.stuv-theme-ready` on `<html>`,
-and only that class makes the control visible: `component.css` hides
-`.stuv-theme-switch` by default, so **deactivating the plugin freezes the site
-in light mode and removes the control** rather than leaving a dead one behind
-(same for visitors with JS disabled).
-The control is a `<details>` dropdown (Hell / Dunkel / System), not a
-`popover`: an open popover sits in the top layer, whose containing block is the
-viewport, so it cannot be anchored under the trigger without CSS anchor
-positioning. Escape and outside-click dismissal are therefore hand-rolled in the
-plugin's `document` listeners. The `<summary>` icon keys off `.dark` (the
-_resolved_ theme), so System shows sun or moon, never a monitor glyph. The
-plugin also points the apple-touch-icon at the opaque
-`stuv-dhbw-apple-touch-icon.png` (`docs/plugins.md`).
-
-**`stuv-dsgvo`**: click-to-load for the two Google Calendar embeds (homepage
-`sections/02-was-wir-bieten.html`, `pages/events/02-upcoming.html`). **The
-privacy guarantee lives in the markup, not in the plugin:** those `<iframe>`s
-carry `data-stuv-src` and **no `src`**, so nothing reaches Google until a
-visitor clicks, even with the plugin off or JS disabled. Don't "fix" that back to a real
-`src`. Consequences that hang together and must change together:
-
-- `component.css` hides `iframe[data-stuv-src]` and reveals it again on
-  `.stuv-dsgvo-loaded`. Hiding on the _attribute_ keeps a
-  plugin-off/JS-off visitor from getting an empty 600px box.
-- Each embed ships a visible `.stuv-dsgvo-fallback` link inside a
-  `.stuv-dsgvo-embed` wrapper; the plugin hides it by setting
-  `.stuv-dsgvo-ready` on that wrapper once its script has run.
-- The script is enqueued only when the rendered post's content contains
-  `data-stuv-src` (`stuv_dsgvo_has_embed()`). An embed moved into a template
-  part, widget or reusable block would never load; drop the check if that
-  happens.
-- Consent **is** persisted per device in `localStorage['stuv-dsgvo-calendar']`.
-  That is defensible only because a loaded embed
-  **always** renders a `.stuv-dsgvo-revoke` line under it. Don't remove it and
-  don't hide it behind a hover or a toggle: the DSGVO wants withdrawal as easy
-  as consent, and this is the only route out. Revoking swaps the iframe for an
-  src-less clone rather than clearing `src`, which would leave Google's document
-  running in the frame. All `localStorage` access is in try/catch: a browser
-  that blocks storage falls back to asking every time, never to an exception
-  that kills the click handler.
-
-So a change here is a **four-part deploy**: plugin zip upload, `global-styles`,
-`homepage`, `events`.
-
-## Formatting
-
-Prettier owns the formatting of block HTML, `component.css`, the JSON design
-tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
-`proseWrap: "preserve"` so Markdown paragraphs aren't rewrapped).
-
-- **No npm dependencies.** Prettier runs through `npx`; the repo deliberately
-  has no `package.json`. That is also why **PHP is left unformatted**: it would
-  need `@prettier/plugin-php` as a real installed dependency. Match the
-  surrounding style by hand in `wp-plugin/`.
-- `.prettierignore` covers the captured `api.dhbw.app` fixtures (must stay
-  byte-exact to be a valid recording) and the built plugin zips.
-- **Reformatting block HTML rewrites deployed bytes.** Prettier reflows tags and
-  inline `style` attributes. The rendered output is equivalent, but a format
-  pass changes the bytes of _every_ target, not just the page you edited, and the
-  next real deploy rewrites them all. Expect that; don't read it as a content
-  change.
-- **Always re-validate after formatting**, across the whole `data/` tree, not just the
-  file you touched.
-- Prettier moves the zero-width space in `.stuv-icon-box` paragraphs onto its
-  own line. Harmless: Gutenberg's equivalence check normalizes that whitespace,
-  and the box renders via CSS mask rather than text.
-
-## Content gotchas
-
-- **German orthography**: legacy migrated content spelled umlauts as ASCII
-  digraphs; live content is fixed. **Never blanket-replace** `ae→ä`/`ss→ß`
-  (corrupts `neue`, `Wohnungssuche`, …). URL slugs (`?pagename=ueber-uns`) must
-  stay digraphs.
-- **`--` inside block-comment JSON must be escaped as `\u002d\u002d`.** A literal
-  `--` is illegal inside an HTML comment, so Gutenberg writes
-  `"color":{"text":"var(\u002d\u002dstuv-muted-foreground)"}`; the `<p>`'s own
-  `style` attribute keeps the real `var(--stuv-…)`. Copying a block's JSON by
-  hand and leaving the dashes raw produces an invalid block. Note that some
-  editing tools decode the escape back to `--` on write; verify with `od` after
-  writing one by hand.
-- **Block validation**: hand-written HTML must match Gutenberg's canonical
-  `save()` output or the editor flags "Dieser Block enthält unerwarteten oder
-  ungültigen Inhalt". A block with `style.color.text` needs `has-text-color` on
-  its root; button links need `wp-element-button` (backfill: the skill's
-  `fix_has_text_color.py`). `validate_blocks.cjs` reads **only its first
-  argument**: passing it a glob silently checks one file and prints a clean
-  pass, so sweep the tree with the loop under Commands. The pattern
-  `'data/*.html'` is deliberate: git's `*` spans slashes, so it matches every
-  block-HTML file in the tree, while `'data/**/*.html'` would miss
-  `header_blocks.html` / `footer_blocks.html` (no subdirectory).
-- **`"style":{}` is not stable across a save.** An empty JSON object in a block
-  comment comes back from WordPress as `"style":[]`, because PHP decodes `{}` to an
-  empty array and re-encodes it as `[]`. It renders fine and still validates,
-  but it makes the affected target report drift on every source-vs-live
-  comparison forever, which buries real drift. The attribute is a no-op anyway:
-  omit it rather than writing it empty.
-- **Verify a deploy by comparing raw block markup, not by eyeballing the page.**
-  Fetch `content.raw` per manifest target and compare it to the joined source;
-  every target should be byte-identical. `verify_deploy.py` does exactly this.
-- **`unfiltered_html` is active.** `<script>` tags and `onclick` attributes in
-  block content survive REST writes byte-for-byte (verified by draft
-  round-trip). Do **not** rely on it: it holds only because the deploy user is
-  an admin and `DISALLOW_UNFILTERED_HTML` is unset. Any hardening would strip
-  inline scripts silently, with no error. Ship JS via a plugin enqueue instead.
-- **`has-border-color` is two classes in one.** Gutenberg puts it on any block
-  with a custom border colour, and the palette slug `border` makes TT5 print
-  `.has-border-color{color:var(--wp--preset--color--border) !important}` for
-  it, so that block's own text turns light grey. Nothing visible breaks today
-  only because every child sets its own colour. Prefer the `.stuv-card` border
-  over a block border colour.
-- **Page template**: all pages use the theme's `page-no-title` template. New
-  pages created via REST **must** set `"template": "page-no-title"`, or
-  WordPress renders a big post-title heading.
-- **Layout**: global widths/colors/typography belong in
-  `data/global-styles.json`; component classes in `data/styles/component.css`.
-  Full-bleed section bands need `align:full` per section.
-- **A group's `contentSize` sizes its children, not the group**, and that
-  silently un-aligns the section lead. Core's constrained layout gives the
-  _children_ of a group with its own `contentSize` a `max-width` and
-  `margin-inline:auto`, but the group's own box still fills the parent column
-  (currently `contentSize: 56rem` / `wideSize: 72rem` in the tokens).
-  `p.stuv-section-intro` carries `margin-inline:0 !important`, and that "0" is
-  measured against the full-width group box, so the heading lands at the inner
-  column while its lead escapes further left. Symptom: a section header where
-  eyebrow and heading sit inset but the lead does not. Fix by dropping the inner
-  `contentSize` so everything inherits one column, or by capping the group
-  itself with a class. **Eyeballing the block HTML will not show this**;
-  measure `getBoundingClientRect().left` for eyebrow/heading/lead/body on the
-  rendered page.
-- **A page-wide horizontal scroll on mobile came from the header, not from the
-  page.** The document is as wide as its widest child, so one overflowing
-  element in the template part makes _every_ page swipeable sideways, so it looks like a per-page bug
-  even though it isn't one. `.stuv-header-row` is
-  `flexWrap:nowrap` and at 360px held ~350px of content in ~300px: the logo is
-  168px on its own (`.stuv-logo-mark` is `height:2.5rem` and the mark is
-  1342x320, so its width follows from its height, which is easy to miss when
-  reading the CSS). The fix is in the `max-width:639px` block. Its smaller sizes help, but the
-  part that prevents the overflow is `min-width:0`
-  on the logo group plus `max-width:100%` on the mark, which lets the logo
-  shrink instead of the row overflowing at widths nobody measured. Keep that
-  when touching the header. Diagnose by filtering
-  `getBoundingClientRect().right > document.documentElement.clientWidth`, not by
-  reading the CSS.
-- **Fluid typography is off; a size ships exactly as written.**
-  `data/global-styles.json` sets `settings.typography.fluid: false` and declares
-  its own static `fontSizes` presets (`small` 0.875, `medium` 1, `large` 1.125,
-  `x-large` 1.875, `xx-large` 3rem). TT5's fluid typography rewrites _every_
-  block-level `"fontSize"` into a `clamp()` floored at `minFontSize`, collapsing
-  the inline sizes in use (`0.75rem` to `2rem`) to the **same 16px** at a 320px
-  viewport. Do not re-enable it: the
-  responsive steps live in `component.css` media queries (`.stuv-hero-title`,
-  `.stuv-h2`), where a breakpoint-based scale belongs and which fluid typography
-  never touched anyway. The presets **must** be declared explicitly:
-  with `fluid:false` an undeclared preset falls back to TT5's own `size` field.
-  Verify a size change on the served HTML, not with
-  `--dry-run` or the block validator, since neither reads rendered CSS.
-
-## Generated files: never hand-edit
-
-- **The maps are generated.** `data/pages/studentenleben/02-campus-karte.html`
-  and the map block in `09-freizeit.html` are emitted by `tools/gen_map.py` from
-  `data/maps/*.json`. Edit the JSON and re-run
-  `python3 tools/gen_map.py <id> --render --write`, never the block HTML; a
-  hand edit is silently overwritten on the next `--write`. Only the region
-  between the `gen_map:` markers is owned by the generator; the rest of those
-  files is hand-editable. `--check` (needs Pillow and `npx prettier`) proves the
-  committed images and blocks still match the data; a Pillow/libwebp upgrade can
-  change WebP bytes for identical input, in which case re-render and commit. The
-  basemaps are self-hosted and the light/dark swap is two inline custom
-  properties picked up by `:root.dark .stuv-map-canvas`; a `<picture>` with a
-  `prefers-color-scheme` `<source>` would follow the OS and ignore the site's
-  own theme toggle. Leaflet was rejected on purpose (it would send visitor IPs
-  to a tile host).
-- **The icon CSS is generated.** The `:root { --ico-*: url("data:…") }` block in
-  `component.css` sits between the `gen_icon_css:` markers and comes from
-  `tools/gen_icon_css.py` (pinned to `lucide-static@0.577.0`). It is the largest
-  single thing in the inline global CSS, so its encoding is deliberately tight.
-  Read the module docstring before touching the escaping.
-
-## Docs
-
-`docs/*.md` is human-readable documentation, written in German, and is read
-**on GitHub** (the repo is public), so a docs edit is done once it is pushed.
-Links must work on GitHub: other docs
-relative (`testing.md`), site files absolute (`https://stuv-heidenheim.de/…`), because
-a root-relative `/wp-content/…` resolves against github.com. Nothing in `docs/`
-may contain secrets. Do not re-add a `docs` deploy target to
-`data/manifest.json`.
-
-`docs/superpowers/` holds specs and plans from the brainstorm → spec → plan →
-execute cycle, and lists **open work only**: executed specs and plans are
-deleted from the tree once their work ships (precedent: `6a19d0a`), so the
-directory is absent when nothing is open. They stay in git history: reference a
-deleted one as `git show 6a19d0a^:<path>`, never as a bare path, which reads
-like a live file and rots silently. Grep the tree for references before
-deleting.
-
-## Headless browsers
-
-Do **not** run Puppeteer/Playwright or any headless-browser script without the
-maintainer's explicit approval each time.
-
-## Repo-local skills
-
-`.agents/skills/improving-code/` holds the refactoring procedure for this repo's
-block HTML, component CSS and design tokens. Its rule: a cleanup must be a
-**verified no-op** on deployed content, or the difference must be stated.
+- Match Gutenberg's `save()`: `style.color.text` needs `has-text-color`, button links `wp-element-button`.
+- In block-comment JSON, `--` is written `\u002d\u002d` (verify with `od`: some tools decode it on write).
+- Keep JSON `style` and inline `style` in agreement; omit an empty `"style":{}` (stored as `[]`, permanent drift).
+- Borders come from `.stuv-card`; a block border colour adds `has-border-color`, which turns the text grey.
+- REST-created pages set `"template": "page-no-title"`. Fluid typography stays off; responsive sizes live in
+  `component.css` media queries. Verify sizes and alignment on the served page, not in the HTML.
+- New contact link → `CONTACTS` in `tools/test_content.py`; new card-link class → `CARD_LINK_CLASSES`
+  (`tools/sitecheck.py`) and the `.stuv-card:has(…)` rule. Check 360px width and a Tab pass by eye.

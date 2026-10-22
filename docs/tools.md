@@ -1,10 +1,9 @@
 # Tools
 
-In `tools/` liegen drei Skripte. Keines spricht mit WordPress; alle erzeugen
-Dateien, die über den normalen Deploy-Weg auf die Site kommen
-(`docs/content-editing.md`). Das sind die beiden Generatoren unten und
-`build_skill_zip.py`, das den Tooling-Skill als ZIP nach `data/media/` packt.
-Das Deploy-Tooling selbst liegt woanders (`docs/ai-workflow.md`).
+In `tools/` liegen die beiden Generatoren unten. Keiner spricht mit WordPress;
+beide erzeugen Dateien, die über den normalen Deploy-Weg auf die Site kommen
+(`docs/content-editing.md`). Das Deploy-Tooling liegt unter `.agents/skills/`
+(`docs/ai-workflow.md`).
 
 Die beiden Generatoren schreiben ihr Ergebnis ins Repo. Generierte Dateien
 **nie von Hand bearbeiten**: Eine Handänderung hält nur bis zum nächsten
@@ -18,7 +17,7 @@ Betroffen sind:
 | `data/pages/studentenleben/02-campus-karte.html`                             | `gen_map.py`      | `data/maps/campus.json`                                     |
 | Karten-Blöcke in `.../09-freizeit.html`                                      | `gen_map.py`      | `data/maps/stadtgebiet.json`, `data/maps/stadtzentrum.json` |
 | `data/media/karte-*.webp` (6 Bilder)                                         | `gen_map.py`      | `data/maps/*.json`                                          |
-| Abschnitt zwischen den `gen_icon_css`-Markern in `data/styles/component.css` | `gen_icon_css.py` | lucide-static-SVGs                                          |
+| Abschnitt zwischen den `gen_icon_css`-Markern in `data/styles/component.css` | `gen_icon_css.py` | Phosphor-SVGs                                               |
 
 Beide Generatoren haben ein `--check`, das neu rendert und vergleicht, ohne
 etwas zu schreiben. Exit-Code 1 heißt, die committete Datei passt nicht mehr zu
@@ -68,7 +67,7 @@ alte Bild unter der neuen Geometrie. Deploye deshalb alle drei zusammen:
 
 ```bash
 source .env
-SKILL=~/.claude/skills/wordpress-default-editor
+SKILL=.agents/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json media
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json global-styles
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json studentenleben
@@ -88,7 +87,7 @@ und das ist der einfachere Weg.
 ## `gen_icon_css.py`: die Icons
 
 Das Skript schreibt die `--ico-*`-Custom-Properties in
-`data/styles/component.css`: [lucide](https://lucide.dev/)-Icons, als Data-URI
+`data/styles/component.css`: [Phosphor](https://phosphoricons.com/)-Icons (Gewicht „regular“), als Data-URI
 eingebettet. Sie liegen zwischen zwei Markern:
 
 ```css
@@ -100,18 +99,25 @@ eingebettet. Sie liegen zwischen zwei Markern:
 Nur dieser Abschnitt gehört dem Generator. Den Rest von `component.css`
 schreiben wir von Hand.
 
-Die lucide-Version ist gepinnt, weil ein Versionssprung Pfade neu zeichnet und
+Die Phosphor-Version ist gepinnt, weil ein Versionssprung Pfade neu zeichnet und
 sich dann jedes Icon auf der Seite auf einmal ändert. Das Repo hat kein
-`node_modules` (siehe `AGENTS.md`), lucide wird also bei Bedarf installiert:
+`node_modules` (siehe `AGENTS.md`), Phosphor wird also bei Bedarf installiert:
 
 ```bash
-npm install --prefix /tmp/lucide lucide-static@0.577.0
-export LUCIDE_ICON_DIR=/tmp/lucide/node_modules/lucide-static/icons
+npm install --prefix /tmp/phosphor @phosphor-icons/core@2.1.1
+export PHOSPHOR_ICON_DIR=/tmp/phosphor/node_modules/@phosphor-icons/core/assets/regular
 python3 tools/gen_icon_css.py --write
 python3 tools/gen_icon_css.py --check    # driftet etwas? (schreibt nichts)
 ```
 
-Ohne `LUCIDE_ICON_DIR` sucht das Skript in `node_modules/lucide-static/icons`.
+Ohne `PHOSPHOR_ICON_DIR` sucht das Skript in
+`node_modules/@phosphor-icons/core/assets/regular`.
+
+Die Namen der `--ico-*`-Tokens stammen noch aus lucide (`--ico-utensils`,
+`--ico-alert-circle`, …), weil Block-HTML, Karten-JSON und `component.css` sie
+verwenden. `ICONS` im Skript ordnet jedem Token das Phosphor-Icon zu, das ihn
+zeichnet; ein anderes Icon ist damit eine Zeile im Skript statt einer
+Umbenennung im ganzen Inhalt.
 
 Die Markenfarbe ist fest in den Data-URI eingebacken. So funktioniert dasselbe
 Bild als CSS-Maske (dort zählt nur der Alphakanal, die Farbe kommt aus
