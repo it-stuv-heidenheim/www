@@ -247,7 +247,8 @@ viewport, so it cannot be anchored under the trigger without CSS anchor
 positioning. Escape and outside-click dismissal are therefore hand-rolled in the
 plugin's `document` listeners. The `<summary>` icon keys off `.dark` (the
 _resolved_ theme), so System shows sun or moon, never a monitor glyph. The
-plugin also points the apple-touch-icon at the opaque
+plugin also registers the `overlay` block style for `core/button` (editor picker
+only: the look is `.wp-block-button.is-style-overlay` in `component.css`), points the apple-touch-icon at the opaque
 `stuv-dhbw-apple-touch-icon.png` (`docs/plugins.md`), and on render replaces
 the year after `©` in the footer paragraph classed `stuv-copyright`; the stored
 year is only the plugin-off fallback.
@@ -389,6 +390,12 @@ need an edit beyond the content itself:
   `.stuv-linktree-card`, listed in `CARD_LINK_CLASSES` in `tools/sitecheck.py`.
   The card draws the hover border and focus ring through `.stuv-card:has(…)`;
   a new card-link class goes into both places.
+- **Buttons** are `wp:button` blocks whose block style is the variant: none
+  (primary), `is-style-outline`, `is-style-overlay`; `stuv-button-lg` for size,
+  a `<span class="stuv-ico …">` in the link for an icon. The
+  `stuv-button-primary|outline|overlay` classes match only a bare
+  `<a>`/`<button>` (plugin markup) and are rejected in `data/`;
+  `stuv-button-link` is a text link, not a button.
 - **Section labels** are a paragraph with `.stuv-kicker` and no inline style.
 - **Kummer Karsten** keeps the `.stuv-crisis` notice (112 and both
   Telefonseelsorge numbers) before the form.

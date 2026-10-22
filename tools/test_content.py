@@ -129,6 +129,15 @@ class TestMarkup(unittest.TestCase):
             with self.subTest(file=str(f.relative_to(sc.REPO))):
                 self.assertNotRegex(f.read_text(), r'style="[^"]*text-transform')
 
+    def test_buttons_are_button_blocks(self):
+        # Content buttons are wp:button blocks with a block style (none,
+        # is-style-outline, is-style-overlay). The stuv-button-* variants match
+        # only a bare <a>/<button>: on a wp:button wrapper they style nothing,
+        # and a button link in a paragraph misses the wp:buttons layout.
+        for f in FILES:
+            with self.subTest(file=str(f.relative_to(sc.REPO))):
+                self.assertNotRegex(f.read_text(), r"\bstuv-button-(primary|outline|overlay)\b")
+
 
 class TestLinks(unittest.TestCase):
     def test_internal_links_resolve(self):

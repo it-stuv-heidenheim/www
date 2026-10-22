@@ -101,7 +101,7 @@ Die Familien:
 | `.stuv-section-primary`                  | Roter Streifen mit weißer Schrift (Events)                |
 | `.stuv-page-header`                      | Linksbündiger Seitenkopf der Unterseiten                  |
 | `.stuv-card`, `.stuv-card-*`             | Karten samt Cover-Link, Hover und Fokusring               |
-| `.stuv-button-*`                         | Buttons (`primary`, `outline`, `link`, `overlay`)         |
+| `.stuv-button-*`                         | Buttons außerhalb von Button-Blöcken, siehe unten         |
 | `.stuv-icon-box`, `.stuv-ico-*`          | Icons; `--ico-*` ist generiert, siehe `docs/tools.md`     |
 | `.stuv-h2`, `.stuv-h3`                   | Überschriften-Größen                                      |
 | `.stuv-badge*`, `.stuv-chip*`            | Pillen; Chips als Sprungleiste (Über uns)                 |
@@ -259,10 +259,18 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
   von `.wp-block-post-content`. Ausgenommen sind Buttons, Karten-Cover-Links und
   Chips; Kopf- und Fußzeile liegen außerhalb. Rot in grauem Text hat zu Grau
   nur rund 1:1 Kontrast, die Farbe allein markiert den Link also nicht.
-- **Buttons in einem Absatz** (`<p><a class="stuv-button-primary">…`) verhalten
-  sich wie ein `wp:buttons`-Block: Umbruch mit Abstand, mobil untereinander in
-  voller Breite. Die Regel greift über `p:has(> a.stuv-button-…)`, neue Absätze
-  brauchen also keine eigene Klasse.
+- **Buttons sind Button-Blöcke** (`wp:buttons` mit `wp:button`), keine Links in
+  einem Absatz. Die Variante ist der Block-Stil: ohne Stil (oder „Füllen“) rot
+  gefüllt, `is-style-outline` mit Kontur, `is-style-overlay` halbtransparent für
+  Hero-Bild und rote Streifen (angemeldet von `stuv-theme`, siehe
+  `plugins.md`). `stuv-button-lg` macht einen Button größer (Hero). Ein Icon ist
+  ein `<span class="stuv-ico stuv-ico-…">` im Link, vor oder nach dem Text; es
+  nimmt die Schriftfarbe des Buttons an. Dieselben Varianten gibt es als
+  Klassen `stuv-button-primary`, `-outline`, `-overlay` für ein `<a>` oder
+  `<button>` außerhalb eines Button-Blocks, etwa im Markup eines Plugins.
+  `stuv-button-link` ist ein Textlink mit Pfeil oder Icon im Fließtext, kein
+  Button-Block. Mobil stehen die Buttons eines Blocks untereinander in voller
+  Breite, und ein langer Text bricht im Button um, statt herauszuragen.
 - **Sektions-Kicker** ist immer `.stuv-kicker` am Absatz, ohne Inline-Stil.
   Nur das Hero-Cover setzt zusätzlich Weiß als Blockfarbe.
 - **WPForms** (zusätzlich zur Ahnenketten-Regel in `docs/content-editing.md`):

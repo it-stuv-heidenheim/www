@@ -187,6 +187,15 @@ Platzhalter. Ein Jahr nach einem `©` ohne diese Klasse lässt
 `tools/test_content.py` durchfallen. Der Page-Cache von WP-Optimize liefert die
 alte Zahl aus, bis er nach dem Jahreswechsel abläuft.
 
+### Der Button-Stil „Auf Farbfläche“
+
+WordPress bringt für den Button-Block die Stile „Füllen“ und „Kontur“ mit.
+`stuv-theme` meldet einen dritten an, `overlay` („Auf Farbfläche“), für Buttons
+auf dem Hero-Bild oder einem roten Streifen. Das Plugin stellt nur die Auswahl
+im Editor bereit; das Aussehen steht in `component.css` unter
+`.wp-block-button.is-style-overlay`. Ist das Plugin aus, behalten vorhandene
+Buttons ihren Stil, nur neue lassen sich im Editor nicht mehr so einstellen.
+
 ## `stuv-dsgvo`: die Kalender-Embeds
 
 Die beiden Google-Kalender (Startseite „Anstehende Events“, Events-Seite) würden
