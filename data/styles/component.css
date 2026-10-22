@@ -360,9 +360,6 @@ a {
   color: var(--stuv-primary);
   transition: background-color 0.15s ease;
 }
-.has-text-align-center .stuv-icon-box {
-  align-self: center;
-}
 .stuv-card-head {
   display: flex;
   align-items: center;
@@ -587,14 +584,6 @@ header.wp-block-template-part {
   transition: background-color 0.15s ease;
   -webkit-mask: center / contain no-repeat;
   mask: center / contain no-repeat;
-}
-.stuv-icon-box-lg {
-  width: 3rem;
-  height: 3rem;
-}
-.stuv-icon-box-lg::before {
-  width: 1.5rem;
-  height: 1.5rem;
 }
 
 .stuv-quicklink {
@@ -1164,11 +1153,9 @@ span.stuv-badge {
   position: absolute;
   inset: 0;
 }
-.stuv-card:has(.stuv-card-cover):hover .stuv-icon-box,
 .stuv-quicklink:hover .stuv-icon-box {
   background: var(--stuv-primary-surface);
 }
-.stuv-card:has(.stuv-card-cover):hover .stuv-icon-box::before,
 .stuv-quicklink:hover .stuv-icon-box::before {
   background: var(--stuv-primary-foreground);
 }
