@@ -45,16 +45,16 @@
           "name": "Inter"
         },
         {
-          "fontFamily": "Faustina, Georgia, serif",
-          "slug": "faustina",
-          "name": "Faustina",
+          "fontFamily": "Fraunces, Georgia, serif",
+          "slug": "fraunces",
+          "name": "Fraunces",
           "fontFace": [
             {
-              "fontFamily": "Faustina",
-              "fontWeight": "300 800",
+              "fontFamily": "Fraunces",
+              "fontWeight": "100 900",
               "fontStyle": "normal",
               "fontDisplay": "swap",
-              "src": ["/wp-content/uploads/fonts/faustina-latin-variable.woff2"]
+              "src": ["/wp-content/uploads/fonts/fraunces-latin-variable.woff2"]
             }
           ]
         }
@@ -67,7 +67,7 @@
     "typography": { "fontFamily": "var:preset|font-family|inter" },
     "elements": {
       "heading": {
-        "typography": { "fontFamily": "var:preset|font-family|faustina" }
+        "typography": { "fontFamily": "var:preset|font-family|fraunces" }
       }
     },
     "blocks": {

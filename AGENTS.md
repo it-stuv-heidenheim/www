@@ -59,8 +59,9 @@ rebuild that zip with `tools/build_skill_zip.py` after a validator change.
 - `data/media/`: images uploaded via the `media` target. `deploy.py` skips
   dot-prefixed files, which is why `.stuv-dhbw-logo.svg` and
   `.stuv-dhbw-favicon.svg` sit there as local-only sources.
-- `data/fonts/`: the self-hosted heading font (Faustina, latin variable woff2,
-  OFL). **Not a deploy target**: it lives in the WordPress Font Library, which
+- `data/fonts/`: the self-hosted heading font (Fraunces, latin variable woff2
+  with all four axes, OFL; `SOFT`/`WONK` are set on `h1`–`h6` in
+  `component.css`). **Not a deploy target**: it lives in the WordPress Font Library, which
   on this host stores files at `/wp-content/uploads/fonts/` (not
   `/wp-content/fonts/`); the `fontFace` `src` in `global-styles.json` must match.
   Never point that `src` at Google Fonts (DSGVO).

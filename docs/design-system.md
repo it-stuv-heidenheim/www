@@ -51,16 +51,28 @@ WordPress macht daraus automatisch CSS-Variablen: aus `primary` wird
 sind die Standardbreiten jeder Seite. Eine Sektion über die volle
 Fensterbreite braucht `align:full` im Block.
 
-**Die Schrift:** Überschriften (`h1` bis `h6`) setzt Faustina, eine
+**Die Schrift:** Überschriften (`h1` bis `h6`) setzt Fraunces, eine
 Serifenschrift, über `styles.elements.heading` in den Tokens. Der Fließtext steht
 auf Inter mit System-Fallbacks; Inter wird nirgends geladen, sichtbar ist also
 die Systemschrift (San Francisco, Segoe UI …).
 
-Faustina liegt selbst gehostet auf dem Server, nicht bei Google: Ein Abruf von
+Fraunces hat neben Gewicht und optischer Größe zwei eigene Achsen, die
+`component.css` in der `h1`–`h6`-Regel per `font-variation-settings` setzt:
+`SOFT 50` rundet die Serifen halb ab, `WONK 0` schaltet die schräg gestellten
+Buchstaben (h, m, n) ab. Die optische Größe stellt der Browser selbst nach der
+Schriftgröße ein, sodass kleine Überschriften kräftiger gezeichnet sind als der
+Hero-Titel. Die Überschriften-Klassen (`.stuv-hero-title`, `.stuv-h2`,
+`.stuv-h3`, `.stuv-h3-sm`) stehen auf Gewicht 500, weil Fraunces bei 600 in
+großen Größen zu dunkel wirkt.
+
+Fraunces liegt selbst gehostet auf dem Server, nicht bei Google: Ein Abruf von
 `fonts.googleapis.com` schickt bei jedem Seitenaufruf die IP-Adresse an Google,
 und das ist ohne Einwilligung nicht DSGVO-konform. Die Datei ist der variable
-Latin-Schnitt (Gewichte 300 bis 800, 27 KB, deckt Umlaute, ß, € und
-Typografie-Zeichen ab) und liegt mit ihrer Lizenz (SIL OFL) unter `data/fonts/`.
+Latin-Schnitt mit allen vier Achsen (Gewichte 100 bis 900, 121 KB, deckt
+Umlaute, ß, € und Typografie-Zeichen ab; Quelle `@fontsource-variable/fraunces`
+5.3.0, `fraunces-latin-full-normal.woff2`) und liegt mit ihrer Lizenz (SIL OFL)
+unter `data/fonts/`. Der Schnitt ohne `SOFT`-Achse wäre 67 KB groß, hätte aber
+nur die spitzen Serifen.
 Auf dem Server liegt sie in der Font Library von WordPress unter
 `/wp-content/uploads/fonts/`; der `fontFace`-Eintrag in `data/global-styles.json` zeigt
 dorthin, und WordPress druckt daraus selbst die `@font-face`-Regel. Die Datei
