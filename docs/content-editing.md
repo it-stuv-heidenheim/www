@@ -259,10 +259,12 @@ die geänderten Dateien mit dem Aufruf aus `docs/testing.md` unter
 
 ## Deploy
 
-Nach dem Push auf `main`: auf GitHub unter **Actions → Deploy → Run workflow**
-starten. Mit dem Standardwert `changed` deployt die Action alle Ziele, die von
-der Live-Seite abweichen, und prüft danach das Ergebnis. Was sie genau macht,
-steht in `docs/ai-workflow.md`.
+Ein Push auf `main`, der etwas unter `data/` ändert, startet die Action
+**Deploy**. Sie wartet auf eine Freigabe: Ein Reviewer klickt im Lauf unter
+**Actions** auf **Review deployments → Approve**. Dann deployt sie alle Ziele,
+die von der Live-Seite abweichen, und prüft danach das Ergebnis. Von Hand geht
+es unter **Actions → Deploy → Run workflow**. Was sie genau macht, steht in
+`docs/ai-workflow.md`.
 
 ### Lokal deployen
 

@@ -70,15 +70,22 @@ Diese Grenzen stehen in `AGENTS.md`, und jede ist aus einem Schaden entstanden:
 ## Deploy per GitHub Action
 
 Deployt wird über die Action **Deploy** (`.github/workflows/deploy.yml`), nicht
-mehr vom eigenen Rechner. Sie startet nie von selbst: Ein Push deployt nichts.
-Einen Deploy löst ein Mensch aus, unter **Actions → Deploy → Run workflow**, und
-zwar nur vom Branch `main`.
+mehr vom eigenen Rechner. Sie startet bei jedem Push auf `main`, der etwas unter
+`data/` oder an den Deploy-Skripten des Skills ändert, und von Hand unter
+**Actions → Deploy → Run workflow**. Andere Branches deployen nie.
 
-An diesem Repo arbeiten wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler.
-Mit Auto-Deploy stünde jeder unbedachte Commit sofort auf der öffentlichen
-Seite. Der Start per Hand hält diesen Schritt bewusst; die Action ersetzt nur
-das lokale Skript, damit niemand dafür den Skill und eine `.env` mit
+Geschrieben wird erst nach einer Freigabe: Das Environment `production` hat
+**Required reviewers**, und der Deploy-Job wartet, bis einer von ihnen unter
+**Review deployments** auf **Approve** klickt. An diesem Repo arbeiten
+wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler. Ohne die Freigabe stünde
+jeder unbedachte Commit sofort auf der öffentlichen Seite. Die Action ersetzt
+nur das lokale Skript, damit niemand dafür den Skill und eine `.env` mit
 Zugangsdaten braucht.
+
+Die Freigabe kommt vor dem Schritt, der die Ziele bestimmt. Wer freigibt, sieht
+also den Commit, aber nicht, was der Deploy auf der Live-Seite überschreibt.
+Wurde seit dem letzten Deploy in wp-admin etwas geändert, vorher lokal
+`verify_deploy.py --manifest data/manifest.json --diff` laufen lassen.
 
 Geprüft wird dagegen auch automatisch: `.github/workflows/checks.yml` führt bei
 jedem Push die Prüfungen aus `docs/testing.md` aus. Der Lauf liest nur, braucht
@@ -88,24 +95,29 @@ Prüfungen zuerst auf und deployt nur, wenn sie grün sind.
 ### Was ein Lauf macht
 
 1. Alle Prüfungen aus `checks.yml`.
-2. Den Dry-Run.
-3. Die Ziele bestimmen. Mit `changed` (Standard) vergleicht
+2. Warten auf die Freigabe.
+3. Den Dry-Run.
+4. Die Ziele bestimmen. Mit `changed` (Standard, bei einem Push immer) vergleicht
    `verify_deploy.py` jedes Ziel mit der Live-Seite und nimmt die, die
    abweichen. Der Diff steht im Log; er zeigt auch, was eine Änderung in
    wp-admin wäre, die der Deploy jetzt überschreibt. `media` läuft immer mit,
    lädt aber nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt
    `changed` gehen auch `all` oder einzelne Zielnamen, mit Leerzeichen
    getrennt.
-4. Den Deploy, danach `verify_deploy.py` für die deployten Ziele und nach
+5. Den Deploy, danach `verify_deploy.py` für die deployten Ziele und nach
    `global-styles` auch `verify_global_css.py`.
-5. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage
+6. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage
    lang (Rollback in `docs/testing.md`).
 
-Die Action deployt mit dem Skill aus demselben Commit wie der Inhalt.
+Die Action deployt mit dem Skill aus demselben Commit wie der Inhalt. Warten
+mehrere Läufe, behält GitHub nur den neuesten; mit `changed` deckt er die Pushes
+davor mit ab.
 
 Nicht über die Action laufen: ein Bild unter derselben URL ersetzen (löschen
 und neu hochladen, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in
-wp-admin, `docs/plugins.md`).
+wp-admin, `docs/plugins.md`). Hängt eine Inhaltsänderung an einem Plugin (etwa
+`stuv-dsgvo` mit `global-styles`, `homepage` und `events`), erst das ZIP
+hochladen und dann den Deploy freigeben.
 
 ### Einmalige Einrichtung
 
@@ -117,7 +129,8 @@ Unter **Settings → Environments** ein Environment `production` anlegen:
   für die Action (Rolle Administrator, sonst darf er die Global Styles nicht
   schreiben) mit einem eigenen Application Password. So lässt sich der Zugang
   sperren, ohne jemandes persönlichen Login anzufassen.
-- Optional **Required reviewers**: Dann wartet jeder Lauf vor dem Deploy auf
-  eine Freigabe.
+- **Required reviewers**: die Leute, die Deploys freigeben dürfen. Pflicht,
+  denn ohne sie deployt jeder Push auf `main` sofort.
 
-Starten darf die Action jeder mit Schreibrechten am Repo.
+Starten darf die Action jeder mit Schreibrechten am Repo, freigeben nur die
+Reviewer.

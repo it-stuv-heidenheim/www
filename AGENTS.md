@@ -9,13 +9,15 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 - All WP tooling (REST client, `deploy.py`, `verify_deploy.py`, `rollback.py`, `blockcheck`) is in the
   `wordpress-default-editor` skill in this repo (`SKILL=.agents/skills/wordpress-default-editor`, paths relative to
   the repo root); read its SKILL.md first. Its tests: `pytest` in that directory (needs `flask`, `pytest`).
-- No build step, no auto-deploy, no root `package.json` (Prettier runs via `npx`; PHP is formatted by hand).
+- No build step, no root `package.json` (Prettier runs via `npx`; PHP is formatted by hand).
   `source .env` before talking to the host; `WP_SITE` includes `https://`, so strip it for ad-hoc `curl`.
 - Before every commit: `npx prettier --check .` and `python3 -m unittest discover -s tools -p "test_*.py"`.
 - `validate_blocks.cjs` reads only its first argument; sweep the tree after every edit or Prettier pass:
   `for f in $(git ls-files 'data/*.html'); do node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"; done | grep -E ': [1-9][0-9]* invalid'` (silent = valid)
-- Deploy runs as `.github/workflows/deploy.yml`: manual `workflow_dispatch` on `main`, environment `production`,
-  scripts from the same commit. Never add a push trigger. Locally:
+- Deploy runs as `.github/workflows/deploy.yml` on `main`: on a push touching `data/**` or the skill's scripts, or
+  by `workflow_dispatch`; environment `production`, scripts from the same commit. Every run waits for a required
+  reviewer of `production`; never remove that gate or deploy from another branch. Pushing to `main` therefore
+  starts a deploy: push only what may go live. Locally:
   `deploy.py --manifest data/manifest.json all --dry-run` (no server), `deploy.py … <target>`, then
   `verify_deploy.py --manifest data/manifest.json`, the only proof the site serves this repo. Undo:
   `rollback.py <id>`. After a `global-styles` deploy:

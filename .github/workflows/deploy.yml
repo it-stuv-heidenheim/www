@@ -1,10 +1,17 @@
-# Deploys data/ to the live site. Started by hand only (Actions → Deploy → Run
-# workflow), never by a push: docs/ai-workflow.md, "Deploy per GitHub Action".
-# Needs the `production` environment with the secrets WP_USER and WP_APP_PASS
-# and the variable WP_SITE (with https://).
+# Deploys data/ to the live site. Starts on a push to main that touches the
+# content or the deploy scripts, or by hand (Actions → Deploy → Run workflow).
+# Either way the deploy job waits for a required reviewer of the `production`
+# environment before it writes: docs/ai-workflow.md, "Deploy per GitHub Action".
+# Needs that environment with the secrets WP_USER and WP_APP_PASS and the
+# variable WP_SITE (with https://).
 name: Deploy
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - ".agents/skills/wordpress-default-editor/scripts/**"
   workflow_dispatch:
     inputs:
       target:
@@ -12,7 +19,9 @@ on:
         default: changed
         required: true
 
-# One deploy at a time; a second run waits instead of interleaving writes.
+# One deploy at a time; a second run waits instead of interleaving writes. Of
+# several waiting runs GitHub keeps only the newest; with `changed` it covers
+# the pushes before it.
 concurrency:
   group: deploy
   cancel-in-progress: false
@@ -39,7 +48,8 @@ jobs:
       # The host publishes an AAAA record it does not route (AGENTS.md).
       WP_ADDRESS_FAMILY: ipv4
       # Through env, never `${{ }}` inside a script: no shell injection.
-      TARGET: ${{ inputs.target }}
+      # A push has no inputs and deploys what differs from the live site.
+      TARGET: ${{ inputs.target || 'changed' }}
       MANIFEST: data/manifest.json
       SKILL_SCRIPTS: .agents/skills/wordpress-default-editor/scripts
     steps:
@@ -56,8 +66,11 @@ jobs:
 
       # `changed` deploys every target whose live content differs from the
       # repo, which also overwrites edits made in wp-admin: the diff below is
-      # what gets replaced. Media cannot be diffed and always runs; it only
-      # uploads files that are not in the library yet.
+      # what gets replaced. The approval comes before this step, so the
+      # reviewer does not see this diff; after edits in wp-admin, run
+      # verify_deploy.py --diff locally before approving. Media cannot be
+      # diffed and always runs; it only uploads files that are not in the
+      # library yet.
       - name: Pick targets
         run: |
           if [ "$TARGET" = changed ]; then
