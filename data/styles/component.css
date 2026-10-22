@@ -186,6 +186,13 @@ a {
 .stuv-section {
   padding: var(--space-12) var(--space-6);
 }
+.stuv-section.stuv-section-continued {
+  padding-top: 0;
+}
+.stuv-section-primary {
+  background-color: var(--stuv-primary-surface);
+  color: var(--stuv-primary-foreground);
+}
 .stuv-page-header {
   border-left: 3px solid var(--stuv-primary);
   padding-left: var(--space-6);
@@ -922,6 +929,20 @@ p.stuv-hero-subtitle {
 :root.dark .stuv-badge-secondary {
   color: var(--stuv-muted-foreground);
 }
+span.stuv-badge {
+  display: inline-flex;
+  margin-right: var(--space-2);
+}
+.stuv-card-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  color: var(--stuv-primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
 .wp-site-blocks > .wp-block-template-part {
   margin-block-start: 0;
 }
@@ -1145,7 +1166,7 @@ p.stuv-hero-subtitle {
 }
 .stuv-card:has(.stuv-card-cover):hover .stuv-icon-box,
 .stuv-quicklink:hover .stuv-icon-box {
-  background: var(--stuv-primary);
+  background: var(--stuv-primary-surface);
 }
 .stuv-card:has(.stuv-card-cover):hover .stuv-icon-box::before,
 .stuv-quicklink:hover .stuv-icon-box::before {
@@ -1331,6 +1352,64 @@ summary:focus-visible,
   align-items: center;
   gap: var(--space-2);
   margin: 0;
+}
+
+.stuv-schedule {
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--stuv-border);
+}
+.stuv-schedule > li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-6);
+  margin: 0;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--stuv-border);
+  color: var(--stuv-muted-foreground);
+}
+.stuv-schedule strong {
+  color: var(--stuv-foreground);
+  font-weight: 600;
+}
+
+.stuv-steps {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 42rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: stuv-step;
+}
+.stuv-steps > li {
+  position: relative;
+  min-height: 2rem;
+  margin: 0;
+  padding-left: var(--space-12);
+  counter-increment: stuv-step;
+  color: var(--stuv-muted-foreground);
+}
+.stuv-steps > li::before {
+  content: counter(stuv-step);
+  position: absolute;
+  top: -0.125rem;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: var(--stuv-primary-surface);
+  color: var(--stuv-primary-foreground);
+  font-weight: 600;
+}
+.stuv-steps strong {
+  color: var(--stuv-foreground);
+  font-weight: 600;
 }
 
 .stuv-linktree-logo {

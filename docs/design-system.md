@@ -68,6 +68,8 @@ Die Familien:
 | Präfix                                   | Wofür                                                     |
 | ---------------------------------------- | --------------------------------------------------------- |
 | `.stuv-section`                          | Vollbreiter Sektionsstreifen                              |
+| `.stuv-section-continued`                | Sektion ohne Abstand oben, setzt die vorige fort          |
+| `.stuv-section-primary`                  | Roter Streifen mit weißer Schrift (Events)                |
 | `.stuv-page-header`                      | Linksbündiger Seitenkopf der Unterseiten                  |
 | `.stuv-card`, `.stuv-card-*`             | Karten samt Cover-Link, Hover und Fokusring               |
 | `.stuv-button-*`                         | Buttons (`primary`, `outline`, `link`, `overlay`)         |
@@ -76,6 +78,8 @@ Die Familien:
 | `.stuv-badge*`, `.stuv-chip*`            | Pillen; Chips als Sprungleiste (Über uns)                 |
 | `.stuv-kicker`                           | Rote Zeile über einer Überschrift, die eine Sektionsart   |
 | `.stuv-crisis`, `.stuv-topic-list`       | Krisenhinweis und Themenliste (Kummer Karsten)            |
+| `.stuv-steps`                            | Nummerierte Schritte als `<ol>` (Kummer Karsten)          |
+| `.stuv-schedule`                         | Liste aus Name und Termin (Hochschulsport, Startseite)    |
 | `.stuv-map-*`                            | Kartenrahmen, Pins, Legende                               |
 | `.stuv-mensa-*`                          | Speiseplan-Widget                                         |
 | `.stuv-wpforms`                          | WPForms-Formularstyling (siehe `docs/content-editing.md`) |

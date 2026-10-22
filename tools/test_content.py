@@ -115,6 +115,14 @@ class TestMarkup(unittest.TestCase):
             with self.subTest(file=str(f.relative_to(sc.REPO))):
                 self.assertEqual(sorted(used - defined), [])
 
+    def test_no_inline_primary_fill(self):
+        # --stuv-primary is lightened for text in dark mode, and white on it is
+        # 3.85:1. A fill under text is --stuv-primary-surface, best via a class
+        # (.stuv-section-primary, .stuv-badge, .stuv-steps).
+        for f in FILES:
+            with self.subTest(file=str(f.relative_to(sc.REPO))):
+                self.assertNotRegex(f.read_text(), r"background(-color)?:\s*var\(--stuv-primary\)")
+
     def test_no_inline_text_transform(self):
         # Section labels use .stuv-kicker; inline uppercase means a hand-rolled one.
         for f in FILES:

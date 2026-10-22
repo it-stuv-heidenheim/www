@@ -77,6 +77,17 @@ class TestContrast(unittest.TestCase):
                 fg = colour("--stuv-primary-foreground", env, bg)
                 self.assertGreaterEqual(sc.contrast(fg, bg), TEXT)
 
+    def test_primary_fill_is_only_an_icon_glyph(self):
+        # Painted through a mask, --stuv-primary is an icon in the brand red.
+        # Anything else filled with it carries white text or a white glyph,
+        # which needs --stuv-primary-surface (see test_button_label_on_primary).
+        rules = sc.css_rules(sc.component_css())
+        for rule in rules:
+            fill = rule.decls.get("background") or rule.decls.get("background-color") or ""
+            if sc.norm_css_value(fill) == "var(--stuv-primary)":
+                with self.subTest(selector=rule.selector_text):
+                    self.assertTrue({"mask", "-webkit-mask"} & set(rule.decls), "use --stuv-primary-surface")
+
     def test_dark_cards_have_a_visible_edge(self):
         env = sc.root_custom_properties(dark=True)
         surf = surfaces(env)
