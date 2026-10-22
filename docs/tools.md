@@ -2,7 +2,7 @@
 
 In `tools/` liegen die beiden Generatoren unten. Keiner spricht mit WordPress;
 beide erzeugen Dateien, die über den normalen Deploy-Weg auf die Site kommen
-(`docs/content-editing.md`). Das Deploy-Tooling liegt unter `.claude/skills/`
+(`docs/content-editing.md`). Das Deploy-Tooling liegt unter `.agents/skills/`
 (`docs/ai-workflow.md`).
 
 Die beiden Generatoren schreiben ihr Ergebnis ins Repo. Generierte Dateien
@@ -67,7 +67,7 @@ alte Bild unter der neuen Geometrie. Deploye deshalb alle drei zusammen:
 
 ```bash
 source .env
-SKILL=.claude/skills/wordpress-default-editor
+SKILL=.agents/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json media
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json global-styles
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json studentenleben

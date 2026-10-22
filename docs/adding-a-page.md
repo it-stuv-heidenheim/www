@@ -86,7 +86,7 @@ Den Aufruf der Block-Validierung findest du in `docs/testing.md` unter
 
 ```bash
 source .env
-SKILL=.claude/skills/wordpress-default-editor
+SKILL=.agents/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json dein-slug --dry-run
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json dein-slug
 ```

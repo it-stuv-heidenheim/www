@@ -3,7 +3,7 @@
 Die meisten Änderungen an diesem Repo macht ein KI-Agent, konkret
 [Claude Code](https://claude.com/claude-code). Das erklärt einige Teile der
 Struktur, die sonst willkürlich wirken: die Datei `AGENTS.md` im
-Wurzelverzeichnis und die Deploy-Skripte unter `.claude/skills/`.
+Wurzelverzeichnis und die Deploy-Skripte unter `.agents/skills/`.
 
 Dieses Dokument erklärt das System. Die Anweisungen an den Agent stehen in
 `AGENTS.md`.
@@ -23,13 +23,13 @@ Kontext. Die Datei enthält deshalb nur, was ein Agent wissen muss, um nichts
 kaputtzumachen: Fallstricke, exakte Befehle, harte Regeln. Erklärungen gehören
 nach `docs/`.
 
-## Warum das Tooling unter `.claude/skills/` liegt
+## Warum das Tooling unter `.agents/skills/` liegt
 
 `deploy.py`, der REST-Client und der Block-Validator liegen in
-`.claude/skills/wordpress-default-editor/`. Aus diesem Verzeichnis lädt Claude
-Code die Skills eines Projekts, sobald es in diesem Repo arbeitet; für Menschen
-sind es gewöhnliche Python- und Node-Skripte, aufgerufen aus dem
-Wurzelverzeichnis.
+`.agents/skills/wordpress-default-editor/`, dem werkzeugunabhängigen Ort für
+die Skills eines Projekts, so wie `AGENTS.md` der werkzeugunabhängige Ort für
+die Anweisungen ist; für Menschen sind es gewöhnliche Python- und Node-Skripte,
+aufgerufen aus dem Wurzelverzeichnis.
 
 Bis Oktober 2026 lag der Skill in einem privaten Skill-Repository, und dieses
 Repo trug einen ZIP-Schnappschuss davon. Seit er hier liegt, sieht jeder, mit

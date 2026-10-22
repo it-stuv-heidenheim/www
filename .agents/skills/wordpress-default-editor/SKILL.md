@@ -9,7 +9,7 @@ description: 'Deploys, verifies and rolls back this repo''s WordPress block cont
 REST write to a page is drift that the next deploy overwrites, so REST writes
 are for deploys, rollbacks, media and creating a resource.
 
-Run from the repo root with `SKILL=.claude/skills/wordpress-default-editor`
+Run from the repo root with `SKILL=.agents/skills/wordpress-default-editor`
 after `source .env`. Each script's docstring and `--help` hold its full usage.
 
 ## Environment
@@ -53,7 +53,7 @@ Manifest targets, paths relative to the manifest's directory:
 ## Python API
 
 ```python
-import sys; sys.path.insert(0, ".claude/skills/wordpress-default-editor/scripts")
+import sys; sys.path.insert(0, ".agents/skills/wordpress-default-editor/scripts")
 import wp_block_api as wp
 ```
 

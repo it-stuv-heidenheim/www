@@ -18,6 +18,6 @@ Die WordPress-Site der Studierendenvertretung (StuV) der DHBW Heidenheim besteht
 
 ## Drumherum
 
-- Deploy, Rollback und Validierung liegen im `wordpress-default-editor`-Skill unter `.claude/skills/`. Deployt wird per Hand über die GitHub Action **Deploy**.
+- Deploy, Rollback und Validierung liegen im `wordpress-default-editor`-Skill unter `.agents/skills/`. Deployt wird per Hand über die GitHub Action **Deploy**.
 - `AGENTS.md` ist die Arbeitsanleitung für Agents.
 - Die Vorgängerseite, eine Next.js-App und Quelle des Designs, ist seit dem 2026-07-10 separat archiviert.

@@ -7,7 +7,7 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 ## Tooling, deploy, host
 
 - All WP tooling (REST client, `deploy.py`, `verify_deploy.py`, `rollback.py`, `blockcheck`) is in the
-  `wordpress-default-editor` skill in this repo (`SKILL=.claude/skills/wordpress-default-editor`, paths relative to
+  `wordpress-default-editor` skill in this repo (`SKILL=.agents/skills/wordpress-default-editor`, paths relative to
   the repo root); read its SKILL.md first. Its tests: `pytest` in that directory (needs `flask`, `pytest`).
 - No build step, no auto-deploy, no root `package.json` (Prettier runs via `npx`; PHP is formatted by hand).
   `source .env` before talking to the host; `WP_SITE` includes `https://`, so strip it for ad-hoc `curl`.

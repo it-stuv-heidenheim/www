@@ -41,7 +41,7 @@ jobs:
       # Through env, never `${{ }}` inside a script: no shell injection.
       TARGET: ${{ inputs.target }}
       MANIFEST: data/manifest.json
-      SKILL_SCRIPTS: .claude/skills/wordpress-default-editor/scripts
+      SKILL_SCRIPTS: .agents/skills/wordpress-default-editor/scripts
     steps:
       - uses: actions/checkout@v4
 

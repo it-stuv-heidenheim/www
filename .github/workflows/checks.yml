@@ -41,7 +41,7 @@ jobs:
       # The skill's tests are the only ones with dependencies outside the
       # standard library (a Flask mock of the WordPress REST API).
       - name: Skill tests
-        working-directory: .claude/skills/wordpress-default-editor
+        working-directory: .agents/skills/wordpress-default-editor
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
           "$RUNNER_TEMP/venv/bin/pip" install --quiet -r tests/requirements.txt
@@ -49,7 +49,7 @@ jobs:
 
       - name: Block validation
         run: |
-          BLOCKCHECK=.claude/skills/wordpress-default-editor/scripts/blockcheck
+          BLOCKCHECK=.agents/skills/wordpress-default-editor/scripts/blockcheck
           npm install --prefix "$BLOCKCHECK" --silent --no-audit --no-fund
           for f in $(git ls-files 'data/*.html'); do
             node "$BLOCKCHECK/validate_blocks.cjs" "$f"

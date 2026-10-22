@@ -9,7 +9,7 @@ und auf der Kommandozeile.
 - Git-Zugriff auf dieses Repo
 - Node.js (für `npx prettier` und die Block-Validierung)
 - Python 3. Das Tooling (`wordpress-default-editor`) liegt im Repo unter
-  `.claude/skills/wordpress-default-editor/`; der Block-Validator installiert
+  `.agents/skills/wordpress-default-editor/`; der Block-Validator installiert
   seine npm-Pakete beim ersten Lauf selbst.
 
 - Zum lokalen Deployen (für die Deploy-Action nicht nötig): git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
@@ -121,7 +121,7 @@ lassen.
 
    ```bash
    source .env
-   python3 .claude/skills/wordpress-default-editor/scripts/deploy.py \
+   python3 .agents/skills/wordpress-default-editor/scripts/deploy.py \
      --manifest data/manifest.json media
    ```
 
@@ -272,7 +272,7 @@ kontaktieren):
 
 ```bash
 source .env
-SKILL=.claude/skills/wordpress-default-editor
+SKILL=.agents/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run
 ```
 

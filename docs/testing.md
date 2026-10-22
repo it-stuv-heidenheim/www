@@ -20,7 +20,7 @@ Vor jedem Deploy zusätzlich:
 
 ```bash
 source .env
-SKILL=.claude/skills/wordpress-default-editor
+SKILL=.agents/skills/wordpress-default-editor
 for f in $(git ls-files 'data/*.html'); do
   node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"
 done | grep -E ': [1-9][0-9]* invalid'
@@ -123,7 +123,7 @@ nachgebauten WordPress-Server, gegen den `deploy.py` und der REST-Client
 schreiben. Am einfachsten in einer virtuellen Umgebung:
 
 ```bash
-cd .claude/skills/wordpress-default-editor
+cd .agents/skills/wordpress-default-editor
 python3 -m venv .venv && .venv/bin/pip install -r tests/requirements.txt
 .venv/bin/python -m pytest -q
 ```
@@ -167,7 +167,7 @@ die Seite jedes Mal neu, aber in der Konsole darf keine Exception erscheinen.
 
 ```bash
 source .env
-python3 .claude/skills/wordpress-default-editor/scripts/deploy.py \
+python3 .agents/skills/wordpress-default-editor/scripts/deploy.py \
   --manifest data/manifest.json all --dry-run
 ```
 
@@ -182,7 +182,7 @@ dem echten Deploy.
 
 ```bash
 source .env
-python3 .claude/skills/wordpress-default-editor/scripts/verify_deploy.py \
+python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
   --manifest data/manifest.json
 ```
 
@@ -216,7 +216,7 @@ siehst du nur, wenn du hinschaust:
 Wenn etwas schiefgegangen ist:
 
 ```bash
-python3 .claude/skills/wordpress-default-editor/scripts/rollback.py <id> \
+python3 .agents/skills/wordpress-default-editor/scripts/rollback.py <id> \
   --endpoint pages
 ```
 

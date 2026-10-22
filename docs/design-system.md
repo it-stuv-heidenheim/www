@@ -17,7 +17,7 @@ Beide Dateien gehen zusammen raus, als ein einziges Deploy-Ziel:
 
 ```bash
 source .env
-python3 .claude/skills/wordpress-default-editor/scripts/deploy.py \
+python3 .agents/skills/wordpress-default-editor/scripts/deploy.py \
   --manifest data/manifest.json global-styles
 ```
 
