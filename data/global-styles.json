@@ -43,6 +43,20 @@
           "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
           "slug": "inter",
           "name": "Inter"
+        },
+        {
+          "fontFamily": "Faustina, Georgia, serif",
+          "slug": "faustina",
+          "name": "Faustina",
+          "fontFace": [
+            {
+              "fontFamily": "Faustina",
+              "fontWeight": "300 800",
+              "fontStyle": "normal",
+              "fontDisplay": "swap",
+              "src": ["/wp-content/fonts/faustina-latin-variable.woff2"]
+            }
+          ]
         }
       ]
     },
@@ -51,6 +65,11 @@
   "styles": {
     "spacing": { "blockGap": "1rem" },
     "typography": { "fontFamily": "var:preset|font-family|inter" },
+    "elements": {
+      "heading": {
+        "typography": { "fontFamily": "var:preset|font-family|faustina" }
+      }
+    },
     "blocks": {
       "core/columns": {
         "spacing": { "blockGap": "1rem" }

@@ -51,7 +51,24 @@ WordPress macht daraus automatisch CSS-Variablen: aus `primary` wird
 sind die Standardbreiten jeder Seite. Eine Sektion über die volle
 Fensterbreite braucht `align:full` im Block.
 
-**Die Schrift:** Inter, mit den üblichen System-Fallbacks.
+**Die Schrift:** Überschriften (`h1` bis `h6`) setzt Faustina, eine
+Serifenschrift, über `styles.elements.heading` in den Tokens. Der Fließtext steht
+auf Inter mit System-Fallbacks; Inter wird nirgends geladen, sichtbar ist also
+die Systemschrift (San Francisco, Segoe UI …).
+
+Faustina liegt selbst gehostet auf dem Server, nicht bei Google: Ein Abruf von
+`fonts.googleapis.com` schickt bei jedem Seitenaufruf die IP-Adresse an Google,
+und das ist ohne Einwilligung nicht DSGVO-konform. Die Datei ist der variable
+Latin-Schnitt (Gewichte 300 bis 800, 27 KB, deckt Umlaute, ß, € und
+Typografie-Zeichen ab) und liegt mit ihrer Lizenz (SIL OFL) unter `data/fonts/`.
+Auf dem Server liegt sie in der Font Library von WordPress unter
+`/wp-content/fonts/`; der `fontFace`-Eintrag in `data/global-styles.json` zeigt
+dorthin, und WordPress druckt daraus selbst die `@font-face`-Regel. Die Datei
+geht mit keinem Deploy-Ziel raus. Einmal hochgeladen wird sie über die
+REST-Route `wp/v2/font-families/<id>/font-faces`, und weil auf `dev.` ein
+anderes Dokumentenverzeichnis liegt, nur mit `WP_SITE` auf der Apex-Domain
+(siehe `AGENTS.md`, Host facts). Fehlt die Datei, fallen die Überschriften auf
+Georgia zurück.
 
 **Eigene Tokens** (`settings.custom`): bisher nur der Eckenradius
 `stuvRadius: 0.5rem`. WordPress übersetzt den camelCase-Namen zu
