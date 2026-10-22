@@ -19,7 +19,7 @@ und auf der Kommandozeile.
   unzip wordpress-default-editor.zip -d ~/.claude/skills/
   ```
 
-- Zum Deployen: git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
+- Zum lokalen Deployen (für die Deploy-Action nicht nötig): git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
   (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`
 
   Bricht einmal jeder Deploy-Befehl mit `HTTP Error 404` ab, obwohl die Website
@@ -266,6 +266,14 @@ die geänderten Dateien mit dem Aufruf aus `docs/testing.md` unter
 
 ## Deploy
 
+Nach dem Push auf `main`: auf GitHub unter **Actions → Deploy → Run workflow**
+starten. Mit dem Standardwert `changed` deployt die Action alle Ziele, die von
+der Live-Seite abweichen, und prüft danach das Ergebnis. Was sie genau macht,
+steht in `docs/ai-workflow.md`.
+
+### Lokal deployen
+
+Ohne die Action geht es mit dem Skill und der `.env` (Voraussetzungen oben).
 Vor jedem Deploy erst einen Trockenlauf machen (prüft lokal, ohne den Server zu
 kontaktieren):
 

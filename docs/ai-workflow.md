@@ -39,8 +39,9 @@ Skill-Repository          →  das Tool (generisch, mehrere Sites)
 dieses Repository         →  der Inhalt   (nur StuV, mehrere Tools)
 ```
 
-Ohne ausgecheckten Skill kannst du hier also nichts deployen (Voraussetzungen in
-`docs/content-editing.md`).
+Lokal brauchst du den Skill für die Block-Validierung und für einen Deploy
+ohne die Action (Voraussetzungen in `docs/content-editing.md`). Die
+Deploy-Action entpackt den Schnappschuss selbst.
 
 ## Der Skill `wordpress-default-editor`
 
@@ -69,16 +70,59 @@ Diese Grenzen stehen in `AGENTS.md`, und jede ist aus einem Schaden entstanden:
 - Kein `--force` bei Medien. WordPress legt dann eine umbenannte Datei an
   (`karte-…-1.webp`), auf die nichts verweist (`docs/tools.md`).
 
-## Warum kein Auto-Deploy
+## Deploy per GitHub Action
 
-Keine GitHub Action deployt bei einem Push. Einen Deploy löst ein Mensch per
-Befehl aus, nach einem Dry-Run und mit Blick auf das Ergebnis.
+Deployt wird über die Action **Deploy** (`.github/workflows/deploy.yml`), nicht
+mehr vom eigenen Rechner. Sie startet nie von selbst: Ein Push deployt nichts.
+Einen Deploy löst ein Mensch aus, unter **Actions → Deploy → Run workflow**, und
+zwar nur vom Branch `main`.
 
 An diesem Repo arbeiten wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler.
 Mit Auto-Deploy stünde jeder unbedachte Commit sofort auf der öffentlichen
-Seite.
+Seite. Der Start per Hand hält diesen Schritt bewusst; die Action ersetzt nur
+das lokale Skript, damit niemand dafür den Skill und eine `.env` mit
+Zugangsdaten braucht.
 
 Geprüft wird dagegen auch automatisch: `.github/workflows/checks.yml` führt bei
 jedem Push die Prüfungen aus `docs/testing.md` aus. Der Lauf liest nur, braucht
-kein Secret und schreibt nichts auf die Seite. Ein roter Lauf heißt: erst
-reparieren, dann deployen.
+kein Secret und schreibt nichts auf die Seite. Die Deploy-Action ruft dieselben
+Prüfungen zuerst auf und deployt nur, wenn sie grün sind.
+
+### Was ein Lauf macht
+
+1. Alle Prüfungen aus `checks.yml`.
+2. Den Dry-Run.
+3. Die Ziele bestimmen. Mit `changed` (Standard) vergleicht
+   `verify_deploy.py` jedes Ziel mit der Live-Seite und nimmt die, die
+   abweichen. Der Diff steht im Log; er zeigt auch, was eine Änderung in
+   wp-admin wäre, die der Deploy jetzt überschreibt. `media` läuft immer mit,
+   lädt aber nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt
+   `changed` gehen auch `all` oder einzelne Zielnamen, mit Leerzeichen
+   getrennt.
+4. Den Deploy, danach `verify_deploy.py` für die deployten Ziele und nach
+   `global-styles` auch `verify_global_css.py`.
+5. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage
+   lang (Rollback in `docs/testing.md`).
+
+Die Skripte kommen aus dem ZIP-Schnappschuss in `data/media/`. Nach einer
+Änderung am Skill also erst `tools/build_skill_zip.py` laufen lassen und
+committen, sonst deployt die Action mit dem alten Stand.
+
+Nicht über die Action laufen: ein Bild unter derselben URL ersetzen (löschen
+und neu hochladen, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in
+wp-admin, `docs/plugins.md`).
+
+### Einmalige Einrichtung
+
+Unter **Settings → Environments** ein Environment `production` anlegen:
+
+- **Deployment branches**: nur `main`.
+- **Variable** `WP_SITE` = `https://stuv-heidenheim.de` (mit Schema).
+- **Secrets** `WP_USER` und `WP_APP_PASS`: ein eigener WordPress-Benutzer
+  für die Action (Rolle Administrator, sonst darf er die Global Styles nicht
+  schreiben) mit einem eigenen Application Password. So lässt sich der Zugang
+  sperren, ohne jemandes persönlichen Login anzufassen.
+- Optional **Required reviewers**: Dann wartet jeder Lauf vor dem Deploy auf
+  eine Freigabe.
+
+Starten darf die Action jeder mit Schreibrechten am Repo.

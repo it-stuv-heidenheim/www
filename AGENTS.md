@@ -13,7 +13,9 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 - Before every commit: `npx prettier --check .` and `python3 -m unittest discover -s tools -p "test_*.py"`.
 - `validate_blocks.cjs` reads only its first argument; sweep the tree after every edit or Prettier pass:
   `for f in $(git ls-files 'data/*.html'); do node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"; done | grep -E ': [1-9][0-9]* invalid'` (silent = valid)
-- Deploy: `deploy.py --manifest data/manifest.json all --dry-run` (local only), `deploy.py … <target>`, then
+- Deploy runs as `.github/workflows/deploy.yml`: manual `workflow_dispatch` on `main`, environment `production`,
+  scripts from the skill zip in `data/media/` (rebuild with `tools/build_skill_zip.py` after a skill change). Never
+  add a push trigger. Locally: `deploy.py --manifest data/manifest.json all --dry-run` (no server), `deploy.py … <target>`, then
   `verify_deploy.py --manifest data/manifest.json`, the only proof the site serves this repo. Undo:
   `rollback.py <id>`. After a `global-styles` deploy:
   `verify_global_css.py --marker .stuv-card --marker .stuv-icon-box --marker ":root.dark" --marker .stuv-wpforms --marker .stuv-body-muted --icon-marker=--ico-calendar`

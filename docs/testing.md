@@ -2,8 +2,10 @@
 
 Alles hier läuft lokal, vor dem Deploy. Dieselben Prüfungen (ohne Dry-Run und
 ohne die Schritte nach dem Deploy) laufen außerdem bei jedem Push in GitHub
-Actions (`.github/workflows/checks.yml`). Deployt wird dort nichts; die Gründe
-stehen in `docs/ai-workflow.md`.
+Actions (`.github/workflows/checks.yml`). Die Deploy-Action
+(`.github/workflows/deploy.yml`) führt sie vor jedem Deploy aus, dazu den
+Dry-Run und die Prüfungen nach dem Deploy (`docs/ai-workflow.md`). Die Befehle
+unten brauchst du für lokale Läufe.
 
 ## Der Kurzdurchlauf
 
@@ -211,3 +213,9 @@ python3 ~/.claude/skills/wordpress-default-editor/scripts/rollback.py <id> \
 
 Vor jedem Schreibvorgang legt der Client ein Backup unter
 `/tmp/wp_backup/<site-slug>/` ab. Medien deckt `rollback.py` nicht ab.
+
+Nach einem Deploy über die Action liegen die Backups im Artefakt
+`wp-backup-<Nummer>` des Laufs. Entpackt nach `/tmp/wp_backup/` findet
+`rollback.py` sie, sofern `WP_SITE` in der `.env` genau so lautet wie in der
+Action. Meist einfacher: den Commit mit `git revert` zurücknehmen und die Action
+erneut starten.

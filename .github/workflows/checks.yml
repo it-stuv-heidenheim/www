@@ -1,12 +1,14 @@
 # Runs the local checks from docs/testing.md on every push and pull request.
-# Checks only: nothing here deploys, and no secret is needed. A deploy stays a
-# manual step (docs/ai-workflow.md, "Warum kein Auto-Deploy").
+# Checks only: nothing here deploys, and no secret is needed. deploy.yml calls
+# this workflow first and deploys only when it passes; a deploy is still started
+# by hand (docs/ai-workflow.md, "Deploy per GitHub Action").
 name: Checks
 
 on:
   push:
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
