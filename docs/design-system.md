@@ -62,7 +62,7 @@ und das ist ohne Einwilligung nicht DSGVO-konform. Die Datei ist der variable
 Latin-Schnitt (Gewichte 300 bis 800, 27 KB, deckt Umlaute, ß, € und
 Typografie-Zeichen ab) und liegt mit ihrer Lizenz (SIL OFL) unter `data/fonts/`.
 Auf dem Server liegt sie in der Font Library von WordPress unter
-`/wp-content/fonts/`; der `fontFace`-Eintrag in `data/global-styles.json` zeigt
+`/wp-content/uploads/fonts/`; der `fontFace`-Eintrag in `data/global-styles.json` zeigt
 dorthin, und WordPress druckt daraus selbst die `@font-face`-Regel. Die Datei
 geht mit keinem Deploy-Ziel raus. Einmal hochgeladen wird sie über die
 REST-Route `wp/v2/font-families/<id>/font-faces`, und weil auf `dev.` ein

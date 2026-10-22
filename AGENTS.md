@@ -60,9 +60,10 @@ rebuild that zip with `tools/build_skill_zip.py` after a validator change.
   dot-prefixed files, which is why `.stuv-dhbw-logo.svg` and
   `.stuv-dhbw-favicon.svg` sit there as local-only sources.
 - `data/fonts/`: the self-hosted heading font (Faustina, latin variable woff2,
-  OFL). **Not a deploy target**: it lives in the WordPress Font Library at
-  `/wp-content/fonts/`, which the `fontFace` `src` in `global-styles.json` must
-  match. Never point that `src` at Google Fonts (DSGVO).
+  OFL). **Not a deploy target**: it lives in the WordPress Font Library, which
+  on this host stores files at `/wp-content/uploads/fonts/` (not
+  `/wp-content/fonts/`); the `fontFace` `src` in `global-styles.json` must match.
+  Never point that `src` at Google Fonts (DSGVO).
 - `data/maps/`: map definitions (pins, zoom, padding) for `tools/gen_map.py`.
 - `tools/`: site-specific utilities with no WP REST access: `gen_icon_css.py`,
   `gen_map.py`, `build_skill_zip.py`, plus their `test_*.py`.
