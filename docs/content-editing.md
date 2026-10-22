@@ -77,8 +77,8 @@ Die Seite ist aus HTML-Dateien in `data/` aufgebaut:
 
 Bei vielen Absätzen stehen Schriftgröße und Farbe nicht am Block, sondern an
 einer Klasse in `data/styles/component.css`: `.stuv-body-muted` für den grauen
-Fließtext in Karten und Listen, `.stuv-eyebrow` für die kleine
-Überschrift-Zeile darüber. Der Block trägt nur noch die Klasse.
+Fließtext in Karten und Listen, `.stuv-kicker` für die kleine rote
+Überschrift-Zeile über einer Sektion. Der Block trägt nur noch die Klasse.
 
 Beim Ändern von Text merkst du davon nichts. Siehst du aber im Editor in der
 rechten Seitenleiste unter **Farbe** oder **Typografie** nach, steht dort „kein

@@ -28,11 +28,13 @@
   --space-6: calc(var(--spacing) * 6);
   --space-8: calc(var(--spacing) * 8);
   --space-12: calc(var(--spacing) * 12);
-  --space-24: calc(var(--spacing) * 24);
-  --space-28: calc(var(--spacing) * 28);
-  --stuv-ring: color-mix(in srgb, var(--stuv-primary) 50%, transparent);
+  --space-16: calc(var(--spacing) * 16);
+  --space-20: calc(var(--spacing) * 20);
+  --stuv-ring: var(--stuv-primary);
   --stuv-accent: var(--stuv-muted);
-  --stuv-input: var(--stuv-border);
+  --stuv-input: #8e8e96;
+  --stuv-card: var(--stuv-background);
+  --stuv-card-border: var(--stuv-border);
   --stuv-destructive: #b91c1c;
   --stuv-alert-bg: rgba(234, 179, 8, 0.12);
   --stuv-alert-border: rgba(234, 179, 8, 0.45);
@@ -71,6 +73,9 @@
   --stuv-muted: #27272a;
   --stuv-muted-foreground: #a1a1aa;
   --stuv-border: #27272a;
+  --stuv-input: #71717a;
+  --stuv-card: #18181b;
+  --stuv-card-border: #3f3f46;
   --wp--preset--color--band: rgba(255, 255, 255, 0.03);
   --stuv-alert-border: rgba(234, 179, 8, 0.5);
   --stuv-alert-icon: #facc15;
@@ -170,6 +175,14 @@ p {
 a {
   text-decoration: none;
 }
+.wp-block-post-content
+  :is(p, li)
+  a:not([class*="stuv-button-"], .stuv-card-cover, .stuv-chip),
+.wp-block-post-content a.stuv-button-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
 .stuv-section {
   padding: var(--space-12) var(--space-6);
 }
@@ -179,8 +192,8 @@ a {
 }
 .stuv-card {
   position: relative;
-  background: var(--stuv-background);
-  border: 1px solid var(--stuv-border);
+  background: var(--stuv-card);
+  border: 1px solid var(--stuv-card-border);
   border-radius: var(--stuv-radius-lg);
   padding: var(--space-6);
   box-shadow:
@@ -415,8 +428,7 @@ a.stuv-button-link {
   padding: 0;
 }
 a.stuv-button-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
 }
 
 a.stuv-button-overlay,
@@ -436,21 +448,35 @@ a.stuv-button-overlay:hover,
   background-color: currentColor;
 }
 
+.wp-block-post-content
+  p:has(
+    > a:is(.stuv-button-primary, .stuv-button-outline, .stuv-button-overlay)
+  ) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.wp-block-post-content
+  p.has-text-align-center:has(
+    > a:is(.stuv-button-primary, .stuv-button-outline, .stuv-button-overlay)
+  ) {
+  justify-content: center;
+}
+
 .wp-block-button.stuv-button-lg .wp-block-button__link {
   height: 2.75rem;
   padding: 0 var(--space-8);
   font-size: 1rem;
 }
 
-.stuv-eyebrow {
-  display: inline-block;
-  padding: var(--space-0_5) var(--space-3);
-  border: 1px solid var(--stuv-border);
-  border-radius: var(--stuv-radius);
+.stuv-kicker {
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.4;
-  color: var(--stuv-foreground);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--stuv-primary);
 }
 p.stuv-section-intro {
   max-width: 42rem;
@@ -790,10 +816,6 @@ header.wp-block-template-part {
 .stuv-accordion[open] > summary::after {
   transform: rotate(180deg);
 }
-.stuv-hero-eyebrow {
-  font-size: 0.875rem;
-  line-height: 1.4;
-}
 .stuv-hero-title {
   font-size: 2.25rem;
   line-height: 1.1;
@@ -862,7 +884,7 @@ p.stuv-hero-subtitle {
 }
 @media (min-width: 768px) {
   .stuv-section {
-    padding: var(--space-24) var(--space-8);
+    padding: var(--space-16) var(--space-8);
   }
   .stuv-hero-title {
     font-size: 3.75rem;
@@ -871,7 +893,7 @@ p.stuv-hero-subtitle {
 
 @media (min-width: 1280px) {
   .stuv-section {
-    padding: var(--space-28) var(--space-12);
+    padding: var(--space-20) var(--space-12);
   }
 }
 
@@ -967,9 +989,7 @@ p.stuv-hero-subtitle {
   border: 1px solid var(--stuv-input);
   border-radius: var(--stuv-radius-sm);
   box-shadow: none;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 .stuv-wpforms .wpforms-container-full .wpforms-form input[type="text"],
 .stuv-wpforms .wpforms-container-full .wpforms-form input[type="email"],
@@ -997,10 +1017,10 @@ p.stuv-hero-subtitle {
 .stuv-wpforms .wpforms-container-full .wpforms-form input:focus:invalid,
 .stuv-wpforms .wpforms-container-full .wpforms-form textarea:focus:invalid,
 .stuv-wpforms .wpforms-container-full .wpforms-form select:focus:invalid {
-  outline: none;
+  outline: 2px solid var(--stuv-ring);
+  outline-offset: 1px;
   color: var(--stuv-foreground);
   border-color: var(--stuv-primary);
-  box-shadow: 0 0 0 2px var(--stuv-ring);
 }
 .stuv-wpforms .wpforms-container-full .wpforms-form input:-webkit-autofill,
 .stuv-wpforms .wpforms-container-full .wpforms-form textarea:-webkit-autofill,
@@ -1139,10 +1159,33 @@ textarea:focus-visible,
 select:focus-visible,
 summary:focus-visible,
 [tabindex]:focus-visible {
-  outline: none;
+  outline: 2px solid var(--stuv-ring);
+  outline-offset: 2px;
+}
+
+.stuv-card:has(.stuv-card-cover, .stuv-quicklink, .stuv-linktree-card) {
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.stuv-card:has(.stuv-card-cover, .stuv-quicklink, .stuv-linktree-card):hover {
+  border-color: var(--stuv-primary);
   box-shadow:
-    0 0 0 2px var(--stuv-background),
-    0 0 0 4px var(--stuv-ring);
+    0 4px 12px -2px rgba(0, 0, 0, 0.08),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06);
+}
+.stuv-card:has(
+  .stuv-card-cover:focus-visible,
+  .stuv-quicklink:focus-visible,
+  .stuv-linktree-card:focus-visible
+) {
+  outline: 2px solid var(--stuv-ring);
+  outline-offset: 2px;
+}
+.stuv-card-cover:focus-visible,
+.stuv-quicklink:focus-visible,
+.stuv-linktree-card:focus-visible {
+  outline-color: transparent;
 }
 
 .stuv-carousel {
@@ -1231,6 +1274,64 @@ summary:focus-visible,
 .stuv-alert-row p + p {
   margin-top: var(--space-1);
 }
+.stuv-card.stuv-crisis {
+  background: var(--stuv-alert-bg);
+  border-color: var(--stuv-alert-border);
+}
+.stuv-crisis .stuv-alert-row p:first-child {
+  font-weight: 600;
+}
+.stuv-crisis a {
+  color: var(--stuv-alert-foreground);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stuv-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.stuv-chip-list > li {
+  margin: 0;
+}
+.stuv-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--stuv-input);
+  border-radius: 9999px;
+  background: var(--stuv-card);
+  color: var(--stuv-foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.stuv-chip:hover {
+  border-color: var(--stuv-primary);
+  color: var(--stuv-primary);
+}
+
+.stuv-topic-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-3) var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stuv-topic-list > li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
 
 .stuv-linktree-logo {
   margin: 0;
@@ -1272,9 +1373,6 @@ summary:focus-visible,
   display: block;
   font-size: 1rem;
   color: var(--stuv-muted-foreground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .stuv-mensa {
@@ -1619,11 +1717,19 @@ summary:focus-visible,
   .stuv-clip iframe {
     min-height: 32rem;
   }
-  .wp-block-buttons {
+  .wp-block-buttons,
+  .wp-block-post-content
+    p:has(
+      > a:is(.stuv-button-primary, .stuv-button-outline, .stuv-button-overlay)
+    ) {
     flex-direction: column;
+    align-items: stretch;
     width: 100%;
   }
-  .wp-block-button__link {
+  .wp-block-button__link,
+  .wp-block-post-content
+    p
+    > a:is(.stuv-button-primary, .stuv-button-outline, .stuv-button-overlay) {
     width: 100%;
   }
   .stuv-header .stuv-header-row {

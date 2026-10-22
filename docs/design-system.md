@@ -69,11 +69,13 @@ Die Familien:
 | ---------------------------------------- | --------------------------------------------------------- |
 | `.stuv-section`                          | Vollbreiter Sektionsstreifen                              |
 | `.stuv-page-header`                      | Linksbündiger Seitenkopf der Unterseiten                  |
-| `.stuv-card`, `.stuv-card-*`             | Karten samt Cover und Hover-Pfeil                         |
+| `.stuv-card`, `.stuv-card-*`             | Karten samt Cover-Link, Hover und Fokusring               |
 | `.stuv-button-*`                         | Buttons (`primary`, `outline`, `link`, `overlay`)         |
 | `.stuv-icon-box`, `.stuv-ico-*`          | Icons; `--ico-*` ist generiert, siehe `docs/tools.md`     |
 | `.stuv-h2`, `.stuv-h3`                   | Überschriften-Größen                                      |
-| `.stuv-badge*`, `.stuv-eyebrow`          | Pillen und Etiketten                                      |
+| `.stuv-badge*`, `.stuv-chip*`            | Pillen; Chips als Sprungleiste (Über uns)                 |
+| `.stuv-kicker`                           | Rote Zeile über einer Überschrift, die eine Sektionsart   |
+| `.stuv-crisis`, `.stuv-topic-list`       | Krisenhinweis und Themenliste (Kummer Karsten)            |
 | `.stuv-map-*`                            | Kartenrahmen, Pins, Legende                               |
 | `.stuv-mensa-*`                          | Speiseplan-Widget                                         |
 | `.stuv-wpforms`                          | WPForms-Formularstyling (siehe `docs/content-editing.md`) |
@@ -95,7 +97,7 @@ Ganz oben in `component.css`:
   --stuv-primary: var(--wp--preset--color--primary, #e2001a);
   --stuv-radius: var(--wp--custom--stuv-radius, 0.5rem);
   --stuv-radius-sm: calc(var(--stuv-radius) - 0.125rem);
-  --stuv-ring: color-mix(in srgb, var(--stuv-primary) 50%, transparent);
+  --stuv-ring: var(--stuv-primary);
   --stuv-accent: var(--stuv-muted);
 }
 ```
@@ -107,8 +109,9 @@ Preset fehlt. Die Palette bleibt die einzige Quelle.
 Der Zwischenschritt bringt drei Dinge:
 
 1. **Abgeleitete Werte, die keine Palette-Einträge sein sollen.** `--stuv-ring`
-   (der Fokusring) ist die Markenfarbe zu 50 % transparent, `--stuv-radius-sm`
-   ist der Radius minus 2px. Als Palette-Einträge wären das Farbkleckse im
+   (der Fokusring) ist die Markenfarbe unter eigenem Namen, `--stuv-radius-sm`
+   ist der Radius minus 2px, `--stuv-card` und `--stuv-card-border` sind
+   Fläche und Rand der Karten. Als Palette-Einträge wären das Farbkleckse im
    Editor, die niemand anklicken soll.
 2. **Aliasse.** `--stuv-accent` ist dasselbe Grau wie `muted` und folgt jeder
    Änderung der Palette.
@@ -206,6 +209,29 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
   nacktes `.stuv-ico-<name>` würde die `.stuv-icon-box` selbst maskieren.
 - **Mobil-Breakpoint** ist `max-width: 639px`, nie 640px: Bei genau 640px greift
   schon `min-width: 640px`.
+- **Fokus ist eine Outline, kein Schatten.** 2px `--stuv-ring` mit 2px Abstand,
+  auf Weiß 4,94:1, auf Dunkel 5,16:1. Ein `box-shadow`-Ring entfällt im
+  Windows-Kontrastmodus ersatzlos, und ein Ring mit 50 % Deckkraft lag unter
+  3:1. `tools/test_styles.py` schlägt bei `outline: none` an.
+- **Ganze Karten als Link.** Drei Klassen machen eine Karte klickbar:
+  `.stuv-card-cover` (ein Link in der Karte, dessen `::after` die Karte
+  überdeckt), `.stuv-quicklink` und `.stuv-linktree-card` (der Link füllt eine
+  `.stuv-clip`-Karte). In einer `.stuv-clip`-Karte schneidet `overflow: hidden`
+  den Fokusring des Links ab, deshalb zeichnet die Karte selbst Ring und
+  Hover-Rand, über `.stuv-card:has(…)`. Eine Karte ohne einen dieser Links
+  reagiert nicht und sieht damit auch nicht klickbar aus. Eine neue solche
+  Klasse gehört in `CARD_LINK_CLASSES` in `tools/sitecheck.py` und in diese
+  Regeln; die Tests prüfen beides.
+- **Links im Fließtext sind unterstrichen**, alle `a` in `p` und `li` innerhalb
+  von `.wp-block-post-content`. Ausgenommen sind Buttons, Karten-Cover-Links und
+  Chips; Kopf- und Fußzeile liegen außerhalb. Rot in grauem Text hat zu Grau
+  nur rund 1:1 Kontrast, die Farbe allein markiert den Link also nicht.
+- **Buttons in einem Absatz** (`<p><a class="stuv-button-primary">…`) verhalten
+  sich wie ein `wp:buttons`-Block: Umbruch mit Abstand, mobil untereinander in
+  voller Breite. Die Regel greift über `p:has(> a.stuv-button-…)`, neue Absätze
+  brauchen also keine eigene Klasse.
+- **Sektions-Kicker** ist immer `.stuv-kicker` am Absatz, ohne Inline-Stil.
+  Nur das Hero-Cover setzt zusätzlich Weiß als Blockfarbe.
 - **WPForms** (zusätzlich zur Ahnenketten-Regel in `docs/content-editing.md`):
   - Die Textfarbe steht bei `:focus` und `:focus:invalid` noch einmal, weil
     WPForms dort eigene Farben setzt (`textarea:focus` mit 0,3,2,
