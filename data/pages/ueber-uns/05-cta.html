@@ -3,9 +3,7 @@
   <!-- wp:group {"layout":{"type":"constrained","contentSize":"48rem"}} -->
   <div class="wp-block-group">
     <!-- wp:heading {"className":"stuv-h2","style":{"typography":{"textAlign":"center"}}} -->
-    <h2 class="wp-block-heading has-text-align-center stuv-h2">
-      Du willst mitmachen?
-    </h2>
+    <h2 class="wp-block-heading has-text-align-center stuv-h2">Mitmachen</h2>
     <!-- /wp:heading -->
 
     <!-- wp:paragraph {"className":"stuv-section-intro","style":{"typography":{"textAlign":"center"},"color":{"text":"var(\u002d\u002dstuv-muted-foreground)"}}} -->
@@ -13,27 +11,36 @@
       class="has-text-align-center has-text-color stuv-section-intro"
       style="color: var(--stuv-muted-foreground)"
     >
-      Ob als Referatsmitglied, in der Wahlversammlung oder bei einzelnen
-      Projekten: Wir freuen uns über jede Unterstützung!
+      Du kannst in einem Referat, in der Wahlversammlung oder bei einzelnen
+      Projekten mitarbeiten. Die Anmeldung dauert zwei Minuten.
     </p>
     <!-- /wp:paragraph -->
 
-    <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"2rem"}},"typography":{"textAlign":"center"}}} -->
-    <p class="has-text-align-center" style="margin-top: 2rem">
-      <a
-        class="stuv-button-primary"
-        href="https://forms.gle/RTqLmyPasqMUMexy7"
-        target="_blank"
-        rel="noopener noreferrer"
-        >Jetzt bei der StuV anmelden<span
-          class="stuv-ico stuv-ico-external-link"
-        ></span
-      ></a>
-      <a class="stuv-button-outline" href="/kontakt/"
-        ><span class="stuv-ico stuv-ico-mail"></span>Kontakt aufnehmen</a
-      >
-    </p>
-    <!-- /wp:paragraph -->
+    <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"},"style":{"spacing":{"margin":{"top":"2rem"}}}} -->
+    <div class="wp-block-buttons" style="margin-top: 2rem">
+      <!-- wp:button -->
+      <div class="wp-block-button">
+        <a
+          class="wp-block-button__link wp-element-button"
+          href="https://forms.gle/RTqLmyPasqMUMexy7"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Jetzt bei der StuV anmelden<span
+            class="stuv-ico stuv-ico-external-link"
+          ></span
+        ></a>
+      </div>
+      <!-- /wp:button -->
+
+      <!-- wp:button {"className":"is-style-outline"} -->
+      <div class="wp-block-button is-style-outline">
+        <a class="wp-block-button__link wp-element-button" href="/kontakt/"
+          ><span class="stuv-ico stuv-ico-mail"></span>Kontakt aufnehmen</a
+        >
+      </div>
+      <!-- /wp:button -->
+    </div>
+    <!-- /wp:buttons -->
   </div>
   <!-- /wp:group -->
 </section>

@@ -43,6 +43,20 @@
           "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
           "slug": "inter",
           "name": "Inter"
+        },
+        {
+          "fontFamily": "Fraunces, Georgia, serif",
+          "slug": "fraunces",
+          "name": "Fraunces",
+          "fontFace": [
+            {
+              "fontFamily": "Fraunces",
+              "fontWeight": "100 900",
+              "fontStyle": "normal",
+              "fontDisplay": "swap",
+              "src": ["/wp-content/uploads/fonts/fraunces-latin-variable.woff2"]
+            }
+          ]
         }
       ]
     },
@@ -51,6 +65,11 @@
   "styles": {
     "spacing": { "blockGap": "1rem" },
     "typography": { "fontFamily": "var:preset|font-family|inter" },
+    "elements": {
+      "heading": {
+        "typography": { "fontFamily": "var:preset|font-family|fraunces" }
+      }
+    },
     "blocks": {
       "core/columns": {
         "spacing": { "blockGap": "1rem" }

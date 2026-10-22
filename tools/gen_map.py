@@ -33,6 +33,7 @@ import math
 import pathlib
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 from typing import NamedTuple
 
@@ -127,13 +128,14 @@ SAFE_ZONE_Y = (6.0, 94.0)
 MEDIA_BASE = "/wp-content/uploads"
 ATTRIBUTION = "© OpenStreetMap-Mitwirkende, © CARTO"
 
-# The legend's outbound link, built from the pin's own lat/lon rather than stored
-# per pin: the coordinates are already the single source of truth for where the
-# pin sits on the image, so the link cannot drift away from it. Searching by name
-# instead would leave Google guessing at a German place name and can land a
-# street away. Nothing is requested until a visitor clicks -- the basemap itself
-# stays self-hosted.
-MAPS_URL = "https://www.google.com/maps/search/?api=1&query={lat:.5f},{lon:.5f}"
+# The legend's outbound link searches Google Maps for the place itself, name and
+# full address together, so a visitor lands on its place card (opening hours,
+# reviews, directions) instead of a dropped pin at bare coordinates. The address
+# keeps Google from guessing at a German place name and picking one in another
+# town. A pin whose legend name is not what Google calls the place carries a
+# maps_query of its own. Nothing is requested until a visitor clicks -- the
+# basemap itself stays self-hosted.
+MAPS_URL = "https://www.google.com/maps/search/?api=1&query={query}"
 MARKER = (
     "<!-- gen_map:{id} — erzeugt von tools/gen_map.py aus data/maps/{id}.json; "
     "nicht von Hand bearbeiten -->"
@@ -445,8 +447,9 @@ def _cache_busted_url(map_id: str, style: str, media_base: str) -> str:
 
 
 def maps_url(pin: dict) -> str:
-    """The pin's Google-Maps link, from its coordinates."""
-    return MAPS_URL.format(lat=pin["lat"], lon=pin["lon"])
+    """The pin's Google-Maps link: its maps_query, else its name and address."""
+    query = pin.get("maps_query") or f"{pin['name']}, {pin['detail']}"
+    return MAPS_URL.format(query=urllib.parse.quote(query, safe=","))
 
 
 def esc(text: str) -> str:
@@ -557,7 +560,10 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
         if pin.get("note"):
             out.append(f'    <p class="stuv-map-legend-note">{esc(pin["note"])}</p>')
         out += [
+            # Every pin has this link, so the visible text alone is ambiguous
+            # in a screen reader's link list; the label names the place.
             f'    <p><a class="stuv-button-link" href="{esc(maps_url(pin))}"'
+            f' aria-label="{esc(pin["name"])} in Karten öffnen"'
             ' target="_blank" rel="noopener noreferrer">In Karten öffnen</a></p>',
             "  </li>",
         ]

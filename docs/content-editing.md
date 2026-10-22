@@ -8,20 +8,12 @@ und auf der Kommandozeile.
 
 - Git-Zugriff auf dieses Repo
 - Node.js (für `npx prettier` und die Block-Validierung)
-- Das `wordpress-default-editor`-Tooling, entpackt nach `~/.claude/skills/`.
-  Lade den ZIP-Schnappschuss herunter und entpacke ihn dorthin. Er enthält
-  denselben Stand wie ein frischer Checkout des Skills, nur ohne die
-  installierten Abhängigkeiten, die beim ersten Lauf ohnehin neu entstehen:
+- Python 3. Das Tooling (`wordpress-default-editor`) liegt im Repo unter
+  `.agents/skills/wordpress-default-editor/`; der Block-Validator installiert
+  seine npm-Pakete beim ersten Lauf selbst.
 
-  [wordpress-default-editor herunterladen (ZIP)](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
-
-  ```bash
-  unzip wordpress-default-editor.zip -d ~/.claude/skills/
-  ```
-
-- Zum Deployen: git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
-  (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`,
-  `WP_ADDRESS_FAMILY="ipv4"` (Gründe in `AGENTS.md`)
+- Zum lokalen Deployen (für die Deploy-Action nicht nötig): git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
+  (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`
 
   Bricht einmal jeder Deploy-Befehl mit `HTTP Error 404` ab, obwohl die Website
   normal läuft, fehlen die Rewrite-Regeln für `/wp-json/`. Dann in wp-admin
@@ -77,8 +69,8 @@ Die Seite ist aus HTML-Dateien in `data/` aufgebaut:
 
 Bei vielen Absätzen stehen Schriftgröße und Farbe nicht am Block, sondern an
 einer Klasse in `data/styles/component.css`: `.stuv-body-muted` für den grauen
-Fließtext in Karten und Listen, `.stuv-eyebrow` für die kleine
-Überschrift-Zeile darüber. Der Block trägt nur noch die Klasse.
+Fließtext in Karten und Listen, `.stuv-kicker` für die kleine rote
+Überschrift-Zeile über einer Sektion. Der Block trägt nur noch die Klasse.
 
 Beim Ändern von Text merkst du davon nichts. Siehst du aber im Editor in der
 rechten Seitenleiste unter **Farbe** oder **Typografie** nach, steht dort „kein
@@ -129,7 +121,7 @@ lassen.
 
    ```bash
    source .env
-   python3 ~/.claude/skills/wordpress-default-editor/scripts/deploy.py \
+   python3 .agents/skills/wordpress-default-editor/scripts/deploy.py \
      --manifest data/manifest.json media
    ```
 
@@ -267,12 +259,22 @@ die geänderten Dateien mit dem Aufruf aus `docs/testing.md` unter
 
 ## Deploy
 
+Ein Push auf `main`, der etwas unter `data/` ändert, startet die Action
+**Deploy**. Sie wartet auf eine Freigabe: Ein Reviewer klickt im Lauf unter
+**Actions** auf **Review deployments → Approve**. Dann deployt sie alle Ziele,
+die von der Live-Seite abweichen, und prüft danach das Ergebnis. Von Hand geht
+es unter **Actions → Deploy → Run workflow**. Was sie genau macht, steht in
+`docs/ai-workflow.md`.
+
+### Lokal deployen
+
+Ohne die Action geht es mit dem Skill und der `.env` (Voraussetzungen oben).
 Vor jedem Deploy erst einen Trockenlauf machen (prüft lokal, ohne den Server zu
 kontaktieren):
 
 ```bash
 source .env
-SKILL=~/.claude/skills/wordpress-default-editor
+SKILL=.agents/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run
 ```
 

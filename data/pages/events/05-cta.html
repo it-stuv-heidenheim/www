@@ -1,8 +1,5 @@
-<!-- wp:group {"tagName":"section","className":"stuv-section","align":"full","style":{"color":{"background":"var(\u002d\u002dstuv-primary)"}},"layout":{"type":"constrained"}} -->
-<section
-  class="wp-block-group alignfull stuv-section has-background"
-  style="background-color: var(--stuv-primary)"
->
+<!-- wp:group {"tagName":"section","className":"stuv-section stuv-section-primary","align":"full","layout":{"type":"constrained"}} -->
+<section class="wp-block-group alignfull stuv-section stuv-section-primary">
   <!-- wp:group {"layout":{"type":"constrained","contentSize":"48rem"}} -->
   <div class="wp-block-group">
     <!-- wp:heading {"className":"stuv-h2","style":{"typography":{"textAlign":"center"},"color":{"text":"var(\u002d\u002dstuv-primary-foreground)"}}} -->
@@ -10,7 +7,7 @@
       class="wp-block-heading has-text-align-center has-text-color stuv-h2"
       style="color: var(--stuv-primary-foreground)"
     >
-      Event-Idee? Wir hören zu!
+      Deine Idee fürs nächste Event
     </h2>
     <!-- /wp:heading -->
 
@@ -19,19 +16,32 @@
       class="has-text-align-center has-text-color stuv-section-intro"
       style="color: var(--stuv-primary-foreground)"
     >
-      Du hast eine Idee für ein Event oder möchtest bei der Organisation helfen?
-      Das Event-Referat freut sich über jede Anregung.
+      Schick uns deinen Vorschlag über das Kontaktformular oder hilf im
+      Event-Referat bei der Organisation mit.
     </p>
     <!-- /wp:paragraph -->
 
-    <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"2rem"}},"typography":{"textAlign":"center"}}} -->
-    <p class="has-text-align-center" style="margin-top: 2rem">
-      <a class="stuv-button-overlay" href="/kontakt/">Event vorschlagen</a>
-      <a class="stuv-button-overlay" href="/ueber-uns/#event"
-        >Event-Referat kennenlernen</a
-      >
-    </p>
-    <!-- /wp:paragraph -->
+    <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"},"style":{"spacing":{"margin":{"top":"2rem"}}}} -->
+    <div class="wp-block-buttons" style="margin-top: 2rem">
+      <!-- wp:button {"className":"is-style-overlay"} -->
+      <div class="wp-block-button is-style-overlay">
+        <a class="wp-block-button__link wp-element-button" href="/kontakt/"
+          >Event vorschlagen</a
+        >
+      </div>
+      <!-- /wp:button -->
+
+      <!-- wp:button {"className":"is-style-overlay"} -->
+      <div class="wp-block-button is-style-overlay">
+        <a
+          class="wp-block-button__link wp-element-button"
+          href="/ueber-uns/#event"
+          >Event-Referat kennenlernen</a
+        >
+      </div>
+      <!-- /wp:button -->
+    </div>
+    <!-- /wp:buttons -->
   </div>
   <!-- /wp:group -->
 </section>
