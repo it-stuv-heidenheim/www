@@ -3,7 +3,7 @@
 Die meisten Änderungen an diesem Repo macht ein KI-Agent, konkret
 [Claude Code](https://claude.com/claude-code). Das erklärt einige Teile der
 Struktur, die sonst willkürlich wirken: die Datei `AGENTS.md` im
-Wurzelverzeichnis und die Deploy-Skripte, die woanders liegen.
+Wurzelverzeichnis und die Deploy-Skripte unter `.claude/skills/`.
 
 Dieses Dokument erklärt das System. Die Anweisungen an den Agent stehen in
 `AGENTS.md`.
@@ -23,32 +23,29 @@ Kontext. Die Datei enthält deshalb nur, was ein Agent wissen muss, um nichts
 kaputtzumachen: Fallstricke, exakte Befehle, harte Regeln. Erklärungen gehören
 nach `docs/`.
 
-## Warum das Tooling nicht in diesem Repo liegt
+## Warum das Tooling unter `.claude/skills/` liegt
 
-`deploy.py`, der REST-Client und der Block-Validator liegen in einem eigenen,
-generischen Skill-Repository. Für diese Site gibt es davon einen
-[ZIP-Schnappschuss zum Herunterladen](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip),
-entpackt nach `~/.claude/skills/`.
+`deploy.py`, der REST-Client und der Block-Validator liegen in
+`.claude/skills/wordpress-default-editor/`. Aus diesem Verzeichnis lädt Claude
+Code die Skills eines Projekts, sobald es in diesem Repo arbeitet; für Menschen
+sind es gewöhnliche Python- und Node-Skripte, aufgerufen aus dem
+Wurzelverzeichnis.
 
-Das Tooling ist nicht StuV-spezifisch: Es bearbeitet jede WordPress-Site mit
-Block-Editor über die REST-API. Läge es hier, könnte es nur dieses eine Repo
-nutzen. Die Aufteilung entspricht der zwischen einem Programm und seinen Daten:
+Bis Oktober 2026 lag der Skill in einem privaten Skill-Repository, und dieses
+Repo trug einen ZIP-Schnappschuss davon. Seit er hier liegt, sieht jeder, mit
+welchem Stand deployt wird, und eine Änderung am Tooling landet im selben
+Commit wie der Inhalt, der sie braucht.
 
-```
-Skill-Repository          →  das Tool (generisch, mehrere Sites)
-dieses Repository         →  der Inhalt   (nur StuV, mehrere Tools)
-```
-
-Lokal brauchst du den Skill für die Block-Validierung und für einen Deploy
-ohne die Action (Voraussetzungen in `docs/content-editing.md`). Die
-Deploy-Action entpackt den Schnappschuss selbst.
+Das Tooling selbst ist nicht StuV-spezifisch: Es bearbeitet jede WordPress-Site
+mit Block-Editor über die REST-API. Was nur für diese Site gilt, gehört nach
+`data/manifest.json`, `AGENTS.md` oder `docs/`, nicht in den Skill.
 
 ## Der Skill `wordpress-default-editor`
 
 Ein „Skill“ ist ein Markdown-Dokument mit einer Anleitung, die der Agent lädt,
 wenn sie zur Aufgabe passt, hier zusammen mit den Skripten, die sie beschreibt.
-Der Skill wird in einem separaten Repository gepflegt (ZIP-Schnappschuss siehe
-oben) und enthält alles Lauffähige:
+Der Skill enthält alles Lauffähige, dazu eigene Tests unter `tests/`
+(`docs/testing.md`):
 
 | Skript                           | Zweck                                                             |
 | -------------------------------- | ----------------------------------------------------------------- |
@@ -104,9 +101,7 @@ Prüfungen zuerst auf und deployt nur, wenn sie grün sind.
 5. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage
    lang (Rollback in `docs/testing.md`).
 
-Die Skripte kommen aus dem ZIP-Schnappschuss in `data/media/`. Nach einer
-Änderung am Skill also erst `tools/build_skill_zip.py` laufen lassen und
-committen, sonst deployt die Action mit dem alten Stand.
+Die Action deployt mit dem Skill aus demselben Commit wie der Inhalt.
 
 Nicht über die Action laufen: ein Bild unter derselben URL ersetzen (löschen
 und neu hochladen, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in

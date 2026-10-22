@@ -19,16 +19,13 @@ Dateien, und ein Deploy schreibt sie über die REST-API auf die Live-Site.
 | `data/media/`               | Bilder (WebP/JPG/PNG), deployt über das `media`-Ziel                                                                                                                 |
 | `data/maps/`                | Kartendefinitionen für `tools/gen_map.py`                                                                                                                            |
 | `data/manifest.json`        | Deploy-Ziele: Name → REST-Endpunkt, ID, Quelldatei                                                                                                                   |
+| `.claude/skills/`           | Das Deploy-Tooling: Skill `wordpress-default-editor` (`docs/ai-workflow.md`)                                                                                         |
 | `tools/`                    | Generatoren und Hilfsskripte (`docs/tools.md`)                                                                                                                       |
 | `wp-plugin/`                | Drei WordPress-Plugins: `stuv-mensa` (Live-Speiseplan), `stuv-theme` (Dark-Mode-Toggle) und `stuv-dsgvo` (Klick-zum-Laden für die Kalender), siehe `docs/plugins.md` |
 | `docs/`                     | Diese Doku, gelesen auf GitHub                                                                                                                                       |
 
 ## Was nicht in diesem Repo liegt
 
-- Lauffähiges WordPress-Tooling. Deploy-Skripte, Block-Validator und
-  REST-Client gehören zum `wordpress-default-editor`-Skill, den es als
-  [ZIP-Schnappschuss zum Herunterladen](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
-  gibt (entpackt nach `~/.claude/skills/wordpress-default-editor`).
 - WordPress-Core und Theme-Dateien. Theme (Twenty Twenty-Five) und Plugins sind
   auf dem Host installiert. `wp-plugin/` versioniert nur den Quellcode der
   eigenen Plugins; die installierten Kopien sind Artefakte.

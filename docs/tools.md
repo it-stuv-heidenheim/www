@@ -1,10 +1,9 @@
 # Tools
 
-In `tools/` liegen drei Skripte. Keines spricht mit WordPress; alle erzeugen
-Dateien, die über den normalen Deploy-Weg auf die Site kommen
-(`docs/content-editing.md`). Das sind die beiden Generatoren unten und
-`build_skill_zip.py`, das den Tooling-Skill als ZIP nach `data/media/` packt.
-Das Deploy-Tooling selbst liegt woanders (`docs/ai-workflow.md`).
+In `tools/` liegen die beiden Generatoren unten. Keiner spricht mit WordPress;
+beide erzeugen Dateien, die über den normalen Deploy-Weg auf die Site kommen
+(`docs/content-editing.md`). Das Deploy-Tooling liegt unter `.claude/skills/`
+(`docs/ai-workflow.md`).
 
 Die beiden Generatoren schreiben ihr Ergebnis ins Repo. Generierte Dateien
 **nie von Hand bearbeiten**: Eine Handänderung hält nur bis zum nächsten
@@ -68,7 +67,7 @@ alte Bild unter der neuen Geometrie. Deploye deshalb alle drei zusammen:
 
 ```bash
 source .env
-SKILL=~/.claude/skills/wordpress-default-editor
+SKILL=.claude/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json media
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json global-styles
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json studentenleben

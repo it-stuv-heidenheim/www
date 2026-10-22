@@ -41,6 +41,7 @@ jobs:
       # Through env, never `${{ }}` inside a script: no shell injection.
       TARGET: ${{ inputs.target }}
       MANIFEST: data/manifest.json
+      SKILL_SCRIPTS: .claude/skills/wordpress-default-editor/scripts
     steps:
       - uses: actions/checkout@v4
 
@@ -49,13 +50,6 @@ jobs:
           for v in WP_SITE WP_USER WP_APP_PASS; do
             [ -n "${!v}" ] || { echo "::error::$v is not set in the production environment"; exit 1; }
           done
-
-      # Same snapshot the checks use; rebuild it with tools/build_skill_zip.py
-      # after a change in the skill repository.
-      - name: Unpack skill
-        run: |
-          unzip -q data/media/wordpress-default-editor.zip -d "$RUNNER_TEMP/skill"
-          echo "SKILL_SCRIPTS=$RUNNER_TEMP/skill/wordpress-default-editor/scripts" >> "$GITHUB_ENV"
 
       - name: Dry run
         run: python3 "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" all --dry-run

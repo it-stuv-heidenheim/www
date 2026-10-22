@@ -1,0 +1,5 @@
+{
+  "eval_id": 3,
+  "eval_name": "preserve-status",
+  "prompt": "On my WordPress site http://127.0.0.1:5001 (user: test, application password: pass), update page 2 so the paragraph says 'Updated draft copy.' Keep the page as a draft."
+}

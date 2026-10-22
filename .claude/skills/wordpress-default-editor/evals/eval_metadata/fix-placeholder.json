@@ -1,0 +1,5 @@
+{
+  "eval_id": 2,
+  "eval_name": "fix-placeholder",
+  "prompt": "On my WordPress site http://127.0.0.1:5001 (user: test, application password: pass), the homepage still has placeholder text. Replace 'This is placeholder text that needs to be replaced.' with 'We build great things for the web.'."
+}

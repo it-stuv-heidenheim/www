@@ -20,7 +20,7 @@ Vor jedem Deploy zusätzlich:
 
 ```bash
 source .env
-SKILL=~/.claude/skills/wordpress-default-editor
+SKILL=.claude/skills/wordpress-default-editor
 for f in $(git ls-files 'data/*.html'); do
   node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"
 done | grep -E ': [1-9][0-9]* invalid'
@@ -114,10 +114,19 @@ python3 -m unittest discover -s tools -p "test_*.py" -v
   `outline: none`, Fokus als Outline statt Schatten (den entfernt der
   Windows-Kontrastmodus), ein Fokusring auf der Karte für jede Klasse eines
   kartenfüllenden Links, keine abgeschnittenen Texte mit `…`.
-- `test_build_skill_zip.py` prüft den ZIP-Build des Tooling-Skills. Mit einem
-  Wegwerf-Git-Repo als Fixture stellt es sicher, dass `SKILL.md` unter dem
-  Prefix landet, installierte Abhängigkeiten (`node_modules/`, `.venv/`, …)
-  draußen bleiben und nur der eine Skill im ZIP landet.
+
+### Der Skill
+
+Die Tests des Deploy-Toolings brauchen als Einzige in diesem Repo Pakete
+außerhalb der Standardbibliothek: `pytest` und `flask`, Letzteres für einen
+nachgebauten WordPress-Server, gegen den `deploy.py` und der REST-Client
+schreiben. Am einfachsten in einer virtuellen Umgebung:
+
+```bash
+cd .claude/skills/wordpress-default-editor
+python3 -m venv .venv && .venv/bin/pip install -r tests/requirements.txt
+.venv/bin/python -m pytest -q
+```
 
 ### Die Plugins
 
@@ -158,7 +167,7 @@ die Seite jedes Mal neu, aber in der Konsole darf keine Exception erscheinen.
 
 ```bash
 source .env
-python3 ~/.claude/skills/wordpress-default-editor/scripts/deploy.py \
+python3 .claude/skills/wordpress-default-editor/scripts/deploy.py \
   --manifest data/manifest.json all --dry-run
 ```
 
@@ -173,7 +182,7 @@ dem echten Deploy.
 
 ```bash
 source .env
-python3 ~/.claude/skills/wordpress-default-editor/scripts/verify_deploy.py \
+python3 .claude/skills/wordpress-default-editor/scripts/verify_deploy.py \
   --manifest data/manifest.json
 ```
 
@@ -207,7 +216,7 @@ siehst du nur, wenn du hinschaust:
 Wenn etwas schiefgegangen ist:
 
 ```bash
-python3 ~/.claude/skills/wordpress-default-editor/scripts/rollback.py <id> \
+python3 .claude/skills/wordpress-default-editor/scripts/rollback.py <id> \
   --endpoint pages
 ```
 

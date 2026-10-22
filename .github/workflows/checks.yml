@@ -38,12 +38,18 @@ jobs:
           php wp-plugin/tests/test_theme.php
           TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 
-      # The skill lives in a private repository; its committed snapshot in
-      # data/media/ carries the validator.
+      # The skill's tests are the only ones with dependencies outside the
+      # standard library (a Flask mock of the WordPress REST API).
+      - name: Skill tests
+        working-directory: .claude/skills/wordpress-default-editor
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet -r tests/requirements.txt
+          "$RUNNER_TEMP/venv/bin/python" -m pytest -q -p no:cacheprovider
+
       - name: Block validation
         run: |
-          unzip -q data/media/wordpress-default-editor.zip -d "$RUNNER_TEMP/skill"
-          BLOCKCHECK="$RUNNER_TEMP/skill/wordpress-default-editor/scripts/blockcheck"
+          BLOCKCHECK=.claude/skills/wordpress-default-editor/scripts/blockcheck
           npm install --prefix "$BLOCKCHECK" --silent --no-audit --no-fund
           for f in $(git ls-files 'data/*.html'); do
             node "$BLOCKCHECK/validate_blocks.cjs" "$f"

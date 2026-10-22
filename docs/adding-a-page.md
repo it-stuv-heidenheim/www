@@ -7,8 +7,6 @@ So legst du eine neue Unterseite auf der StuV-Website an und bringst sie live.
 - Git-Zugriff auf dieses Repo
 - WordPress-Admin-Zugang (zum Anlegen der Seite in wp-admin)
 - `.env`-Datei mit Deploy-Credentials
-- Der `wordpress-default-editor`-Skill unter `~/.claude/skills/wordpress-default-editor`
-  (siehe Voraussetzungen in `docs/content-editing.md`)
 - Node.js für `npx prettier` und Block-Validierung
 
 ## Schritt 1: Verzeichnis und erste Content-Datei anlegen
@@ -88,7 +86,7 @@ Den Aufruf der Block-Validierung findest du in `docs/testing.md` unter
 
 ```bash
 source .env
-SKILL=~/.claude/skills/wordpress-default-editor
+SKILL=.claude/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json dein-slug --dry-run
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json dein-slug
 ```

@@ -1,0 +1,11 @@
+{
+  "name": "wp-blockcheck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Run the real Gutenberg block validator over saved block markup.",
+  "dependencies": {
+    "@wordpress/blocks": "*",
+    "@wordpress/block-library": "*",
+    "jsdom": "*"
+  }
+}

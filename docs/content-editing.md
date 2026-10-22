@@ -8,16 +8,9 @@ und auf der Kommandozeile.
 
 - Git-Zugriff auf dieses Repo
 - Node.js (für `npx prettier` und die Block-Validierung)
-- Das `wordpress-default-editor`-Tooling, entpackt nach `~/.claude/skills/`.
-  Lade den ZIP-Schnappschuss herunter und entpacke ihn dorthin. Er enthält
-  denselben Stand wie ein frischer Checkout des Skills, nur ohne die
-  installierten Abhängigkeiten, die beim ersten Lauf ohnehin neu entstehen:
-
-  [wordpress-default-editor herunterladen (ZIP)](https://stuv-heidenheim.de/wp-content/uploads/wordpress-default-editor.zip)
-
-  ```bash
-  unzip wordpress-default-editor.zip -d ~/.claude/skills/
-  ```
+- Python 3. Das Tooling (`wordpress-default-editor`) liegt im Repo unter
+  `.claude/skills/wordpress-default-editor/`; der Block-Validator installiert
+  seine npm-Pakete beim ersten Lauf selbst.
 
 - Zum lokalen Deployen (für die Deploy-Action nicht nötig): git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
   (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`
@@ -128,7 +121,7 @@ lassen.
 
    ```bash
    source .env
-   python3 ~/.claude/skills/wordpress-default-editor/scripts/deploy.py \
+   python3 .claude/skills/wordpress-default-editor/scripts/deploy.py \
      --manifest data/manifest.json media
    ```
 
@@ -279,7 +272,7 @@ kontaktieren):
 
 ```bash
 source .env
-SKILL=~/.claude/skills/wordpress-default-editor
+SKILL=.claude/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run
 ```
 
