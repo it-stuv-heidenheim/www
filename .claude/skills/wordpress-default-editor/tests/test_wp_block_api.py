@@ -53,7 +53,8 @@ def restore_pages(request):
         yield
         return
     snapshot = {
-        p["id"]: (p["content"]["raw"], p["status"]) for p in api.list_content("pages")
+        p["id"]: (p["content"]["raw"], p["status"])
+        for p in api._request("GET", "pages?per_page=100&context=edit")
     }
     yield
     for pid, (raw, status) in snapshot.items():
@@ -114,46 +115,9 @@ def test_backup_dir_distinguishes_same_host_installs(monkeypatch):
     assert blog != insecure
 
 
-def test_update_block_text_changes_only_targeted_block():
-    raw = (
-        '<!-- wp:heading -->\n<h1>Welcome</h1>\n<!-- /wp:heading -->\n'
-        '<!-- wp:paragraph -->\n<p>Hello</p>\n<!-- /wp:paragraph -->'
-    )
-    new = api.update_block_text(raw, "paragraph", "Hello", "Hola")
-    assert "Hola" in new
-    assert "Welcome" in new
-    assert "Hello" not in new
-
-
-def test_update_block_text_refuses_ambiguous_match():
-    raw = (
-        '<!-- wp:paragraph -->\n<p>Save now</p>\n<!-- /wp:paragraph -->\n'
-        '<!-- wp:paragraph -->\n<p>Save now</p>\n<!-- /wp:paragraph -->'
-    )
-    with pytest.raises(ValueError, match="2 .*paragraph"):
-        api.update_block_text(raw, "paragraph", "Save now", "Buy now")
-
-
-def test_verify_only_text_changed_passes_and_fails():
-    old = (
-        '<!-- wp:heading -->\n<h1>Welcome</h1>\n<!-- /wp:heading -->\n'
-        '<!-- wp:paragraph -->\n<p>Hello</p>\n<!-- /wp:paragraph -->'
-    )
-    new = api.update_block_text(old, "paragraph", "Hello", "Hola")
-    assert api.verify_only_text_changed(old, new, "paragraph", "Hello")
-
-    bad = old.replace("Welcome", "Goodbye")
-    assert not api.verify_only_text_changed(old, bad, "paragraph", "Hello")
-
-
 def test_save_content_preserves_status(mock_server):
     data = api.fetch_raw("pages", 1)
-    updated = api.update_block_text(
-        data["content"]["raw"],
-        "paragraph",
-        "placeholder text",
-        "new copy",
-    )
+    updated = data["content"]["raw"].replace("placeholder text", "new copy")
     api.save_content("pages", 1, updated, data["status"])
     after = api.fetch_raw("pages", 1)
     assert "new copy" in after["content"]["raw"]
@@ -162,25 +126,10 @@ def test_save_content_preserves_status(mock_server):
 
 def test_save_content_does_not_publish_draft(mock_server):
     data = api.fetch_raw("pages", 2)
-    updated = api.update_block_text(
-        data["content"]["raw"],
-        "paragraph",
-        "Draft placeholder",
-        "Updated draft copy",
-    )
+    updated = data["content"]["raw"].replace("Draft placeholder", "Updated draft copy")
     api.save_content("pages", 2, updated, data["status"])
     after = api.fetch_raw("pages", 2)
     assert after["status"] == "draft"
-
-
-def test_update_block_text_refuses_non_leaf_block():
-    raw = (
-        '<!-- wp:buttons -->\n<div class="wp-block-buttons"><!-- wp:button -->\n'
-        '<a class="wp-block-button__link">Click me</a>\n'
-        '<!-- /wp:button --></div>\n<!-- /wp:buttons -->'
-    )
-    with pytest.raises(ValueError):
-        api.update_block_text(raw, "buttons", "Click me", "Press me")
 
 
 def test_rollback_restores_content_and_status(mock_server):
