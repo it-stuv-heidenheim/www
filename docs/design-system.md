@@ -58,12 +58,14 @@ die Systemschrift (San Francisco, Segoe UI …).
 
 Fraunces hat neben Gewicht und optischer Größe zwei eigene Achsen, die
 `component.css` in der `h1`–`h6`-Regel per `font-variation-settings` setzt:
-`SOFT 50` rundet die Serifen halb ab, `WONK 0` schaltet die schräg gestellten
-Buchstaben (h, m, n) ab. Die optische Größe stellt der Browser selbst nach der
-Schriftgröße ein, sodass kleine Überschriften kräftiger gezeichnet sind als der
-Hero-Titel. Die Überschriften-Klassen (`.stuv-hero-title`, `.stuv-h2`,
-`.stuv-h3`, `.stuv-h3-sm`) stehen auf Gewicht 500, weil Fraunces bei 600 in
-großen Größen zu dunkel wirkt.
+`SOFT 50` rundet die Serifen halb ab, `WONK 1` schaltet die schräg gestellten
+Buchstaben (h, m, n) und schiefen Serifen ein, die Fraunces ihren Charakter
+geben. Der Hero-Titel (`.stuv-hero-title`) ist eine leichte Display-Zeile:
+Gewicht 300, optische Größe fest auf 144 (höchster Kontrast), engere Laufweite
+und bis zu 4.5rem groß. Darunter folgt die übliche Regel für Display-Serifen:
+`.stuv-h2`, `.stuv-h3` und `.stuv-h3-sm` stehen auf Gewicht 400, die optische
+Größe stellt der Browser selbst nach der Schriftgröße ein. Kleine Überschriften
+sind dadurch schon kräftiger gezeichnet und wirken bei mehr als 400 fett.
 
 Fraunces liegt selbst gehostet auf dem Server, nicht bei Google: Ein Abruf von
 `fonts.googleapis.com` schickt bei jedem Seitenaufruf die IP-Adresse an Google,
