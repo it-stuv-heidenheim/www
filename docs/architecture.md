@@ -22,7 +22,6 @@ Dateien, und ein Deploy schreibt sie über die REST-API auf die Live-Site.
 | `tools/`                    | Generatoren und Hilfsskripte (`docs/tools.md`)                                                                                                                       |
 | `wp-plugin/`                | Drei WordPress-Plugins: `stuv-mensa` (Live-Speiseplan), `stuv-theme` (Dark-Mode-Toggle) und `stuv-dsgvo` (Klick-zum-Laden für die Kalender), siehe `docs/plugins.md` |
 | `docs/`                     | Diese Doku, gelesen auf GitHub                                                                                                                                       |
-| `.agents/skills/`           | Repo-lokale Agent-Verfahren (`docs/ai-workflow.md`)                                                                                                                  |
 
 ## Was nicht in diesem Repo liegt
 

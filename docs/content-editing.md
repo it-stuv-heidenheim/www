@@ -20,8 +20,7 @@ und auf der Kommandozeile.
   ```
 
 - Zum Deployen: git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
-  (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`,
-  `WP_ADDRESS_FAMILY="ipv4"` (Gründe in `AGENTS.md`)
+  (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`
 
   Bricht einmal jeder Deploy-Befehl mit `HTTP Error 404` ab, obwohl die Website
   normal läuft, fehlen die Rewrite-Regeln für `/wp-json/`. Dann in wp-admin

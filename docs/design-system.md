@@ -79,9 +79,7 @@ Auf dem Server liegt sie in der Font Library von WordPress unter
 `/wp-content/uploads/fonts/`; der `fontFace`-Eintrag in `data/global-styles.json` zeigt
 dorthin, und WordPress druckt daraus selbst die `@font-face`-Regel. Die Datei
 geht mit keinem Deploy-Ziel raus. Einmal hochgeladen wird sie über die
-REST-Route `wp/v2/font-families/<id>/font-faces`, und weil auf `dev.` ein
-anderes Dokumentenverzeichnis liegt, nur mit `WP_SITE` auf der Apex-Domain
-(siehe `AGENTS.md`, Host facts). Fehlt die Datei, fallen die Überschriften auf
+REST-Route `wp/v2/font-families/<id>/font-faces`. Fehlt die Datei, fallen die Überschriften auf
 Georgia zurück.
 
 **Eigene Tokens** (`settings.custom`): bisher nur der Eckenradius
@@ -297,8 +295,7 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
   überlebt keinen Palette-Wechsel und kennt keinen Dark Mode. Nimm stattdessen
   eine Klasse oder die Gutenberg-Farbwahl.
 - Erst suchen, dann schreiben. Es gibt schon viele Klassen, und mit jeder
-  neuen, die fast dasselbe tut, wird das Stylesheet schwerer zu pflegen (siehe
-  `.agents/skills/improving-code/`).
+  neuen, die fast dasselbe tut, wird das Stylesheet schwerer zu pflegen.
 
 ## Nach dem Deploy
 

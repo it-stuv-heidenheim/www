@@ -51,7 +51,7 @@ rebuild that zip with `tools/build_skill_zip.py` after a validator change.
   (`twentytwentyfive//header` / `//footer`).
 - `data/global-styles.json`: theme.json-shaped design tokens (layout widths,
   palette, typography).
-- `data/styles/component.css`: ~110 KB of component classes (`.stuv-card`,
+- `data/styles/component.css`: component classes (`.stuv-card`,
   `.stuv-icon-box`, `.stuv-button-*`, `.stuv-wpforms`) plus the `:root.dark`
   overrides; deployed into the global-styles custom-CSS field, which WordPress
   prints inline in `<style id="global-styles-inline-css">` on **every** page
@@ -75,7 +75,7 @@ rebuild that zip with `tools/build_skill_zip.py` after a validator change.
 
 Run from the repo root. `source .env` first for anything that talks to the host
 (`.env` is git-ignored and holds `WP_SITE`, `WP_USER`, `WP_APP_PASS`,
-`WP_REST_ROOT`, `WP_ADDRESS_FAMILY`).
+`WP_REST_ROOT`).
 
 ```bash
 npx prettier --check .        # before every commit
@@ -154,69 +154,21 @@ carries no inline CSS at all).
 
 ## Host facts
 
-**The live host is `stuv-heidenheim.de`, and `WP_SITE` must point at it.**
-`dev.stuv-heidenheim.de` and the apex are one WordPress database but **two
-document roots**: WordPress's site URL is the apex, so `dev.` 301s every page
-there, yet nginx still serves `dev.`'s _own_ files for static paths. A REST
-upload through `dev.` therefore writes the file into `dev.`'s folder while the
-attachment URL (shared database) names the apex, which 404s it (nginx's 404,
-not the theme's). The two roots also drift apart in other ways (core
-`readme.html` is 403 on `dev.`, 200 on the apex). Page, template-part and
-global-styles deploys only touch the database and are unaffected. If an upload
-is missing on the apex, delete the attachment and re-upload with `WP_SITE` on
-the apex (see Media). The apex replaced the beta host `stuv.michi.onl`, a
-_different_ WordPress instance: don't reintroduce its facts
-(`index.php/wp-json`, `?pagename=` URLs, Cloudflare, `uploads/<YYYY>/<MM>/`, its
-page ids) from memory or git history.
+**The live host is `stuv-heidenheim.de`, and `WP_SITE` points at it.**
 
-- `WP_REST_ROOT=wp-json`: permalinks are **Beitragsname** (`/%postname%/`) and
-  the REST rewrite works; the `index.php/wp-json` fallback the beta host needed
-  does not apply (it 301s straight back to `/wp-json/`).
-- **If `/wp-json/` ever 404s again, re-save the permalinks; don't hunt for a
-  firewall.** **Einstellungen → Permalinks → Speichern** flushes
-  `rewrite_rules`; unsaved permalinks leave core's `wp-json` rules unwritten.
-  Recognise it by the response: `/wp-json/` returns the _theme's_ 404,
-  byte-identical to any unknown slug, while `?rest_route=/` answers 200. A
-  firewall block returns 403/deny instead, so
-  `all-in-one-wp-security-and-firewall` is the wrong suspect.
-  `WP_REST_ROOT="?rest_route="` is the stopgap
-  that keeps deploys working meanwhile; `wp_block_api.py` handles a `?…` root
-  natively.
+- `WP_REST_ROOT=wp-json`: permalinks are **Beitragsname** (`/%postname%/`).
+  Front-end subpage URLs are `/<slug>/`.
+- **If `/wp-json/` returns the theme's 404 while `?rest_route=/` answers 200,
+  the rewrite rules are unwritten:** re-save **Einstellungen → Permalinks →
+  Speichern**. `WP_REST_ROOT="?rest_route="` keeps deploys working meanwhile.
+  The REST `settings` endpoint never exposes `permalink_structure`, so `null`
+  there proves nothing.
 - `wps-hide-login` is active, so **`wp-login.php` 404s by design**: wp-admin is
-  reachable only via its custom slug. Unrelated to the above; don't "fix" it.
-- The REST `settings` endpoint does **not** expose `permalink_structure`, because core
-  never registers that field, so `null` there is evidence of nothing. Judge
-  permalinks by whether pretty URLs resolve.
-- Front-end subpage URLs are `/<slug>/`; `?pagename=<slug>` still works as a
-  fallback. Page permalinks are unaffected by a REST-root breakage.
-- **No Cloudflare.** Plain nginx, accepts the default `python-urllib/3.x`
-  User-Agent, so the beta host's `403 / error code: 1010` trap does not apply.
-  The skill's client still sends `User-Agent: wp-default-editor/1.0` and
-  `tools/gen_map.py` still needs its own UA, because CARTO's tile servers do ban
-  the stdlib default.
-- **The host publishes an AAAA record it does not route.** Every IPv6 connection
-  attempt hangs. `curl` and browsers hide this behind Happy Eyeballs, so the
-  site feels fine while Python's `urllib`, which gives _each_ candidate address
-  the full timeout, stalls 30s per REST call. `wp_block_api.py` caps each connect attempt
-  (`WP_CONNECT_TIMEOUT`, default 5s) and caches the address that answered, and
-  **`.env` sets `WP_ADDRESS_FAMILY="ipv4"`**, which drops the AAAA candidate
-  before any connect. `WP_CONNECT_TIMEOUT` is a per-_process_ cap and
-  every script is its own process, so without the pin each command pays it
-  again. The pin raises `OSError` if the host ever stops publishing an A record.
-  That failure is meant to be loud. All three names (`dev.`,
-  `www.`, apex) resolve to A `202.61.233.9` plus the same dead AAAA. If a
-  deploy goes mysteriously slow again, check this first:
-
-  ```bash
-  HOST="$(printf '%s' "$WP_SITE" | sed -E 's#^https?://##')"
-  curl -6 -sS -o /dev/null -m 8 -w 'v6 %{http_code} %{time_total}\n' "https://$HOST/wp-json/"
-  curl -4 -sS -o /dev/null -m 8 -w 'v4 %{http_code} %{time_total}\n' "https://$HOST/wp-json/"
-  ```
-
+  reachable only via its custom slug.
 - **`WP_SITE` already includes the `https://` scheme.** The skill's client
-  normalizes it, ad-hoc `curl` does not: `curl "https://$WP_SITE/..."` builds
-  `https://https://…` and fails with `HTTP 000`, which reads like a network
-  outage rather than a typo. Strip the scheme first, as above.
+  normalizes it, ad-hoc `curl` does not: `curl "https://$WP_SITE/..."` fails
+  with `HTTP 000`, which reads like a network outage. Strip the scheme first:
+  `HOST="$(printf '%s' "$WP_SITE" | sed -E 's#^https?://##')"`.
 - **The host runs WP-Optimize page caching.** A fetch can return a stale,
   minified copy of a page (`x-cache-status: HIT`) whose _inline_ global-styles
   CSS predates the deploy. Bust it with a query string when verifying a CSS
@@ -249,11 +201,9 @@ PY
 
 **Uploads are flat on this host.** Month/year folders are switched off, so files
 land at `uploads/<name>` and `MEDIA_BASE` in `gen_map.py` is the root-relative
-`/wp-content/uploads`, root-relative on purpose so the same markup renders on
-every host name instead of pinning every map to the one it was generated
-against. That stable URL is why delete-then-re-upload is safe
-here. If month/year folders are ever re-enabled, `MEDIA_BASE` has to change with
-them and the "URL only survives within the same month" caveat comes back.
+`/wp-content/uploads`, root-relative so the same markup renders on every host
+name. That stable URL is why delete-then-re-upload is safe here. If month/year
+folders are ever re-enabled, `MEDIA_BASE` has to change with them.
 
 `find_media_by_filename` takes the newest
 match and warns on stderr when a name is ambiguous. If that warning appears,
@@ -357,10 +307,6 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
 
 ## Content gotchas
 
-- **German orthography**: legacy migrated content spelled umlauts as ASCII
-  digraphs; live content is fixed. **Never blanket-replace** `ae→ä`/`ss→ß`
-  (corrupts `neue`, `Wohnungssuche`, …). URL slugs (`?pagename=ueber-uns`) must
-  stay digraphs.
 - **`--` inside block-comment JSON must be escaped as `\u002d\u002d`.** A literal
   `--` is illegal inside an HTML comment, so Gutenberg writes
   `"color":{"text":"var(\u002d\u002dstuv-muted-foreground)"}`; the `<p>`'s own
@@ -381,26 +327,15 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
   passes a block whose JSON `style` disagrees with its inline `style` (a
   `"fontWeight":"500"` over `font-weight: 400`); the editor then re-saves the
   JSON value and the look changes. `tools/test_content.py` catches that drift.
-- **`"style":{}` is not stable across a save.** An empty JSON object in a block
-  comment comes back from WordPress as `"style":[]`, because PHP decodes `{}` to an
-  empty array and re-encodes it as `[]`. It renders fine and still validates,
-  but it makes the affected target report drift on every source-vs-live
-  comparison forever, which buries real drift. The attribute is a no-op anyway:
-  omit it rather than writing it empty.
+- **Omit an empty `"style":{}`.** WordPress stores it back as `"style":[]` (PHP
+  round-trip), so that target reports drift against its source forever.
 - **Verify a deploy by comparing raw block markup, not by eyeballing the page.**
   Fetch `content.raw` per manifest target and compare it to the joined source;
   every target should be byte-identical. `verify_deploy.py` does exactly this.
-- **`unfiltered_html` is active.** `<script>` tags and `onclick` attributes in
-  block content survive REST writes byte-for-byte (verified by draft
-  round-trip). Do **not** rely on it: it holds only because the deploy user is
-  an admin and `DISALLOW_UNFILTERED_HTML` is unset. Any hardening would strip
-  inline scripts silently, with no error. Ship JS via a plugin enqueue instead.
-- **`has-border-color` is two classes in one.** Gutenberg puts it on any block
-  with a custom border colour, and the palette slug `border` makes TT5 print
-  `.has-border-color{color:var(--wp--preset--color--border) !important}` for
-  it, so that block's own text turns light grey. Nothing visible breaks today
-  only because every child sets its own colour. Prefer the `.stuv-card` border
-  over a block border colour.
+- **Use the `.stuv-card` border, not a block border colour.** A custom border
+  colour adds `has-border-color`, which the palette slug `border` turns into
+  `color:var(--wp--preset--color--border) !important`: the block's text goes
+  light grey.
 - **Page template**: all pages use the theme's `page-no-title` template. New
   pages created via REST **must** set `"template": "page-no-title"`, or
   WordPress renders a big post-title heading.
@@ -420,20 +355,12 @@ tokens, docs and JS. Config: `.prettierrc.json` (`printWidth: 80`,
   itself with a class. **Eyeballing the block HTML will not show this**;
   measure `getBoundingClientRect().left` for eyebrow/heading/lead/body on the
   rendered page.
-- **A page-wide horizontal scroll on mobile came from the header, not from the
-  page.** The document is as wide as its widest child, so one overflowing
-  element in the template part makes _every_ page swipeable sideways, so it looks like a per-page bug
-  even though it isn't one. `.stuv-header-row` is
-  `flexWrap:nowrap` and at 360px held ~350px of content in ~300px: the logo is
-  168px on its own (`.stuv-logo-mark` is `height:2.5rem` and the mark is
-  1342x320, so its width follows from its height, which is easy to miss when
-  reading the CSS). The fix is in the `max-width:639px` block. Its smaller sizes help, but the
-  part that prevents the overflow is `min-width:0`
-  on the logo group plus `max-width:100%` on the mark, which lets the logo
-  shrink instead of the row overflowing at widths nobody measured. Keep that
-  when touching the header. Diagnose by filtering
-  `getBoundingClientRect().right > document.documentElement.clientWidth`, not by
-  reading the CSS.
+- **A sideways scroll on every page at mobile width comes from the header**
+  (`.stuv-header-row` is `flexWrap:nowrap`). In the `max-width:639px` block,
+  `min-width:0` on the logo group plus `max-width:100%` on `.stuv-logo-mark` is
+  what lets the logo shrink; keep both. Find the overflowing element by
+  filtering `getBoundingClientRect().right >
+document.documentElement.clientWidth`.
 - **Fluid typography is off; a size ships exactly as written.**
   `data/global-styles.json` sets `settings.typography.fluid: false` and declares
   its own static `fontSizes` presets (`small` 0.875, `medium` 1, `large` 1.125,
@@ -505,22 +432,3 @@ relative (`testing.md`), site files absolute (`https://stuv-heidenheim.de/…`),
 a root-relative `/wp-content/…` resolves against github.com. Nothing in `docs/`
 may contain secrets. Do not re-add a `docs` deploy target to
 `data/manifest.json`.
-
-`docs/superpowers/` holds specs and plans from the brainstorm → spec → plan →
-execute cycle, and lists **open work only**: executed specs and plans are
-deleted from the tree once their work ships (precedent: `6a19d0a`), so the
-directory is absent when nothing is open. They stay in git history: reference a
-deleted one as `git show 6a19d0a^:<path>`, never as a bare path, which reads
-like a live file and rots silently. Grep the tree for references before
-deleting.
-
-## Headless browsers
-
-Do **not** run Puppeteer/Playwright or any headless-browser script without the
-maintainer's explicit approval each time.
-
-## Repo-local skills
-
-`.agents/skills/improving-code/` holds the refactoring procedure for this repo's
-block HTML, component CSS and design tokens. Its rule: a cleanup must be a
-**verified no-op** on deployed content, or the difference must be stated.
