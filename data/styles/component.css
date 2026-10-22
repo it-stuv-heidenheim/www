@@ -933,7 +933,6 @@ span.stuv-badge {
 .stuv-card-stat {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-1);
   margin-top: var(--space-3);
   color: var(--stuv-primary);
