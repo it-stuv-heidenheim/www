@@ -557,7 +557,10 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
         if pin.get("note"):
             out.append(f'    <p class="stuv-map-legend-note">{esc(pin["note"])}</p>')
         out += [
+            # Every pin has this link, so the visible text alone is ambiguous
+            # in a screen reader's link list; the label names the place.
             f'    <p><a class="stuv-button-link" href="{esc(maps_url(pin))}"'
+            f' aria-label="{esc(pin["name"])} in Karten öffnen"'
             ' target="_blank" rel="noopener noreferrer">In Karten öffnen</a></p>',
             "  </li>",
         ]
