@@ -1,0 +1,71 @@
+# Watches the live site between deploys; reads only, never writes. Daily: a
+# target edited in wp-admin (verify_deploy.py --history) and plugins whose live
+# version differs from wp-plugin/ (tools/check_plugins.py). Mondays: external
+# links that died (tools/check_links.py). A failed run emails whoever last
+# changed the schedule below; docs/testing.md, "Überwachung".
+# Needs the environment `monitor` (main only, no reviewers) with the secrets
+# WP_USER and WP_APP_PASS of its own administrator and the variable WP_SITE.
+name: Monitor
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+    - cron: "37 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '17 4 * * *'
+    runs-on: ubuntu-latest
+    environment: monitor
+    env:
+      WP_SITE: ${{ vars.WP_SITE }}
+      WP_USER: ${{ secrets.WP_USER }}
+      WP_APP_PASS: ${{ secrets.WP_APP_PASS }}
+      WP_REST_ROOT: wp-json
+      # The host publishes an AAAA record it does not route (AGENTS.md).
+      WP_ADDRESS_FAMILY: ipv4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # --history looks the live content up in every commit.
+          fetch-depth: 0
+
+      - name: Configuration present
+        run: |
+          for v in WP_SITE WP_USER WP_APP_PASS; do
+            [ -n "${!v}" ] || { echo "::error::$v is not set in the monitor environment"; exit 1; }
+          done
+
+      # EDITED fails the run: the edit is lost on the next deploy of that
+      # target unless someone ports it into data/ (docs/ai-workflow.md).
+      # BEHIND only warns: a push to main whose deploy is not approved yet.
+      - name: Edits in wp-admin
+        run: |
+          set +e
+          python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
+            --manifest data/manifest.json --diff --history
+          rc=$?
+          set -e
+          case $rc in
+            0) ;;
+            1) echo "::warning::The site serves an older commit: a deploy is waiting for approval or was never started." ;;
+            3) echo "::error::Edited in wp-admin (EDITED above). Port the edit into data/ before the next deploy."; exit 1 ;;
+            *) echo "::error::Live site not readable (exit $rc)"; exit 1 ;;
+          esac
+
+      - name: Plugin versions
+        if: success() || failure()
+        run: python3 tools/check_plugins.py
+
+  links:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '37 4 * * 1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: External links
+        run: python3 tools/check_links.py

@@ -113,7 +113,8 @@ ist kein Speiseplan verfügbar.“
 Die Version steht an zwei Stellen, im Plugin-Header und in
 `STUV_MENSA_VERSION`, und beide müssen übereinstimmen: Die Konstante hängt als
 Cache-Buster an `assets/mensa.js`. Wer nur eine erhöht, liefert neues PHP mit
-altem JavaScript aus.
+altem JavaScript aus. Dasselbe gilt für die anderen beiden Plugins;
+`tools/test_plugins.py` prüft es für alle drei.
 
 Zwei Eigenheiten der Upstream-API fängt die Normalisierung
 (`inc/normalize.php`) ab. Beide sind keine Bugs:
@@ -254,6 +255,16 @@ pflegt, sollte einen Absatz dazu ergänzen; die Seite liegt außerhalb dieses
 Repos.
 
 ## Plugins auf der Live-Site prüfen
+
+Ob die Site die Plugins in der Version aus `wp-plugin/` und aktiv betreibt,
+prüft `tools/check_plugins.py` (braucht die Zugangsdaten aus der `.env`, liest
+nur). Die Action **Monitor** führt es täglich aus (`docs/testing.md`). Eine
+Zeile `DIFFERS` heißt: Zip bauen und hochladen, wie oben beschrieben.
+
+```bash
+source .env
+python3 tools/check_plugins.py
+```
 
 ```bash
 HOST="$(printf '%s' "$WP_SITE" | sed -E 's#^https?://##')"

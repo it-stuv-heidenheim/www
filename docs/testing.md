@@ -205,11 +205,53 @@ WordPress' REST-Sanitizer kann Teile des Custom-CSS entfernen. Deshalb gehört
 `verify_global_css.py` zu diesem Deploy dazu (Aufruf in `AGENTS.md`, Erklärung
 in `docs/tools.md`).
 
+## Überwachung zwischen den Deploys
+
+Die Action **Monitor** (`.github/workflows/monitor.yml`) liest die Live-Site,
+ohne etwas zu schreiben. Sie läuft im Environment `monitor`, ohne Freigabe
+(Einrichtung in `docs/ai-workflow.md`), und lässt sich unter **Actions →
+Monitor → Run workflow** auch von Hand starten; dann laufen alle Prüfungen.
+
+Täglich:
+
+- `verify_deploy.py --history`: Ein Ziel, das in wp-admin geändert wurde
+  (`EDITED`), lässt den Lauf scheitern. So fällt die Änderung am Tag danach auf
+  und nicht erst beim nächsten Deploy, der dann abbricht. `BEHIND` gibt nur
+  eine Warnung: Dann wartet meist ein Deploy auf seine Freigabe.
+- `tools/check_plugins.py`: Jedes Plugin aus `wp-plugin/` muss installiert,
+  aktiv und in derselben Version sein. Ein vergessener Zip-Upload fällt sonst
+  niemandem auf.
+
+Montags:
+
+- `tools/check_links.py` ruft jeden externen Link der Seiten einmal auf.
+  `BROKEN` (404, 410, eine Domain ohne DNS-Eintrag, ein ungültiges Zertifikat,
+  jeweils auch beim zweiten Versuch) lässt den Lauf scheitern; `WARN` (etwa 403
+  von einem Bot-Schutz oder ein Timeout) und `MOVED` (Link landet auf einer
+  anderen Domain) sind Hinweise. Instagram, WhatsApp, Google Maps und der
+  Abo-Link des Kalenders lassen sich so nicht prüfen und werden übersprungen.
+
+Alle drei laufen auch lokal, die ersten beiden nach `source .env`:
+
+```bash
+python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
+  --manifest data/manifest.json --history
+python3 tools/check_plugins.py
+python3 tools/check_links.py
+```
+
+Scheitert ein geplanter Lauf, schickt GitHub eine Mail an die Person, die den
+Zeitplan in `monitor.yml` zuletzt geändert hat. In einem öffentlichen Repo
+schaltet GitHub geplante Workflows nach 60 Tagen ohne Commit ab; dann unter
+**Actions → Monitor** wieder einschalten.
+
 ## Was keine dieser Prüfungen sieht
 
 Die Prüfungen oben lesen Quelltext; gerendert wird nichts. Kontraste rechnet
 `test_styles.py` aus, aber ob die Seite gut aussieht und auf ein Handy passt,
-siehst du nur, wenn du hinschaust:
+zeigt nur die gerenderte Seite. Ein Agent darf sie dafür selbst im Browser oder
+headless rendern und Screenshots ansehen, ohne zu fragen. Nach jeder Änderung am
+Layout:
 
 - Seite aufrufen, hell **und** dunkel.
 - Das Fenster auf 360px Breite ziehen: Nichts darf seitlich scrollen, Buttons

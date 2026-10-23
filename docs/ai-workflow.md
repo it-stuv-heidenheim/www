@@ -147,3 +147,18 @@ Unter **Settings → Environments** ein Environment `production` anlegen:
 
 Starten darf die Action jeder mit Schreibrechten am Repo, freigeben nur die
 Reviewer.
+
+Für die Action **Monitor** (`docs/testing.md`) ein zweites Environment
+`monitor` anlegen:
+
+- **Deployment branches**: nur `main`.
+- **Variable** `WP_SITE` wie oben.
+- **Secrets** `WP_USER` und `WP_APP_PASS`: wieder ein eigener Benutzer mit
+  eigenem Application Password, Rolle Administrator. Nur Administratoren lesen
+  Template-Parts, Global Styles und die Plugin-Liste.
+- **Keine Reviewer.** Die Action läuft täglich und schreibt nichts; mit
+  Freigabe käme jeder Lauf erst an, wenn jemand klickt.
+
+Der Preis: Wer einen Workflow auf `main` pusht, kann dieses Passwort ohne
+Freigabe benutzen. Deshalb ein eigener Benutzer, den man sperren kann, ohne den
+Deploy-Zugang anzufassen.
