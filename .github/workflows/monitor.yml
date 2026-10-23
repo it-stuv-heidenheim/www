@@ -1,6 +1,7 @@
 # Watches the live site between deploys; reads only, never writes. Daily: a
-# target edited in wp-admin (verify_deploy.py --history) and plugins whose live
-# version differs from wp-plugin/ (tools/check_plugins.py). Mondays: external
+# target edited in wp-admin (verify_deploy.py --history), plugins whose live
+# version differs from wp-plugin/ (tools/check_plugins.py) and wp-admin state
+# that differs from data/site-state.json (tools/site_state.py). Mondays: external
 # links that died (tools/check_links.py). A failed run emails whoever last
 # changed the schedule below; docs/testing.md, "Überwachung".
 # Needs the environment `monitor` (main only, no reviewers) with the secrets
@@ -60,6 +61,11 @@ jobs:
       - name: Plugin versions
         if: success() || failure()
         run: python3 tools/check_plugins.py
+
+      # Settings, pages, plugins, media, SEO and form fields set in wp-admin.
+      - name: Site state
+        if: success() || failure()
+        run: python3 tools/site_state.py
 
   links:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '37 4 * * 1'

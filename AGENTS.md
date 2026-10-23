@@ -33,7 +33,9 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 - `wp-login.php` 404s by design. `/wp-json/` 404 with `?rest_route=/` 200: re-save Permalinks; meanwhile
   `WP_REST_ROOT="?rest_route="`. WP-Optimize caches pages: add a query string when checking front-end CSS.
 - `.github/workflows/monitor.yml` (environment `monitor`, no reviewer, reads only) runs daily
-  `verify_deploy.py --history` and `tools/check_plugins.py`, Mondays `tools/check_links.py`.
+  `verify_deploy.py --history`, `tools/check_plugins.py` and `tools/site_state.py`, Mondays `tools/check_links.py`.
+- `data/site-state.json` records what only wp-admin sets (settings, pages, plugins, media, SEO, form fields); it is
+  never deployed. After a change in wp-admin: `tools/site_state.py --write`, commit. No e-mail addresses in it.
 
 ## Media
 

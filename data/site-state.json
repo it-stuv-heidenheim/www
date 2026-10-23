@@ -1,0 +1,298 @@
+{
+  "forms": {
+    "129": {
+      "fields": [
+        {
+          "id": 1,
+          "label": "Name",
+          "required": true,
+          "type": "name"
+        },
+        {
+          "id": 2,
+          "label": "E-Mail-Adresse",
+          "required": true,
+          "type": "email"
+        },
+        {
+          "id": 3,
+          "label": "Kommentar oder Nachricht",
+          "required": false,
+          "type": "textarea"
+        }
+      ],
+      "page": "/kontakt/",
+      "submit": "Absenden"
+    },
+    "132": {
+      "fields": [
+        {
+          "id": 4,
+          "label": "Anliegen (optional)",
+          "options": [
+            "Probleme im Studium",
+            "Probleme mit der DHBW",
+            "Probleme im Ausbildungsbetrieb",
+            "Persönliche Probleme",
+            "Mobbing / Diskriminierung",
+            "Verbesserungsvorschlag"
+          ],
+          "required": false,
+          "type": "select"
+        },
+        {
+          "id": 3,
+          "label": "Nachricht",
+          "required": true,
+          "type": "textarea"
+        },
+        {
+          "id": 5,
+          "label": "Name (optional)",
+          "required": false,
+          "type": "name"
+        },
+        {
+          "id": 6,
+          "label": "Kurs (optional)",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "id": 2,
+          "label": "E-Mail-Adresse (optional)",
+          "required": false,
+          "type": "email"
+        }
+      ],
+      "page": "/kummer-karsten/",
+      "submit": "Absenden"
+    }
+  },
+  "media": [
+    "jan.jpg",
+    "karte-campus-dark.webp",
+    "karte-campus-light.webp",
+    "karte-stadtgebiet-dark.webp",
+    "karte-stadtgebiet-light.webp",
+    "karte-stadtzentrum-dark.webp",
+    "karte-stadtzentrum-light.webp",
+    "kilian.jpg",
+    "og-stuv.jpg",
+    "stuv-dhbw-apple-touch-icon.png",
+    "stuv-dhbw-favicon.png",
+    "stuv-dhbw-logo-q.png",
+    "stuv-team-hero.jpg",
+    "stuv-team-hero.webp"
+  ],
+  "pages": {
+    "events": {
+      "comment_status": "closed",
+      "featured_media": 0,
+      "id": 11,
+      "menu_order": 0,
+      "parent": 0,
+      "ping_status": "closed",
+      "status": "publish",
+      "template": "page-no-title",
+      "title": "Events"
+    },
+    "kontakt": {
+      "comment_status": "closed",
+      "featured_media": 0,
+      "id": 13,
+      "menu_order": 0,
+      "parent": 0,
+      "ping_status": "closed",
+      "status": "publish",
+      "template": "page-no-title",
+      "title": "Kontakt"
+    },
+    "kummer-karsten": {
+      "comment_status": "closed",
+      "featured_media": 0,
+      "id": 16,
+      "menu_order": 0,
+      "parent": 0,
+      "ping_status": "closed",
+      "status": "publish",
+      "template": "page-no-title",
+      "title": "Kummer Karsten"
+    },
+    "linktree": {
+      "comment_status": "closed",
+      "featured_media": 0,
+      "id": 14,
+      "menu_order": 0,
+      "parent": 0,
+      "ping_status": "closed",
+      "status": "publish",
+      "template": "page-no-title",
+      "title": "Linktree"
+    },
+    "startseite": {
+      "comment_status": "closed",
+      "featured_media": 0,
+      "id": 9,
+      "menu_order": 0,
+      "parent": 0,
+      "ping_status": "closed",
+      "status": "publish",
+      "template": "page-no-title",
+      "title": "Startseite"
+    },
+    "studentenleben": {
+      "comment_status": "closed",
+      "featured_media": 0,
+      "id": 12,
+      "menu_order": 0,
+      "parent": 0,
+      "ping_status": "closed",
+      "status": "publish",
+      "template": "page-no-title",
+      "title": "Studentenleben"
+    },
+    "ueber-uns": {
+      "comment_status": "closed",
+      "featured_media": 0,
+      "id": 10,
+      "menu_order": 0,
+      "parent": 0,
+      "ping_status": "closed",
+      "status": "publish",
+      "template": "page-no-title",
+      "title": "Über uns"
+    }
+  },
+  "plugins": {
+    "all-in-one-wp-security-and-firewall/wp-security": "active",
+    "autodescription/autodescription": "active",
+    "login-with-google/login-with-google": "active",
+    "stuv-dsgvo/stuv-dsgvo": "active",
+    "stuv-mensa/stuv-mensa": "active",
+    "stuv-theme/stuv-theme": "active",
+    "updraftplus/updraftplus": "active",
+    "wp-optimize/wp-optimize": "active",
+    "wpforms-lite/wpforms": "active",
+    "wps-hide-login/wps-hide-login": "active"
+  },
+  "seo": {
+    "/": {
+      "canonical": "https://stuv-heidenheim.de/",
+      "description": "Die Studierendenvertretung der DHBW Heidenheim: Wir vertreten deine Interessen an der Hochschule und organisieren Events rund ums Studium in Heidenheim.",
+      "og:description": "Die Studierendenvertretung der DHBW Heidenheim: Wir vertreten deine Interessen an der Hochschule und organisieren Events rund ums Studium in Heidenheim.",
+      "og:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "og:title": "Studierendenvertretung der DHBW Heidenheim – StuV",
+      "og:type": "website",
+      "robots": "max-snippet:-1,max-image-preview:large,max-video-preview:-1",
+      "title": "Studierendenvertretung der DHBW Heidenheim – StuV",
+      "twitter:card": "summary_large_image",
+      "twitter:description": "Die Studierendenvertretung der DHBW Heidenheim: Wir vertreten deine Interessen an der Hochschule und organisieren Events rund ums Studium in Heidenheim.",
+      "twitter:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "twitter:title": "Studierendenvertretung der DHBW Heidenheim – StuV"
+    },
+    "/events/": {
+      "canonical": "https://stuv-heidenheim.de/events/",
+      "description": "Partys, Sportevents und Workshops der StuV DHBW Heidenheim: alle kommenden Veranstaltungen im Kalender, auch zum Abonnieren.",
+      "og:description": "Partys, Sportevents und Workshops der StuV DHBW Heidenheim: alle kommenden Veranstaltungen im Kalender, auch zum Abonnieren.",
+      "og:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "og:title": "Events",
+      "og:type": "website",
+      "robots": "max-snippet:-1,max-image-preview:large,max-video-preview:-1",
+      "title": "Events - StuV der DHBW Heidenheim",
+      "twitter:card": "summary_large_image",
+      "twitter:description": "Partys, Sportevents und Workshops der StuV DHBW Heidenheim: alle kommenden Veranstaltungen im Kalender, auch zum Abonnieren.",
+      "twitter:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "twitter:title": "Events"
+    },
+    "/kontakt/": {
+      "canonical": "https://stuv-heidenheim.de/kontakt/",
+      "description": "So erreichst du die StuV der DHBW Heidenheim: per E-Mail, WhatsApp oder Instagram, für Fragen, Anregungen und Zusammenarbeit.",
+      "og:description": "So erreichst du die StuV der DHBW Heidenheim: per E-Mail, WhatsApp oder Instagram, für Fragen, Anregungen und Zusammenarbeit.",
+      "og:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "og:title": "Kontakt",
+      "og:type": "website",
+      "robots": "max-snippet:-1,max-image-preview:large,max-video-preview:-1",
+      "title": "Kontakt - StuV der DHBW Heidenheim",
+      "twitter:card": "summary_large_image",
+      "twitter:description": "So erreichst du die StuV der DHBW Heidenheim: per E-Mail, WhatsApp oder Instagram, für Fragen, Anregungen und Zusammenarbeit.",
+      "twitter:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "twitter:title": "Kontakt"
+    },
+    "/kummer-karsten/": {
+      "canonical": "https://stuv-heidenheim.de/kummer-karsten/",
+      "description": "Der anonyme Kummerkasten der StuV DHBW Heidenheim: Sorgen, Probleme oder Feedback vertraulich loswerden. Wir hören zu.",
+      "og:description": "Der anonyme Kummerkasten der StuV DHBW Heidenheim: Sorgen, Probleme oder Feedback vertraulich loswerden. Wir hören zu.",
+      "og:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "og:title": "Kummer Karsten",
+      "og:type": "website",
+      "robots": "max-snippet:-1,max-image-preview:large,max-video-preview:-1",
+      "title": "Kummer Karsten - StuV der DHBW Heidenheim",
+      "twitter:card": "summary_large_image",
+      "twitter:description": "Der anonyme Kummerkasten der StuV DHBW Heidenheim: Sorgen, Probleme oder Feedback vertraulich loswerden. Wir hören zu.",
+      "twitter:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "twitter:title": "Kummer Karsten"
+    },
+    "/linktree/": {
+      "canonical": "https://stuv-heidenheim.de/linktree/",
+      "description": "Alle Kanäle der StuV DHBW Heidenheim auf einen Blick: WhatsApp-Community, Instagram, Hochschulsport und mehr.",
+      "og:description": "Alle Kanäle der StuV DHBW Heidenheim auf einen Blick: WhatsApp-Community, Instagram, Hochschulsport und mehr.",
+      "og:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "og:title": "Linktree",
+      "og:type": "website",
+      "robots": "max-snippet:-1,max-image-preview:large,max-video-preview:-1",
+      "title": "Linktree - StuV der DHBW Heidenheim",
+      "twitter:card": "summary_large_image",
+      "twitter:description": "Alle Kanäle der StuV DHBW Heidenheim auf einen Blick: WhatsApp-Community, Instagram, Hochschulsport und mehr.",
+      "twitter:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "twitter:title": "Linktree"
+    },
+    "/studentenleben/": {
+      "canonical": "https://stuv-heidenheim.de/studentenleben/",
+      "description": "Wohnen, Essen, Sport und Freizeit in Heidenheim: Campus-Karte, Mensa-Speiseplan und Tipps der StuV für dein Studium an der DHBW.",
+      "og:description": "Wohnen, Essen, Sport und Freizeit in Heidenheim: Campus-Karte, Mensa-Speiseplan und Tipps der StuV für dein Studium an der DHBW.",
+      "og:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "og:title": "Studentenleben",
+      "og:type": "website",
+      "robots": "max-snippet:-1,max-image-preview:large,max-video-preview:-1",
+      "title": "Studentenleben - StuV der DHBW Heidenheim",
+      "twitter:card": "summary_large_image",
+      "twitter:description": "Wohnen, Essen, Sport und Freizeit in Heidenheim: Campus-Karte, Mensa-Speiseplan und Tipps der StuV für dein Studium an der DHBW.",
+      "twitter:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "twitter:title": "Studentenleben"
+    },
+    "/ueber-uns/": {
+      "canonical": "https://stuv-heidenheim.de/ueber-uns/",
+      "description": "Lerne das Team, die Struktur und die Referate der Studierendenvertretung (StuV) der DHBW Heidenheim kennen.",
+      "og:description": "Lerne das Team, die Struktur und die Referate der Studierendenvertretung (StuV) der DHBW Heidenheim kennen.",
+      "og:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "og:title": "Über uns",
+      "og:type": "website",
+      "robots": "max-snippet:-1,max-image-preview:large,max-video-preview:-1",
+      "title": "Über uns - StuV der DHBW Heidenheim",
+      "twitter:card": "summary_large_image",
+      "twitter:description": "Lerne das Team, die Struktur und die Referate der Studierendenvertretung (StuV) der DHBW Heidenheim kennen.",
+      "twitter:image": "https://stuv-heidenheim.de/wp-content/uploads/og-stuv.jpg",
+      "twitter:title": "Über uns"
+    }
+  },
+  "settings": {
+    "date_format": "j. F Y",
+    "default_comment_status": "open",
+    "default_ping_status": "open",
+    "description": "",
+    "language": "de_DE",
+    "page_for_posts": 0,
+    "page_on_front": 9,
+    "posts_per_page": 10,
+    "show_on_front": "page",
+    "site_icon": 116,
+    "site_logo": null,
+    "start_of_week": 1,
+    "time_format": "H:i",
+    "timezone": "Europe/Berlin",
+    "title": "StuV der DHBW Heidenheim",
+    "url": "https://stuv-heidenheim.de"
+  },
+  "theme": "twentytwentyfive"
+}

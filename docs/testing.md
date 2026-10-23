@@ -221,6 +221,15 @@ Täglich:
 - `tools/check_plugins.py`: Jedes Plugin aus `wp-plugin/` muss installiert,
   aktiv und in derselben Version sein. Ein vergessener Zip-Upload fällt sonst
   niemandem auf.
+- `tools/site_state.py` vergleicht, was nur in wp-admin eingestellt wird, mit
+  `data/site-state.json`: Einstellungen, Theme, aktive Plugins, Seiten (Titel,
+  Slug, Status, Template), die Dateien der Mediathek, die SEO-Angaben jeder
+  Seite (Titel, Beschreibung, Vorschaubild) und die Felder der beiden
+  Formulare. Bei einer Abweichung zeigt das Log den Diff. War die Änderung
+  gewollt, `python3 tools/site_state.py --write` ausführen und die Datei
+  committen; sonst die Einstellung in wp-admin zurücksetzen. Deployt wird die
+  Datei nie, und E-Mail-Adressen stehen absichtlich nicht darin, weil das Repo
+  öffentlich ist (`docs/architecture.md`).
 
 Montags:
 
@@ -237,6 +246,7 @@ Alle drei laufen auch lokal, die ersten beiden nach `source .env`:
 python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
   --manifest data/manifest.json --history
 python3 tools/check_plugins.py
+python3 tools/site_state.py
 python3 tools/check_links.py
 ```
 
