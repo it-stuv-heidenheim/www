@@ -15,34 +15,16 @@
 })(function () {
   "use strict";
 
-  var priceFormat = new Intl.NumberFormat("de-DE", {
+  // format is a bound getter, so these work unattached.
+  var formatPrice = new Intl.NumberFormat("de-DE", {
     style: "currency",
     currency: "EUR",
-  });
-
-  var berlinDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Berlin",
-  });
-
-  function formatPrice(value) {
-    return priceFormat.format(value);
-  }
+  }).format;
 
   /** Today's date in Berlin, as 'YYYY-MM-DD', whatever the visitor's clock says. */
-  function todayInBerlin(date) {
-    return berlinDate.format(date || new Date());
-  }
-
-  /**
-   * Index of the day to show first: today if the Mensa is open today,
-   * otherwise the next open day. Only called with at least one day.
-   */
-  function pickInitialDay(days, todayIso) {
-    var index = days.findIndex(function (day) {
-      return day.date === todayIso;
-    });
-    return index === -1 ? 0 : index;
-  }
+  var todayInBerlin = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+  }).format;
 
   /**
    * Drop days that are already over.
@@ -110,8 +92,6 @@
   // roving tabindex (see selectTab); rebuilding every button on each click would
   // destroy the button the click landed on and force a focus-restore dance.
   function buildTabs(tabs, days, onSelect) {
-    tabs.textContent = "";
-
     days.forEach(function (day) {
       var tab = el("button", "stuv-mensa-tab", day.weekday.slice(0, 2));
       tab.type = "button";
@@ -120,9 +100,9 @@
       tabs.appendChild(tab);
     });
 
+    // A tab holds only text, so the event target is the tab or the strip (-1).
     function indexOf(target) {
-      var tab = target && target.closest && target.closest(".stuv-mensa-tab");
-      return tab ? Array.prototype.indexOf.call(tabs.children, tab) : -1;
+      return Array.prototype.indexOf.call(tabs.children, target);
     }
 
     tabs.addEventListener("click", function (event) {
@@ -170,13 +150,12 @@
     hours.textContent = data.openingHours
       ? "Öffnungszeiten: " + data.openingHours
       : "";
+    root.hidden = false; // revealed only once we have data
 
     // Semester break, or a stale payload whose days have all expired. Terminal state.
     if (days.length === 0) {
       lead.textContent = "Zurzeit ist kein Speiseplan verfügbar.";
       tabs.hidden = true;
-      panel.textContent = "";
-      root.hidden = false;
       return;
     }
 
@@ -192,17 +171,15 @@
       renderMeals(panel, day);
     }
 
+    // Days come sorted and from today on (dropPastDays), so the first one is
+    // today if the Mensa is open today, otherwise the next open day.
     buildTabs(tabs, days, select);
-    select(pickInitialDay(days, today));
-    root.hidden = false; // revealed only once we have data
+    select(0);
   }
 
   function init() {
+    // Enqueued in the footer only on a page with the widget, after its config.
     var root = document.querySelector("[data-stuv-mensa]");
-    if (!root || typeof stuvMensaConfig === "undefined") {
-      return;
-    }
-
     fetch(stuvMensaConfig.endpoint, { headers: { Accept: "application/json" } })
       .then(function (response) {
         if (!response.ok) throw new Error("HTTP " + response.status);
@@ -218,17 +195,10 @@
       });
   }
 
-  if (typeof document !== "undefined") {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", init);
-    } else {
-      init();
-    }
-  }
+  if (typeof document !== "undefined") init();
 
   return {
     formatPrice,
-    pickInitialDay,
     dropPastDays,
     todayInBerlin,
   };

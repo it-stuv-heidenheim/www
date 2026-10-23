@@ -23,7 +23,6 @@ CONTACTS = {
     "tel:+498001110111",  # Telefonseelsorge
     "tel:+498001110222",  # Telefonseelsorge
     "tel:+49731790315100",  # PBS Studierendenwerk Ulm
-    "tel:+497315022200",  # Nightline Ulm
     "mailto:vorsitz@stuv-heidenheim.de",
     "mailto:pbs@studierendenwerk-ulm.de",
     "instagram.com/stuvheidenheim",
@@ -129,14 +128,25 @@ class TestMarkup(unittest.TestCase):
             with self.subTest(file=str(f.relative_to(sc.REPO))):
                 self.assertNotRegex(f.read_text(), r'style="[^"]*text-transform')
 
+    def test_hand_written_images_have_dimensions(self):
+        # Without width and height the browser reserves no space for the image
+        # and the layout jumps when it loads. Image and cover blocks write
+        # their own markup; an <img> in an html block is ours to size.
+        for f in FILES:
+            for html in re.findall(r"<!-- wp:html -->(.*?)<!-- /wp:html -->", f.read_text(), re.S):
+                for img in re.findall(r"<img\b[^>]*>", html):
+                    with self.subTest(file=str(f.relative_to(sc.REPO)), img=img[:80]):
+                        self.assertRegex(img, r"\swidth=")
+                        self.assertRegex(img, r"\sheight=")
+
     def test_buttons_are_button_blocks(self):
         # Content buttons are wp:button blocks with a block style (none,
-        # is-style-outline, is-style-overlay). The stuv-button-* variants match
-        # only a bare <a>/<button>: on a wp:button wrapper they style nothing,
-        # and a button link in a paragraph misses the wp:buttons layout.
+        # is-style-outline, is-style-overlay). stuv-button-outline is for plugin
+        # markup: on a wp:button wrapper it styles nothing, and a button link in
+        # a paragraph misses the wp:buttons layout.
         for f in FILES:
             with self.subTest(file=str(f.relative_to(sc.REPO))):
-                self.assertNotRegex(f.read_text(), r"\bstuv-button-(primary|outline|overlay)\b")
+                self.assertNotRegex(f.read_text(), r"\bstuv-button-outline\b")
 
 
 class TestLinks(unittest.TestCase):

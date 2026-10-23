@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-Rollback a page/post/template-part from /tmp/wp_backup/.
-Restores both content AND status.
+Rollback a page/post/template-part, or a replaced image, from /tmp/wp_backup/.
+Restores both content AND status; an image goes back under its old URL.
 Usage: python3 rollback.py <id> [--endpoint pages|posts|template-parts|...]
+       python3 rollback.py --media <filename>
 
 <id> may be an integer (pages/posts) or a string like 'theme//slug' (template parts).
+--media restores the file replace_media() backed up before it deleted the
+attachment. The file it removes again is not backed up: it is the one just
+uploaded, so the caller has it.
 """
 import argparse
+import json
 import os
 import sys
 import urllib.error
 
-try:  # run as a script: scripts/ is on sys.path
-    from wp_block_api import backup_dir, _backup_key, save_content
-except ModuleNotFoundError:  # imported as scripts.rollback (tests)
-    from scripts.wp_block_api import backup_dir, _backup_key, save_content
+from wp_block_api import backup_dir, _backup_key, media_backup_paths, replace_media, save_content
 
 
 def rollback(page_id, endpoint="pages"):
@@ -45,9 +47,34 @@ def rollback(page_id, endpoint="pages"):
     print(f"Rolled back {endpoint}/{page_id} to status '{status}'.")
 
 
+def rollback_media(filename):
+    path, meta_path = media_backup_paths(filename)
+    if not os.path.exists(path):
+        print(f"No media backup found for {filename}", file=sys.stderr)
+        sys.exit(1)
+    alt_text = None
+    if os.path.exists(meta_path):
+        with open(meta_path, encoding="utf-8") as f:
+            alt_text = json.load(f).get("alt_text") or None
+    try:
+        # backup=False: a backup now would overwrite the one being restored.
+        new = replace_media(path, filename=filename, alt_text=alt_text, backup=False)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        print(f"HTTP {exc.code} restoring {filename}: {body}", file=sys.stderr)
+        sys.exit(1)
+    print(f"Restored {filename} at {new['source_url']} (id {new['id']}).")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Rollback from /tmp/wp_backup/")
-    parser.add_argument("page_id", help="page/post id, or 'theme//slug' for template parts")
+    parser.add_argument("page_id", nargs="?", help="page/post id, or 'theme//slug' for template parts")
     parser.add_argument("--endpoint", default="pages", help="WP REST endpoint (default: pages)")
+    parser.add_argument("--media", metavar="FILENAME", help="restore an image replaced by replace_media()")
     args = parser.parse_args()
-    rollback(args.page_id, args.endpoint)
+    if (args.page_id is None) == (args.media is None):
+        parser.error("give either an id or --media FILENAME")
+    if args.media:
+        rollback_media(args.media)
+    else:
+        rollback(args.page_id, args.endpoint)

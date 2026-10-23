@@ -192,11 +192,7 @@ class TestRenderHtml(unittest.TestCase):
         self.assertEqual(lines[-1], "<!-- /wp:html -->")
 
     def test_the_frame_carries_both_basemaps_as_custom_properties(self):
-        # Dark mode on this site is class-driven (:root.dark, set before first
-        # paint by the stuv-theme plugin), not OS-driven, so a <picture> with a
-        # prefers-color-scheme <source> would ignore the toggle. component.css
-        # picks one of these two var()s instead. Only the one that ends up in
-        # background-image is ever fetched.
+        # Why custom properties and not a <picture>: render_html's docstring.
         for mode in ("light", "dark"):
             self.assertRegex(
                 self.html,
@@ -205,10 +201,6 @@ class TestRenderHtml(unittest.TestCase):
             )
 
     def test_the_frame_carries_its_ratio_so_the_page_does_not_shift(self):
-        # No <img> means no intrinsic size; without this the frame is 0 px tall
-        # until the background loads, and everything below it jumps. It rides in
-        # as a custom property because component.css needs the number twice: the
-        # frame crops to 3:2 on a phone, the canvas inside it keeps the image's own.
         width, height = gen_map.image_size(CAMPUS_BBOX, CAMPUS["zoom"])
         self.assertIn(f"--stuv-map-ratio: {width} / {height}", self.html)
 

@@ -56,16 +56,21 @@ function stuv_mensa_label(string $date): array {
  * this filters by date rather than trusting the `closed` flag alone.
  *
  * An empty `days` array is a normal response (semester break), not an error.
+ * Null means the upstream is not a menu at all (an error object, an empty
+ * list); the caller then keeps the copy it has.
  */
 function stuv_mensa_normalize(
     array $upstream,
     string $today,
     string $image_base
-): array {
-    $site = $upstream[0] ?? [];
+): ?array {
+    $site = $upstream[0] ?? null;
+    if (!is_array($site) || !is_array($site['menus'] ?? null)) {
+        return null;
+    }
 
     $days = [];
-    foreach (($site['menus'] ?? []) as $menu) {
+    foreach ($site['menus'] as $menu) {
         if (!empty($menu['closed']) || empty($menu['date'])) {
             continue;
         }

@@ -9,28 +9,14 @@
 const STUV_MENSA_IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 
 /**
- * Decide whether to fetch a fresh payload or serve what we already have.
+ * Whether to fetch upstream now rather than serve the store.
  *
- * Returns one of:
- *   'serve'       — payload is fresh, serve the store
- *   'serve_stale' — another worker is already fetching; serve what we have
- *   'fetch'       — freshness expired, fetch upstream
+ * A cold cache always fetches, so first-ever visitors are never blocked. A warm
+ * one fetches only once the freshness marker has expired and no other worker
+ * holds the refresh lock; everyone else is served the store, stale or not.
  */
-function stuv_mensa_payload_decision(
-    bool $fresh,
-    bool $lock_held,
-    bool $store_present
-): string {
-    if (!$store_present) {
-        return 'fetch'; // cold cache: never block first-ever visitors
-    }
-    if ($fresh) {
-        return 'serve';
-    }
-    if ($lock_held) {
-        return 'serve_stale';
-    }
-    return 'fetch';
+function stuv_mensa_should_fetch(bool $fresh, bool $lock_held, bool $store_present): bool {
+    return !$store_present || (!$fresh && !$lock_held);
 }
 
 /**

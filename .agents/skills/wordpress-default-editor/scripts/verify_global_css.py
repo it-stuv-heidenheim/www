@@ -17,10 +17,7 @@ Usage:
 import argparse
 import sys
 
-try:  # run as a script: scripts/ is on sys.path
-    import wp_block_api as wp
-except ModuleNotFoundError:  # imported as scripts.verify_global_css (tests)
-    import scripts.wp_block_api as wp
+import wp_block_api as wp
 
 
 def check(css, markers, icon_marker=None):

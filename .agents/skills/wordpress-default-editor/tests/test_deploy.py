@@ -1,14 +1,10 @@
-
 import json
 import os
-import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-import scripts.deploy as deploy
-import scripts.wp_block_api as wp
+import deploy
+import wp_block_api as wp
 
 BALANCED = "<!-- wp:paragraph -->\n<p>Hallo</p>\n<!-- /wp:paragraph -->"
 
@@ -109,3 +105,26 @@ def test_main_resolves_sources_relative_to_manifest(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "[dry-run] pages/39 <- page.html" in out
     assert "balanced OK" in out
+
+
+def test_deploy_refuses_a_wp_admin_edit_unless_overwrite(tmp_path, monkeypatch):
+    (tmp_path / "page.html").write_text(BALANCED)
+    (tmp_path / "manifest.json").write_text(json.dumps({"homepage": {
+        "type": "structural", "endpoint": "pages", "id": 9,
+        "source": "page.html", "status": "publish",
+    }}))
+    live = BALANCED.replace("Hallo", "aus wp-admin")  # no commit has it
+    saved = []
+    monkeypatch.setattr(wp, "fetch_raw",
+                        lambda e, i: {"content": {"raw": live}, "status": "publish"})
+    monkeypatch.setattr(wp, "backup", lambda e, i: None)
+    monkeypatch.setattr(wp, "save_structural",
+                        lambda e, i, content, status, *, confirm: saved.append(content))
+    m = str(tmp_path / "manifest.json")
+
+    with pytest.raises(SystemExit, match="homepage"):
+        deploy.main(["--manifest", m, "homepage"])
+    assert saved == []
+
+    deploy.main(["--manifest", m, "homepage", "--overwrite"])
+    assert saved == [BALANCED]

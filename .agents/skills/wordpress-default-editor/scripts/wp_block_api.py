@@ -169,32 +169,25 @@ def _rest_base():
     return os.environ.get("WP_REST_ROOT", "wp-json").strip("/")
 
 
-def _request(method, path, data=None, retries=3):
-    rest_base = _rest_base()
-    if rest_base.startswith("?"):
-        if "?" in path:
-            route, qs = path.split("?", 1)
-        else:
-            route, qs = path, ""
-        base_url = f"{_site()}/{rest_base}/wp/v2/{route}"
-        url = f"{base_url}&{qs}" if qs else base_url
-    else:
-        url = f"{_site()}/{rest_base}/wp/v2/{path}"
+def _send(req, timeout, retries):
+    """Open req and decode its JSON, retrying rate limits and server errors with backoff."""
     for attempt in range(retries):
         try:
-            req = urllib.request.Request(
-                url,
-                data=data,
-                headers=_headers(for_write=data is not None),
-                method=method,
-            )
-            with _opener.open(req, timeout=30) as response:
+            with _opener.open(req, timeout=timeout) as response:
                 return json.loads(response.read())
         except urllib.error.HTTPError as exc:
             if exc.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
                 time.sleep(2 ** attempt)
                 continue
             raise
+
+
+def _request(method, path, data=None, retries=3):
+    rest_base = _rest_base()
+    route, qs = path.split("?", 1) if rest_base.startswith("?") and "?" in path else (path, "")
+    url = f"{_site()}/{rest_base}/wp/v2/{route}" + (f"&{qs}" if qs else "")
+    headers = _headers(for_write=data is not None)
+    return _send(urllib.request.Request(url, data=data, headers=headers, method=method), 30, retries)
 
 
 def fetch_raw(endpoint, pid):
@@ -330,23 +323,76 @@ def upload_media(file_path, *, filename=None, alt_text=None, reuse_existing=True
     headers["Content-Type"] = content_type
     headers["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-    for attempt in range(retries):
-        try:
-            req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-            with _opener.open(req, timeout=60) as response:
-                result = json.loads(response.read())
-            break
-        except urllib.error.HTTPError as exc:
-            if exc.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
-                time.sleep(2**attempt)
-                continue
-            raise
+    result = _send(urllib.request.Request(url, data=data, headers=headers, method="POST"), 60, retries)
 
     if alt_text:
         result = _request(
             "POST", f"media/{result['id']}", data=json.dumps({"alt_text": alt_text}).encode()
         )
     return result
+
+
+def _download(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "wp-default-editor/1.0"})
+    with _opener.open(req, timeout=60) as response:
+        return response.read()
+
+
+def media_backup_paths(filename):
+    """(file, metadata) paths of the backup that backup_media() keeps for filename."""
+    path = os.path.join(backup_dir(), "media", filename)
+    return path, path + ".json"
+
+
+def backup_media(item):
+    """Save an attachment's file and text fields under backup_dir()/media/.
+
+    Replacing an image at the same URL deletes the attachment first, and after
+    that this is the only copy of the old file. One backup per filename,
+    overwritten by the next replace, like the page backups.
+    """
+    filename = item["source_url"].rsplit("/", 1)[-1]
+    path, meta_path = media_backup_paths(filename)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    data = _download(item["source_url"])
+    with open(path, "wb") as f:
+        f.write(data)
+    meta = {
+        "id": item.get("id"),
+        "source_url": item["source_url"],
+        "alt_text": item.get("alt_text") or "",
+        "bytes": len(data),
+    }
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=1)
+    return path
+
+
+def replace_media(file_path, *, filename=None, alt_text=None, backup=True):
+    """Put file_path in the library under the URL its filename already has.
+
+    WordPress never overwrites an upload; a second file of the same name
+    becomes name-1.ext. So: back up the old attachment (backup_media), delete
+    it, upload the new file into the freed name. Raises if the new URL differs
+    from the old one (a '-1', or "organize uploads into month- and year-based
+    folders" sending it to a dated folder); the backup is then still on disk.
+    The new attachment gets a new id, the alt text carries over unless given.
+    """
+    filename = filename or os.path.basename(file_path)
+    old = find_media_by_filename(filename)
+    if old:
+        if backup:
+            backup_media(old)
+        if alt_text is None:
+            alt_text = old.get("alt_text") or None
+        delete_resource("media", old["id"], force=True)
+    new = upload_media(file_path, filename=filename, alt_text=alt_text, reuse_existing=False)
+    if old and new["source_url"] != old["source_url"]:
+        raise RuntimeError(
+            f"{filename} landed at {new['source_url']}, not {old['source_url']}; "
+            f"the old file is backed up in {media_backup_paths(filename)[0]}"
+        )
+    return new
 
 
 # --- Structural writes (full template part / page rebuilds) ---

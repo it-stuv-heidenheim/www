@@ -1,14 +1,6 @@
 {
   "settings": {
     "layout": { "contentSize": "56rem", "wideSize": "72rem" },
-    "spacing": {
-      "spacingSizes": [
-        { "slug": "4", "size": "1rem", "name": "1rem" },
-        { "slug": "6", "size": "1.5rem", "name": "1.5rem" },
-        { "slug": "8", "size": "2rem", "name": "2rem" },
-        { "slug": "12", "size": "3rem", "name": "3rem" }
-      ]
-    },
     "color": {
       "palette": [
         { "slug": "primary", "color": "#E2001A", "name": "StuV Red" },
@@ -68,11 +60,6 @@
     "elements": {
       "heading": {
         "typography": { "fontFamily": "var:preset|font-family|fraunces" }
-      }
-    },
-    "blocks": {
-      "core/columns": {
-        "spacing": { "blockGap": "1rem" }
       }
     }
   }

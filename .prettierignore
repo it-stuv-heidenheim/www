@@ -3,3 +3,6 @@ wp-plugin/tests/fixtures/
 
 # Build artifacts (wp-plugin/build.sh)
 wp-plugin/*.zip
+
+# Written by tools/site_state.py --write and compared as parsed JSON
+data/site-state.json

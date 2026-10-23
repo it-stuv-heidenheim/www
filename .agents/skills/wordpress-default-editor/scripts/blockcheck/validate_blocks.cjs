@@ -3,7 +3,7 @@
  * Ground-truth block validation using the REAL Gutenberg parser.
  *
  * Usage:
- *   node validate_blocks.cjs <file-with-raw-block-markup> [--limit N] [--json]
+ *   node validate_blocks.cjs <file-with-raw-block-markup>... [--limit N] [--json]
  *
  * The input file must contain the RAW block markup (the `content.raw` you get from
  * GET /wp-json/wp/v2/{type}/{id}?context=edit). For each block whose stored HTML does
@@ -62,13 +62,7 @@ const globals = {
     removeListener() {},
   }),
 };
-for (const [k, v] of Object.entries(globals)) {
-  try {
-    global[k] = v;
-  } catch (e) {
-    /* read-only globals (navigator) */
-  }
-}
+for (const [k, v] of Object.entries(globals)) global[k] = v;
 
 const { parse } = require("@wordpress/blocks");
 const { registerCoreBlocks } = require("@wordpress/block-library");
@@ -89,70 +83,81 @@ function silent(fn) {
 silent(() => registerCoreBlocks());
 
 // --- args ---
+// Several files run in one process: loading the block library is most of the
+// time a file takes, so a sweep over the tree pays for it once.
 const args = process.argv.slice(2);
-const file = args.find((a) => !a.startsWith("--"));
 const asJson = args.includes("--json");
-const limitArg = args.find((a) => a.startsWith("--limit"));
-const limit = limitArg
-  ? parseInt(
-      limitArg.split("=")[1] || args[args.indexOf(limitArg) + 1] || "20",
-      10,
-    )
-  : 20;
-if (!file) {
+let limit = 20;
+const files = [];
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--json") continue;
+  if (args[i].startsWith("--limit")) {
+    limit = parseInt(args[i].split("=")[1] || args[++i] || "20", 10);
+    continue;
+  }
+  files.push(args[i]);
+}
+if (!files.length) {
   process.stderr.write(
-    "usage: node validate_blocks.cjs <file> [--limit N] [--json]\n",
+    "usage: node validate_blocks.cjs <file>... [--limit N] [--json]\n",
   );
   process.exit(2);
 }
 
-const markup = fs.readFileSync(path.resolve(file), "utf8");
-const blocks = silent(() => parse(markup));
+function check(file) {
+  const markup = fs.readFileSync(path.resolve(file), "utf8");
+  const blocks = silent(() => parse(markup));
 
-let total = 0;
-const invalid = [];
-(function walk(list) {
-  for (const b of list) {
-    if (b.name) {
-      total++;
-      if (b.isValid === false) {
-        const issue = (b.validationIssues || [])[0];
-        // args = [printf-style format, ...values]; substitute %s/%o for a clean message
-        let reason = "";
-        if (issue && issue.args && issue.args.length) {
-          const vals = issue.args.slice(1);
-          let i = 0;
-          reason = String(issue.args[0]).replace(/%[so]/g, () =>
-            i < vals.length ? String(vals[i++]) : "%s",
-          );
+  let total = 0;
+  const invalid = [];
+  (function walk(list) {
+    for (const b of list) {
+      if (b.name) {
+        total++;
+        if (b.isValid === false) {
+          const issue = (b.validationIssues || [])[0];
+          // args = [printf-style format, ...values]; substitute %s/%o for a clean message
+          let reason = "";
+          if (issue && issue.args && issue.args.length) {
+            const vals = issue.args.slice(1);
+            let i = 0;
+            reason = String(issue.args[0]).replace(/%[so]/g, () =>
+              i < vals.length ? String(vals[i++]) : "%s",
+            );
+          }
+          invalid.push({
+            name: b.name,
+            reason,
+            style: b.attributes && b.attributes.style,
+            markup: (b.originalContent || "")
+              .replace(/\s+/g, " ")
+              .slice(0, 200),
+          });
         }
-        invalid.push({
-          name: b.name,
-          reason,
-          style: b.attributes && b.attributes.style,
-          markup: (b.originalContent || "").replace(/\s+/g, " ").slice(0, 200),
-        });
       }
+      if (b.innerBlocks && b.innerBlocks.length) walk(b.innerBlocks);
     }
-    if (b.innerBlocks && b.innerBlocks.length) walk(b.innerBlocks);
-  }
-})(blocks);
-
-if (asJson) {
-  process.stdout.write(
-    JSON.stringify(
-      { total, invalid: invalid.length, blocks: invalid },
-      null,
-      2,
-    ) + "\n",
-  );
-} else {
-  invalid.slice(0, limit).forEach((b, i) => {
-    console.log(`\n#${i + 1} INVALID  ${b.name}`);
-    console.log("  reason:", b.reason);
-    console.log("  attrs.style:", JSON.stringify(b.style));
-    console.log("  markup:", b.markup);
-  });
-  console.log(`\n=== ${file}: ${invalid.length} invalid / ${total} blocks ===`);
+  })(blocks);
+  return { file, total, invalid: invalid.length, blocks: invalid };
 }
-process.exit(invalid.length ? 1 : 0);
+
+const results = files.map(check);
+if (asJson) {
+  // One file keeps the single-object shape; several give an array.
+  const out = results.length === 1 ? results[0] : results;
+  if (results.length === 1) delete out.file;
+  process.stdout.write(JSON.stringify(out, null, 2) + "\n");
+} else {
+  for (const r of results) {
+    r.blocks.slice(0, limit).forEach((b, i) => {
+      console.log(`\n#${i + 1} INVALID  ${b.name}`);
+      console.log("  reason:", b.reason);
+      console.log("  attrs.style:", JSON.stringify(b.style));
+      console.log("  markup:", b.markup);
+    });
+    console.log(
+      `\n=== ${r.file}: ${r.invalid} invalid / ${r.total} blocks ===`,
+    );
+  }
+}
+process.exit(results.some((r) => r.invalid) ? 1 : 0);

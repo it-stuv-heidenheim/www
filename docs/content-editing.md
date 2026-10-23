@@ -155,6 +155,64 @@ lassen.
 
 5. Die Seite deployen (siehe Abschnitt Deploy).
 
+## Nach einer Wahl: die Übergabe
+
+Nach jeder Wahl wechselt der Vorsitz, oft auch Referate. Diese Liste in einem
+Durchgang abarbeiten, am besten zusammen mit dem alten Vorsitz.
+
+**Vorsitz** (`data/patterns/vorsitz.html`, erscheint auf Startseite und Über
+uns):
+
+- [ ] Pro Person Vorname, Foto und Zitat ersetzen; das Markup einer Karte
+      bleibt, wie es ist. Bei mehr oder weniger Personen eine ganze Karte
+      (`stuv-card`-Gruppe) kopieren oder löschen.
+- [ ] Fotos quadratisch, 480 × 480 px, als JPG oder WebP, unter einem neuen
+      Namen wie `vorsitz-2027-lena.jpg` nach `data/media/` legen. Den Namen
+      eines alten Fotos nie wiederverwenden (siehe „Ein Bild ersetzen“), auch
+      nicht bei gleichem Vornamen. Als `alt`-Text „Porträt von Lena“.
+- [ ] Nur mit Einverständnis der Person: Foto, Name und Zitat sind öffentlich.
+
+**Referate** (`data/pages/ueber-uns/02-referate.html`): Die Karten nennen keine
+Namen, ändern sich also nur, wenn ein Referat dazukommt oder wegfällt.
+
+- [ ] Karte kopieren oder löschen, dazu den Eintrag in der Sprungleiste oben in
+      derselben Datei. Der `anchor` der Karte (`#finanzen`) ist ein Linkziel:
+      `events/05-cta.html` verlinkt `#event`, `studentenleben/08-sport.html`
+      `#sport`. Fällt ein Referat mit Linkziel weg, schlägt `test_content.py`
+      fehl und nennt den Link.
+- [ ] Bekommt ein Referat einen eigenen Kanal (Instagram, Mail), die Adresse
+      in `CONTACTS` in `tools/test_content.py` eintragen, sonst schlägt der
+      Test fehl. Fällt ein Kanal weg, den Eintrag dort löschen.
+
+**Prüfen und deployen:**
+
+- [ ] Kurzdurchlauf und Block-Validierung aus `docs/testing.md`.
+- [ ] Deploy starten (Abschnitt Deploy): `media` für die neuen Fotos, dazu
+      `pattern-vorsitz` und bei geänderten Referaten `ueber-uns`. Mit `changed`
+      erledigt ein Lauf alles.
+- [ ] Startseite und Über uns ansehen, auch auf dem Handy.
+
+**Alte Fotos entfernen.** Ein Foto, auf das keine Seite mehr verweist, bleibt
+unter seiner URL abrufbar, bis es aus der Mediathek gelöscht ist, und das
+Foto eines ehemaligen Mitglieds soll nicht öffentlich bleiben.
+
+- [ ] Die alten Fotos aus `data/media/` löschen und committen.
+- [ ] In wp-admin unter **Medien** dieselben Dateien endgültig löschen, erst
+      nach dem Deploy, sonst zeigt die Seite bis dahin ein leeres Bild.
+- [ ] `python3 tools/site_state.py` muss danach „matches“ melden. Steht ein
+      altes Foto unter `media_not_in_repo`, liegt es noch in der Mediathek.
+
+**Außerhalb des Repos:**
+
+- [ ] WPForms: Empfänger der Benachrichtigungen von Kontakt und Kummer Karsten
+      auf die neuen Zuständigen umstellen, danach einen frischen Export ablegen
+      (`docs/architecture.md`).
+- [ ] WordPress-Konten und Application Passwords der Ausgeschiedenen löschen
+      oder herabstufen (wp-admin → Benutzer). Die Benutzer der beiden Actions
+      bleiben.
+- [ ] GitHub: Zugriff auf das Repo und die Reviewer des Environments
+      `production` an die neue Besetzung anpassen.
+
 ## Google-Kalender ändern
 
 Der StuV-Google-Kalender erscheint an drei Stellen, alle mit derselben
@@ -214,11 +272,11 @@ eine `.stuv-card.stuv-wpforms`-Gruppe:
 | Seite          | Datei                                    | Formular-ID |
 | -------------- | ---------------------------------------- | ----------- |
 | Kontakt        | `data/pages/kontakt/03-form.html`        | 129         |
-| Kummer Karsten | `data/pages/kummer-karsten/02-form.html` | 132         |
+| Kummer Karsten | `data/pages/kummer-karsten/03-form.html` | 132         |
 
 WPForms ist ein Drittanbieter-Plugin auf dem Host. Anders als
 `stuv-mensa`/`stuv-theme`/`stuv-dsgvo` gehört es nicht zu `wp-plugin/` und ist
-nicht in diesem Repo versioniert (siehe `docs/plugins.md`). Daraus folgt:
+nicht in diesem Repo versioniert. Daraus folgt:
 
 - Felder, Pflichtangaben, Bestätigungstext und Benachrichtigungs-E-Mail
   bearbeitest du ausschließlich in wp-admin → WPForms → Formular bearbeiten.
@@ -259,12 +317,14 @@ die geänderten Dateien mit dem Aufruf aus `docs/testing.md` unter
 
 ## Deploy
 
-Ein Push auf `main`, der etwas unter `data/` ändert, startet die Action
-**Deploy**. Sie wartet auf eine Freigabe: Ein Reviewer klickt im Lauf unter
-**Actions** auf **Review deployments → Approve**. Dann deployt sie alle Ziele,
-die von der Live-Seite abweichen, und prüft danach das Ergebnis. Von Hand geht
-es unter **Actions → Deploy → Run workflow**. Was sie genau macht, steht in
-`docs/ai-workflow.md`.
+Ein Push auf `main` bringt nichts auf die Live-Seite, er startet nur die
+Prüfungen. Deployt wird mit der Action **Deploy**, die du unter **Actions →
+Deploy → Run workflow** von Hand startest. Sie wartet auf eine Freigabe: Ein
+Reviewer klickt im Lauf auf **Review deployments → Approve**. Dann deployt sie
+alle Ziele, die von der Live-Seite abweichen, also alles, was seit dem letzten
+Deploy auf `main` gelandet ist, und prüft danach das Ergebnis. Hat jemand ein Ziel in wp-admin
+geändert, bricht sie ab, statt die Änderung zu überschreiben. Was sie genau
+macht und wie es dann weitergeht, steht in `docs/ai-workflow.md`.
 
 ### Lokal deployen
 

@@ -1,4 +1,8 @@
 import os
+import sys
+
+# The scripts import each other as top-level modules, as they do when run.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts"))
 
 # Overwrite, never setdefault: a shell that has sourced a site's .env would
 # otherwise point the server-backed tests, which write pages and global styles,

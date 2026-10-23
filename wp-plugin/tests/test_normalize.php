@@ -55,6 +55,15 @@ check('semester break: empty days, not an error', $break['days'], []);
 check('semester break: opening hours still present',
     $break['openingHours'], '11:30 – 13:45 Uhr');
 
+// A 200 that is not the menu (an error object, an empty list) must not
+// replace the cached menu with an empty one: null, and the caller keeps stale.
+check('malformed: an error object is not a menu',
+    stuv_mensa_normalize(['error' => 'maintenance'], '2026-07-14', $base), null);
+check('malformed: an empty list is not a menu',
+    stuv_mensa_normalize([], '2026-07-14', $base), null);
+check('malformed: menus that is not a list is not a menu',
+    stuv_mensa_normalize([['menus' => 'none']], '2026-07-14', $base), null);
+
 // --- image helpers ----------------------------------------------------------
 check('image id: parsed from the upstream url',
     stuv_mensa_image_id('https://api.dhbw.app/file/12692/12692.webp'), 12692);
