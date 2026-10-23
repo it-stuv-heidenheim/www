@@ -70,15 +70,23 @@ Diese Grenzen stehen in `AGENTS.md`, und jede ist aus einem Schaden entstanden:
 ## Deploy per GitHub Action
 
 Deployt wird über die Action **Deploy** (`.github/workflows/deploy.yml`), nicht
-mehr vom eigenen Rechner. Sie startet bei jedem Push auf `main`, der etwas unter
-`data/` oder an den Deploy-Skripten des Skills ändert, und von Hand unter
-**Actions → Deploy → Run workflow**. Andere Branches deployen nie.
+mehr vom eigenen Rechner. Gestartet wird sie nur von Hand, unter **Actions →
+Deploy → Run workflow** oder mit `gh workflow run deploy.yml`. Andere Branches
+deployen nie.
+
+Ein Push auf `main` startet nur die Prüfungen. So können mehrere Commits auf
+`main` liegen, bevor jemand deployt, und ein einziger Lauf bringt sie alle auf
+die Seite. Bis dahin meldet die Action **Monitor** täglich eine Warnung, dass
+die Seite hinter `main` liegt (`docs/testing.md`). Früher startete jeder Push
+einen Deploy; wer nicht jeden freigab, hatte bald eine Schlange wartender Läufe,
+in der der älteste alle anderen aufhielt.
 
 Geschrieben wird erst nach einer Freigabe: Das Environment `production` hat
 **Required reviewers**, und der Deploy-Job wartet, bis einer von ihnen unter
 **Review deployments** auf **Approve** klickt. An diesem Repo arbeiten
-wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler. Ohne die Freigabe stünde
-jeder unbedachte Commit sofort auf der öffentlichen Seite. Die Action ersetzt
+wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler. Ohne die Freigabe
+könnte jeder mit Schreibrechten einen unfertigen Stand auf die öffentliche Seite
+bringen. Die Action ersetzt
 nur das lokale Skript, damit niemand dafür den Skill und eine `.env` mit
 Zugangsdaten braucht.
 
@@ -112,7 +120,7 @@ Prüfungen zuerst auf und deployt nur, wenn sie grün sind.
 3. Den Dry-Run.
 4. Die Ziele bestimmen. `verify_deploy.py --history` vergleicht jedes Ziel mit
    der Live-Seite und teilt die abweichenden in `BEHIND` und `EDITED` ein (siehe
-   oben). Mit `changed` (Standard, bei einem Push immer) nimmt die Action alle
+   oben). Mit `changed` (Standard) nimmt die Action alle
    abweichenden. Ist eines der zu schreibenden Ziele `EDITED` und steht nicht
    unter `overwrite`, bricht sie hier ab. `media` läuft immer mit, lädt aber
    nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt `changed`
@@ -122,9 +130,11 @@ Prüfungen zuerst auf und deployt nur, wenn sie grün sind.
 6. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage
    lang (Rollback in `docs/testing.md`).
 
-Die Action deployt mit dem Skill aus demselben Commit wie der Inhalt. Warten
-mehrere Läufe, behält GitHub nur den neuesten; mit `changed` deckt er die Pushes
-davor mit ab.
+Die Action deployt mit dem Skill aus demselben Commit wie der Inhalt. Es läuft
+immer nur ein Deploy, und ein Lauf, der auf seine Freigabe wartet, zählt dabei
+mit: Ein zweiter Lauf wartet hinter ihm. Einen Lauf, den du nicht freigeben
+willst, deshalb unter **Review deployments** ablehnen, statt ihn liegen zu
+lassen; sonst bricht GitHub ihn erst nach 30 Tagen ab.
 
 Nicht über die Action laufen: ein Bild unter derselben URL ersetzen (löschen
 und neu hochladen, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in
@@ -143,7 +153,7 @@ Unter **Settings → Environments** ein Environment `production` anlegen:
   schreiben) mit einem eigenen Application Password. So lässt sich der Zugang
   sperren, ohne jemandes persönlichen Login anzufassen.
 - **Required reviewers**: die Leute, die Deploys freigeben dürfen. Pflicht,
-  denn ohne sie deployt jeder Push auf `main` sofort.
+  denn ohne sie deployt jeder Lauf ohne Rückfrage.
 
 Starten darf die Action jeder mit Schreibrechten am Repo, freigeben nur die
 Reviewer.

@@ -1,7 +1,9 @@
-# Deploys data/ to the live site. Starts on a push to main that touches the
-# content or the deploy scripts, or by hand (Actions → Deploy → Run workflow).
-# Either way the deploy job waits for a required reviewer of the `production`
-# environment before it writes: docs/ai-workflow.md, "Deploy per GitHub Action".
+# Deploys data/ to the live site. Started by hand only (Actions → Deploy → Run
+# workflow, or `gh workflow run deploy.yml`): a push runs checks.yml and nothing
+# else, so pushes collect on main until someone deploys them, and one run with
+# `changed` takes them all. The deploy job still waits for a required reviewer
+# of the `production` environment before it writes: docs/ai-workflow.md,
+# "Deploy per GitHub Action".
 # A target edited in wp-admin since the last deploy stops the run before any
 # write, unless the run is started by hand with that target under `overwrite`.
 # Needs that environment with the secrets WP_USER and WP_APP_PASS and the
@@ -9,11 +11,6 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "data/**"
-      - ".agents/skills/wordpress-default-editor/scripts/**"
   workflow_dispatch:
     inputs:
       target:
@@ -25,9 +22,9 @@ on:
         default: ""
         required: false
 
-# One deploy at a time; a second run waits instead of interleaving writes. Of
-# several waiting runs GitHub keeps only the newest; with `changed` it covers
-# the pushes before it.
+# One deploy at a time; a second run waits instead of interleaving writes. A
+# run waiting for approval holds the group too: reject a run you will not
+# approve, or the next one queues behind it.
 concurrency:
   group: deploy
   cancel-in-progress: false
@@ -54,7 +51,6 @@ jobs:
       # The host publishes an AAAA record it does not route (AGENTS.md).
       WP_ADDRESS_FAMILY: ipv4
       # Through env, never `${{ }}` inside a script: no shell injection.
-      # A push has no inputs and deploys what differs from the live site.
       TARGET: ${{ inputs.target || 'changed' }}
       OVERWRITE: ${{ inputs.overwrite }}
       MANIFEST: data/manifest.json

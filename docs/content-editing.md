@@ -259,11 +259,12 @@ die geänderten Dateien mit dem Aufruf aus `docs/testing.md` unter
 
 ## Deploy
 
-Ein Push auf `main`, der etwas unter `data/` ändert, startet die Action
-**Deploy**. Sie wartet auf eine Freigabe: Ein Reviewer klickt im Lauf unter
-**Actions** auf **Review deployments → Approve**. Dann deployt sie alle Ziele,
-die von der Live-Seite abweichen, und prüft danach das Ergebnis. Von Hand geht
-es unter **Actions → Deploy → Run workflow**. Hat jemand ein Ziel in wp-admin
+Ein Push auf `main` bringt nichts auf die Live-Seite, er startet nur die
+Prüfungen. Deployt wird mit der Action **Deploy**, die du unter **Actions →
+Deploy → Run workflow** von Hand startest. Sie wartet auf eine Freigabe: Ein
+Reviewer klickt im Lauf auf **Review deployments → Approve**. Dann deployt sie
+alle Ziele, die von der Live-Seite abweichen, also alles, was seit dem letzten
+Deploy auf `main` gelandet ist, und prüft danach das Ergebnis. Hat jemand ein Ziel in wp-admin
 geändert, bricht sie ab, statt die Änderung zu überschreiben. Was sie genau
 macht und wie es dann weitergeht, steht in `docs/ai-workflow.md`.
 

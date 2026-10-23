@@ -14,10 +14,10 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 - Before every commit: `npx prettier --check .` and `python3 -m unittest discover -s tools -p "test_*.py"`.
 - Sweep the tree with `validate_blocks.cjs` after every edit or Prettier pass (one process, all files):
   `node $SKILL/scripts/blockcheck/validate_blocks.cjs $(git ls-files 'data/*.html') | grep -E ': [1-9][0-9]* invalid'` (silent = valid)
-- Deploy runs as `.github/workflows/deploy.yml` on `main`: on a push touching `data/**` or the skill's scripts, or
-  by `workflow_dispatch`; environment `production`, scripts from the same commit. Every run waits for a required
-  reviewer of `production`; never remove that gate or deploy from another branch. Pushing to `main` therefore
-  starts a deploy: push only what may go live. Locally:
+- Deploy runs as `.github/workflows/deploy.yml` on `main`, by `workflow_dispatch` only (`gh workflow run deploy.yml`);
+  a push runs only the checks, so `main` may hold undeployed commits. Environment `production`, scripts from the
+  same commit. Every run waits for a required reviewer of `production`; never remove that gate, add a push
+  trigger or deploy from another branch. Start a deploy only when asked. Locally:
   `deploy.py --manifest data/manifest.json all --dry-run` (no server), `deploy.py … <target>`, then
   `verify_deploy.py --manifest data/manifest.json`, the only proof the site serves this repo. A target whose live
   content matches no commit (`verify_deploy.py … --history`: `EDITED`) was edited in wp-admin; `deploy.py` and the

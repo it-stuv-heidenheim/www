@@ -217,7 +217,7 @@ Täglich:
 - `verify_deploy.py --history`: Ein Ziel, das in wp-admin geändert wurde
   (`EDITED`), lässt den Lauf scheitern. So fällt die Änderung am Tag danach auf
   und nicht erst beim nächsten Deploy, der dann abbricht. `BEHIND` gibt nur
-  eine Warnung: Dann wartet meist ein Deploy auf seine Freigabe.
+  eine Warnung: Auf `main` liegen Commits, die noch niemand deployt hat.
 - `tools/check_plugins.py`: Jedes Plugin aus `wp-plugin/` muss installiert,
   aktiv und in derselben Version sein. Ein vergessener Zip-Upload fällt sonst
   niemandem auf.

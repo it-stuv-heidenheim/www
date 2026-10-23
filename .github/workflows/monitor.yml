@@ -42,7 +42,7 @@ jobs:
 
       # EDITED fails the run: the edit is lost on the next deploy of that
       # target unless someone ports it into data/ (docs/ai-workflow.md).
-      # BEHIND only warns: a push to main whose deploy is not approved yet.
+      # BEHIND only warns: main has pushes nobody has deployed yet.
       - name: Edits in wp-admin
         run: |
           set +e
@@ -52,7 +52,7 @@ jobs:
           set -e
           case $rc in
             0) ;;
-            1) echo "::warning::The site serves an older commit: a deploy is waiting for approval or was never started." ;;
+            1) echo "::warning::The site serves an older commit: main has undeployed changes (Actions → Deploy → Run workflow)." ;;
             3) echo "::error::Edited in wp-admin (EDITED above). Port the edit into data/ before the next deploy."; exit 1 ;;
             *) echo "::error::Live site not readable (exit $rc)"; exit 1 ;;
           esac
