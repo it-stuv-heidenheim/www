@@ -67,25 +67,16 @@ END = "/* gen_icon_css:end */"
 # view for nothing.
 ICONS = {
     # Referate
-    "banknote": "money",
-    "megaphone": "megaphone",
-    "party-popper": "confetti",
-    "monitor": "monitor",
     "dumbbell": "barbell",
-    "leaf": "leaf",
     "graduation-cap": "graduation-cap",
     "heart": "heart",
     "map-pin": "map-pin",
-    "globe": "globe",
     "landmark": "bank",
     # Was wir bieten / Werde aktiv
     "calendar": "calendar-blank",
     "calendar-days": "calendar-dots",
     "coffee": "coffee",
     "trophy": "trophy",
-    "home": "house",
-    "utensils-crossed": "fork-knife",
-    "ticket": "ticket",
     "clock": "clock",
     "instagram": "instagram-logo",
     "message-circle": "chat-circle",
@@ -104,7 +95,6 @@ ICONS = {
     "lock": "lock",
     "phone": "phone",
     "shield": "shield",
-    "sparkles": "sparkle",
     "utensils": "fork-knife",
     # Kummer Karsten categories / hilfsangebote card headings
     "briefcase": "briefcase",

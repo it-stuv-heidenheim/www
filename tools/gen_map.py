@@ -5,7 +5,7 @@ Reads a map definition from data/maps/<id>.json, fetches CARTO basemap tiles
 once at build time, composites them into data/media/karte-<id>-{light,dark}.webp,
 and emits the Gutenberg core/html block that shows the image with its pin overlay
 and legend. Nothing here talks to the WordPress REST API: the images go up with
-the skill's upload_media.py, the blocks with deploy.py.
+the skill's upload_media.py --replace, the blocks with deploy.py.
 
 The geometry is stdlib-only so it stays unit-testable. Pillow is imported lazily
 and is needed only for --render, --preview and --check; --write and --check also

@@ -196,8 +196,6 @@ rechnen sich neu, weil sie auf `--stuv-primary` zeigen.
   invertierten Kalender-iframes, die mit `color-scheme: light` aussteigen:
   Unter `invert(1)` würde eine dunkle Startfläche weiß aufblitzen, bis Googles
   eigene Seite darüber malt.
-- **Rot wird im Dunkeln heller** (`#ff1a33` statt `#e2001a`): Das DHBW-Rot hat
-  auf Fast-Schwarz zu wenig Kontrast.
 - **`band` hat keinen `--stuv-*`-Alias**, weil die Seiten es direkt über
   `.has-band-background-color` benutzen. Deshalb überschreibt `:root.dark`
   ausnahmsweise den Preset selbst; die hellen 3 % Schwarz wären auf dunklem
@@ -265,9 +263,8 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
   Hero-Bild und rote Streifen (angemeldet von `stuv-theme`, siehe
   `plugins.md`). `stuv-button-lg` macht einen Button größer (Hero). Ein Icon ist
   ein `<span class="stuv-ico stuv-ico-…">` im Link, vor oder nach dem Text; es
-  nimmt die Schriftfarbe des Buttons an. Dieselben Varianten gibt es als
-  Klassen `stuv-button-primary`, `-outline`, `-overlay` für ein `<a>` oder
-  `<button>` außerhalb eines Button-Blocks, etwa im Markup eines Plugins.
+  nimmt die Schriftfarbe des Buttons an. Außerhalb eines Button-Blocks, im
+  Markup eines Plugins, gibt es `stuv-button-outline` für ein `<button>`.
   `stuv-button-link` ist ein Textlink mit Pfeil oder Icon im Fließtext, kein
   Button-Block. Mobil stehen die Buttons eines Blocks untereinander in voller
   Breite, und ein langer Text bricht im Button um, statt herauszuragen.
@@ -279,9 +276,8 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
     `…:focus:invalid` mit 0,4,3). Ohne die Wiederholung tippt man im Dark Mode
     schwarz auf schwarz.
   - Autofill: Der Browser erzwingt seine Textfarbe mit `!important`;
-    `-webkit-text-fill-color` und `caret-color` umgehen das. Die beiden
-    Autofill-Selektoren stehen in getrennten Regeln, weil ein Browser, der einen
-    davon nicht kennt, sonst die ganze Liste verwirft.
+    `-webkit-text-fill-color` und `caret-color` umgehen das. `:-webkit-autofill`
+    reicht: Jeder Browser, der `:autofill` kennt, kennt auch diese Form.
   - Der Absenden-Button braucht `[type="submit"]`, um WPForms' Blau (0,4,2) zu
     schlagen.
   - Eingabefelder sind mobil mindestens 16px groß, sonst zoomt iOS Safari beim
@@ -304,9 +300,3 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
   eine Klasse oder die Gutenberg-Farbwahl.
 - Erst suchen, dann schreiben. Es gibt schon viele Klassen, und mit jeder
   neuen, die fast dasselbe tut, wird das Stylesheet schwerer zu pflegen.
-
-## Nach dem Deploy
-
-WordPress' REST-Sanitizer kann Teile des Custom-CSS entfernen. Ob alles
-angekommen ist, prüft `verify_global_css.py` (Aufruf in `AGENTS.md`, Exit-Codes
-in `docs/tools.md`).

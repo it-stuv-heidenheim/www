@@ -5,24 +5,24 @@
 require __DIR__ . '/harness.php';
 require __DIR__ . '/../stuv-mensa/inc/cache.php';
 
-// --- stuv_mensa_payload_decision -------------------------------------------
+// --- stuv_mensa_should_fetch -----------------------------------------------
 check('fresh payload is served',
-    stuv_mensa_payload_decision(true, false, true), 'serve');
+    stuv_mensa_should_fetch(true, false, true), false);
 
 check('fresh payload served regardless of lock',
-    stuv_mensa_payload_decision(true, true, true), 'serve');
+    stuv_mensa_should_fetch(true, true, true), false);
 
 check('expired, no lock, store present — fetch',
-    stuv_mensa_payload_decision(false, false, true), 'fetch');
+    stuv_mensa_should_fetch(false, false, true), true);
 
 check('expired, lock held — serve stale',
-    stuv_mensa_payload_decision(false, true, true), 'serve_stale');
+    stuv_mensa_should_fetch(false, true, true), false);
 
 check('cold cache — fetch regardless of lock',
-    stuv_mensa_payload_decision(false, false, false), 'fetch');
+    stuv_mensa_should_fetch(false, false, false), true);
 
 check('cold cache, lock held — still fetch (never block first visitors)',
-    stuv_mensa_payload_decision(false, true, false), 'fetch');
+    stuv_mensa_should_fetch(false, true, false), true);
 
 // --- stuv_mensa_image_cacheable --------------------------------------------
 check('cacheable: valid image response',

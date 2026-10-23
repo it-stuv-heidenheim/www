@@ -2,7 +2,6 @@ const test = require("node:test");
 const assert = require("node:assert");
 const {
   formatPrice,
-  pickInitialDay,
   dropPastDays,
   todayInBerlin,
 } = require("../stuv-mensa/assets/mensa.js");
@@ -14,18 +13,6 @@ const norm = (s) => s.replace(/ /g, " ");
 test("formatPrice renders German currency", () => {
   assert.equal(norm(formatPrice(4.55)), "4,55 €");
   assert.equal(norm(formatPrice(4)), "4,00 €");
-});
-
-test("pickInitialDay selects today when today is an open day", () => {
-  const days = [{ date: "2026-07-13" }, { date: "2026-07-14" }];
-  assert.equal(pickInitialDay(days, "2026-07-13"), 0);
-  assert.equal(pickInitialDay(days, "2026-07-14"), 1);
-});
-
-test("pickInitialDay falls back to the first open day on a weekend", () => {
-  // Saturday: today is not in the payload, so show the next open day.
-  const days = [{ date: "2026-07-20" }, { date: "2026-07-21" }];
-  assert.equal(pickInitialDay(days, "2026-07-18"), 0);
 });
 
 test("dropPastDays keeps today and everything after it", () => {

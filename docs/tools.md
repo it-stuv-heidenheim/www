@@ -63,12 +63,14 @@ und ist deshalb ohne Pillow testbar (`docs/testing.md`).
 **Ein Kartenwechsel ist ein Dreifach-Deploy.** Die Bilder sind
 CSS-Hintergründe: Die Geometrie steckt in `component.css`, das Bild in
 `data/media/`, der Block in der Seite. Wer nur eines davon deployt, bekommt das
-alte Bild unter der neuen Geometrie. Deploye deshalb alle drei zusammen:
+alte Bild unter der neuen Geometrie. Deploye deshalb alle drei zusammen. Ein neu
+gerendertes Bild behält seinen Dateinamen, und den überspringt der
+`media`-Deploy; es geht deshalb mit `--replace` hoch (hier für `campus`):
 
 ```bash
 source .env
 SKILL=.agents/skills/wordpress-default-editor
-python3 $SKILL/scripts/deploy.py --manifest data/manifest.json media
+python3 $SKILL/scripts/upload_media.py --replace data/media/karte-campus-light.webp data/media/karte-campus-dark.webp
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json global-styles
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json studentenleben
 ```
@@ -79,10 +81,12 @@ CSS-Custom-Properties, die `:root.dark .stuv-map-canvas` aufgreift. Ein
 Theme-Schalter der Seite ignorieren.
 
 **Vorsicht beim Ersetzen von Bildern.** Der `media`-Deploy überspringt
-vorhandene Dateinamen ohne Meldung, und `--force` legt `karte-…-1.webp` an, auf
-das keine CSS-Referenz zeigt. Der richtige Ablauf steht in `AGENTS.md` unter
-„Media“. Die Kartenbilder lassen sich aber auch mit `--render` neu erzeugen,
-und das ist der einfachere Weg.
+vorhandene Dateinamen ohne Meldung, und ein zweiter Upload desselben Namens
+landet als `karte-…-1.webp`, auf das nichts verweist. `upload_media.py
+--replace` (`replace_media()` im Skill) sichert die alte Datei, löscht sie und
+lädt die neue unter dieselbe URL; `rollback.py --media <dateiname>` stellt die
+alte wieder her. Das `?v=` in der Bild-URL ändert sich mit dem Inhalt, also
+holt der Browser das neue Bild, statt das alte aus dem Cache zu zeigen.
 
 ## `gen_icon_css.py`: die Icons
 

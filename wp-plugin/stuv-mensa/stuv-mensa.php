@@ -2,7 +2,7 @@
 /**
  * Plugin Name: StuV Mensa
  * Description: Liefert den Speiseplan der Mensa Heidenheim (api.dhbw.app) same-origin an die Website. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Speiseplan auf der Seite "Studentenleben". Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.2.1
+ * Version: 1.2.2
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/inc/normalize.php';
 require_once __DIR__ . '/inc/cache.php';
 
-define('STUV_MENSA_VERSION', '1.2.1'); // keep in sync with the header Version above; it cache-busts assets/mensa.js
+define('STUV_MENSA_VERSION', '1.2.2'); // keep in sync with the header Version above; it cache-busts assets/mensa.js
 define('STUV_MENSA_TTL', 30 * MINUTE_IN_SECONDS);
 define('STUV_MENSA_LOCK_TTL', 60);
 define('STUV_MENSA_IMAGE_TTL', 30 * DAY_IN_SECONDS);
@@ -31,17 +31,16 @@ define('STUV_MENSA_IMAGE_TTL', 30 * DAY_IN_SECONDS);
  * upstream is down AND nothing was ever cached.
  */
 function stuv_mensa_payload(): ?array {
-    $store    = get_option('stuv_mensa_payload_stale');
-    $decision = stuv_mensa_payload_decision(
+    $store = get_option('stuv_mensa_payload_stale');
+    if (!stuv_mensa_should_fetch(
         get_transient('stuv_mensa_fresh') !== false,
         get_transient('stuv_mensa_refresh_lock') !== false,
         is_array($store)
-    );
-    if ($decision !== 'fetch') {
+    )) {
         return $store;
     }
 
-    // A warm 'fetch' means no lock is held: take it so others serve stale.
+    // A warm fetch means no lock is held: take it so others serve stale.
     if (is_array($store)) {
         set_transient('stuv_mensa_refresh_lock', 1, STUV_MENSA_LOCK_TTL);
     }
@@ -54,15 +53,14 @@ function stuv_mensa_payload(): ?array {
     $upstream = is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)
         ? null
         : json_decode(wp_remote_retrieve_body($response), true);
-    if (!is_array($upstream)) {
-        return is_array($store) ? $store : null;
-    }
-
-    $payload = stuv_mensa_normalize(
+    $payload = is_array($upstream) ? stuv_mensa_normalize(
         $upstream,
         (new DateTimeImmutable('now', new DateTimeZone('Europe/Berlin')))->format('Y-m-d'),
         rest_url('stuv/v1/mensa/image/')
-    );
+    ) : null;
+    if ($payload === null) {
+        return is_array($store) ? $store : null;
+    }
 
     update_option('stuv_mensa_payload_stale', $payload, false);
     set_transient('stuv_mensa_fresh', 1, STUV_MENSA_TTL);
@@ -74,13 +72,8 @@ add_action('rest_api_init', function (): void {
     register_rest_route('stuv/v1', '/mensa', [
         'methods'             => 'GET',
         'permission_callback' => '__return_true', // public, read-only
-        'callback'            => function () {
-            $payload = stuv_mensa_payload();
-            if (null === $payload) {
-                return new WP_Error('stuv_mensa_unavailable', 'Speiseplan nicht verfügbar', ['status' => 503]);
-            }
-            return rest_ensure_response($payload);
-        },
+        'callback'            => fn() => stuv_mensa_payload()
+            ?? new WP_Error('stuv_mensa_unavailable', 'Speiseplan nicht verfügbar', ['status' => 503]),
     ]);
 
     register_rest_route('stuv/v1', '/mensa/image/(?P<id>\d+)', [
@@ -160,12 +153,8 @@ function stuv_mensa_send_image(string $type, string $body): void {
  * moving the widget to another page needs no change here.
  */
 add_action('wp_enqueue_scripts', function (): void {
-    if (!is_singular()) {
-        return;
-    }
-
     $post = get_post();
-    if (!$post || !str_contains($post->post_content, 'data-stuv-mensa')) {
+    if (!is_singular() || !$post || !str_contains($post->post_content, 'data-stuv-mensa')) {
         return;
     }
 

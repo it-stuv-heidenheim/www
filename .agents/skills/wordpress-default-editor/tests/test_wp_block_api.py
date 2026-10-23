@@ -1,4 +1,6 @@
+import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -8,9 +10,8 @@ import urllib.request
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-import scripts.wp_block_api as api
+import rollback as rb
+import wp_block_api as api
 
 
 @pytest.fixture(scope="module")
@@ -69,22 +70,14 @@ def test_fetch_raw_returns_blocks_and_status(mock_server):
 
 
 def test_backup_writes_content_and_status(mock_server):
+    shutil.rmtree(api.backup_dir(), ignore_errors=True)
     api.backup("pages", 1)
     site_dir = api.backup_dir()
     with open(f"{site_dir}/pages__1_original.txt", encoding="utf-8") as f:
         assert "Welcome to our site" in f.read()
     with open(f"{site_dir}/pages__1_status.txt", encoding="utf-8") as f:
         assert f.read().strip() == "publish"
-
-
-def test_backup_namespaces_by_site(mock_server):
-    """Two sites with the same page id must not share a backup file."""
-    import shutil
-
-    shutil.rmtree("/tmp/wp_backup", ignore_errors=True)
-    api.backup("pages", 1)
-    assert os.path.exists(f"{api.backup_dir()}/pages__1_original.txt")
-    # The flat, site-agnostic path must not be the write target.
+    # Namespaced by site: two sites with the same page id must not share a file.
     assert not os.path.exists("/tmp/wp_backup/pages__1_original.txt")
 
 
@@ -133,8 +126,6 @@ def test_save_content_does_not_publish_draft(mock_server):
 
 
 def test_rollback_restores_content_and_status(mock_server):
-    import scripts.rollback as rb
-
     original = api.backup("pages", 2)
     orig_raw = original["content"]["raw"]
     orig_status = original["status"]
@@ -158,8 +149,6 @@ def test_rollback_restores_content_and_status(mock_server):
 
 
 def test_rollback_preserves_trailing_newline(mock_server):
-    import scripts.rollback as rb
-
     original = "<!-- wp:paragraph -->\n<p>Keep newline</p>\n<!-- /wp:paragraph -->\n"
     api.save_content("pages", 1, original, "publish")
     api.backup("pages", 1)
@@ -223,8 +212,6 @@ def test_save_structural_requires_confirm(mock_server):
 
 
 def test_save_structural_requires_backup(mock_server):
-    import shutil
-
     shutil.rmtree(api.backup_dir(), ignore_errors=True)
     leaf = "<!-- wp:paragraph -->\n<p>x</p>\n<!-- /wp:paragraph -->"
     with pytest.raises(RuntimeError, match="no backup"):
@@ -249,8 +236,6 @@ def test_create_find_and_delete_resource(mock_server):
 
 
 def test_rollback_template_part(mock_server):
-    import scripts.rollback as rb
-
     tp = "twentytwentyfive//header"
     original = api.backup("template-parts", tp)
     orig_raw = original["content"]["raw"]
@@ -284,8 +269,6 @@ def test_apply_global_styles_requires_confirm(mock_server):
 
 
 def test_apply_global_styles_merges_and_backs_up(mock_server):
-    import shutil
-
     shutil.rmtree(api.backup_dir(), ignore_errors=True)
     result = api.apply_global_styles(
         {
@@ -336,8 +319,10 @@ def listening_socket():
 
 
 def test_connect_any_falls_back_past_a_blackholed_address(monkeypatch, listening_socket):
-    """A hanging first address must not consume the caller's whole read timeout."""
+    """A hanging first address must not consume the caller's whole read timeout,
+    and with WP_ADDRESS_FAMILY unset both families are tried."""
     monkeypatch.setattr(api, "_CONNECT_TIMEOUT", 0.5)
+    api._preferred_addr.clear()
     monkeypatch.setattr(
         socket,
         "getaddrinfo",
@@ -348,23 +333,12 @@ def test_connect_any_falls_back_past_a_blackholed_address(monkeypatch, listening
     elapsed = time.monotonic() - start
     try:
         assert sock.getpeername() == listening_socket
+        # The short connect budget must not leak into the socket's read timeout.
+        assert sock.gettimeout() == 30
     finally:
         sock.close()
     # Old behaviour: one 30s attempt on the blackhole, then the fallback.
     assert elapsed < 5, f"fallback took {elapsed:.1f}s; per-attempt cap not applied"
-
-
-def test_connect_any_restores_the_caller_timeout_for_reads(monkeypatch, listening_socket):
-    """The short connect budget must not leak into the socket's read timeout."""
-    monkeypatch.setattr(api, "_CONNECT_TIMEOUT", 0.5)
-    monkeypatch.setattr(
-        socket, "getaddrinfo", lambda *a, **k: [_addrinfo(*listening_socket)]
-    )
-    sock = api._connect_any(listening_socket, timeout=30)
-    try:
-        assert sock.gettimeout() == 30
-    finally:
-        sock.close()
 
 
 def test_connect_any_remembers_the_address_that_answered(monkeypatch, listening_socket):
@@ -432,21 +406,6 @@ def test_address_family_pinned_to_v6_skips_ipv4(monkeypatch, listening_socket):
         api._connect_any(listening_socket, timeout=5)
 
 
-def test_address_family_defaults_to_trying_both(monkeypatch, listening_socket):
-    monkeypatch.delenv("WP_ADDRESS_FAMILY", raising=False)
-    monkeypatch.setattr(api, "_CONNECT_TIMEOUT", 0.5)
-    api._preferred_addr.clear()
-    v6 = _addrinfo(*BLACKHOLE)  # stands in for a hanging first candidate
-    monkeypatch.setattr(
-        socket, "getaddrinfo", lambda *a, **k: [v6, _addrinfo(*listening_socket)]
-    )
-    sock = api._connect_any(listening_socket, timeout=30)
-    try:
-        assert sock.getpeername() == listening_socket
-    finally:
-        sock.close()
-
-
 def test_address_family_rejects_an_unknown_value(monkeypatch, listening_socket):
     monkeypatch.setenv("WP_ADDRESS_FAMILY", "ipv5")
     with pytest.raises(ValueError, match="WP_ADDRESS_FAMILY"):
@@ -477,7 +436,8 @@ def _media_rows():
 
 
 def test_find_media_by_filename_is_deterministic_across_api_order(monkeypatch):
-    """Result must not depend on the order the REST API returns rows in."""
+    """Result must not depend on the order the REST API returns rows in, and the
+    order is pinned in the query, not left to the endpoint default."""
     seen = {}
 
     def fake(method, path, data=None, retries=3):
@@ -486,22 +446,10 @@ def test_find_media_by_filename_is_deterministic_across_api_order(monkeypatch):
 
     monkeypatch.setattr(api, "_request", fake)
     first = api.find_media_by_filename("jan.jpg")
+    assert "orderby=id" in seen["path"] and "order=desc" in seen["path"]
     seen["flip"] = True
     second = api.find_media_by_filename("jan.jpg")
     assert first["id"] == second["id"] == 42  # newest upload wins, both times
-
-
-def test_find_media_by_filename_requests_a_stable_order(monkeypatch):
-    """Ordering is pinned in the query, not left to the endpoint default."""
-    seen = {}
-
-    def fake(method, path, data=None, retries=3):
-        seen["path"] = path
-        return _media_rows()
-
-    monkeypatch.setattr(api, "_request", fake)
-    api.find_media_by_filename("jan.jpg")
-    assert "orderby=id" in seen["path"] and "order=desc" in seen["path"]
 
 
 def test_find_media_by_filename_warns_about_duplicates(monkeypatch, capsys):
@@ -515,3 +463,111 @@ def test_find_media_by_filename_ignores_partial_name_matches(monkeypatch):
     monkeypatch.setattr(api, "_request", lambda *a, **k: _media_rows())
     assert api.find_media_by_filename("jan-klein.jpg")["id"] == 19
     assert api.find_media_by_filename("nope.jpg") is None
+
+
+# --- replacing an image at the same URL ------------------------------------
+#
+# The delete in a replace is the one step nothing else can undo: the old file
+# is gone from the server. replace_media() keeps a copy first, and
+# rollback.py --media puts it back.
+
+OLD_URL = "https://example.test/wp-content/uploads/jan.jpg"
+
+
+class FakeLibrary:
+    """Stands in for the media endpoints and records the order of the calls."""
+
+    def __init__(self, monkeypatch, tmp_path, existing=True, new_url=OLD_URL):
+        self.calls = []
+        self.uploads = []
+        self.old = {"id": 42, "source_url": OLD_URL, "alt_text": "Jan"} if existing else None
+        self.new_url = new_url
+        monkeypatch.setattr(api, "backup_dir", lambda: str(tmp_path))
+        monkeypatch.setattr(api, "find_media_by_filename", self.find)
+        monkeypatch.setattr(api, "_download", self.download)
+        monkeypatch.setattr(api, "delete_resource", self.delete)
+        monkeypatch.setattr(api, "upload_media", self.upload)
+
+    def find(self, filename):
+        return self.old
+
+    def download(self, url):
+        self.calls.append("download")
+        return b"old bytes"
+
+    def delete(self, endpoint, pid, force=True):
+        self.calls.append(f"delete {endpoint}/{pid}")
+
+    def upload(self, path, *, filename=None, alt_text=None, reuse_existing=True):
+        self.calls.append("upload")
+        with open(path, "rb") as f:
+            self.uploads.append({"bytes": f.read(), "filename": filename, "alt_text": alt_text,
+                                 "reuse_existing": reuse_existing})
+        return {"id": 43, "source_url": self.new_url}
+
+
+def test_replace_media_backs_up_before_it_deletes(monkeypatch, tmp_path):
+    lib = FakeLibrary(monkeypatch, tmp_path)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    api.replace_media(str(new))
+    assert lib.calls == ["download", "delete media/42", "upload"]
+    path, meta_path = api.media_backup_paths("jan.jpg")
+    assert open(path, "rb").read() == b"old bytes"
+    assert json.load(open(meta_path))["source_url"] == OLD_URL
+    assert lib.uploads[0]["reuse_existing"] is False
+
+
+def test_replace_media_keeps_the_alt_text(monkeypatch, tmp_path):
+    lib = FakeLibrary(monkeypatch, tmp_path)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    api.replace_media(str(new))
+    assert lib.uploads[0]["alt_text"] == "Jan"
+
+
+def test_replace_media_raises_when_the_url_changes(monkeypatch, tmp_path):
+    FakeLibrary(monkeypatch, tmp_path, new_url="https://example.test/wp-content/uploads/jan-1.jpg")
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    with pytest.raises(RuntimeError, match="jan-1.jpg"):
+        api.replace_media(str(new))
+    assert os.path.exists(api.media_backup_paths("jan.jpg")[0])
+
+
+def test_replace_media_without_an_old_file_only_uploads(monkeypatch, tmp_path):
+    lib = FakeLibrary(monkeypatch, tmp_path, existing=False)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    api.replace_media(str(new))
+    assert lib.calls == ["upload"]
+
+
+def test_upload_media_cli_replace_goes_through_replace_media(monkeypatch, tmp_path, capsys):
+    import upload_media
+
+    lib = FakeLibrary(monkeypatch, tmp_path)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    upload_media.main(["--replace", str(new)])
+    assert lib.calls == ["download", "delete media/42", "upload"]
+    assert OLD_URL in capsys.readouterr().out
+
+
+def test_rollback_media_restores_the_backup(monkeypatch, tmp_path):
+    lib = FakeLibrary(monkeypatch, tmp_path)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    api.replace_media(str(new))
+    rb.rollback_media("jan.jpg")
+    restored = lib.uploads[-1]
+    assert restored["bytes"] == b"old bytes" and restored["filename"] == "jan.jpg"
+    assert restored["alt_text"] == "Jan"
+    # The restore takes no backup of its own, so the one it restores survives.
+    assert open(api.media_backup_paths("jan.jpg")[0], "rb").read() == b"old bytes"
+
+
+def test_rollback_media_without_a_backup_exits(monkeypatch, tmp_path):
+    monkeypatch.setattr(rb, "media_backup_paths", lambda n: (str(tmp_path / n), str(tmp_path / n) + ".json"))
+    with pytest.raises(SystemExit):
+        rb.rollback_media("nope.jpg")

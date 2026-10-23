@@ -1,11 +1,5 @@
-
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-import scripts.verify_global_css as verify
-import scripts.wp_block_api as wp
+import verify_global_css as verify
+import wp_block_api as wp
 
 MARKER_ARGS = ["--marker", ".stuv-card", "--marker", ".stuv-icon-box",
                "--icon-marker=--ico-calendar"]

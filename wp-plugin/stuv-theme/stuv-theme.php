@@ -2,7 +2,7 @@
 /**
  * Plugin Name: StuV Theme Toggle
  * Description: Schaltet den Dark Mode der Website um (Button in der Kopfzeile) und merkt sich die Wahl im Browser. Außerdem bietet es im Editor den Button-Stil „Auf Farbfläche“ an, liefert das Apple-Touch-Icon mit weißem Hintergrund aus und hält die Jahreszahl im Copyright der Fußzeile aktuell. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Umschalt-Button, die Seite zeigt immer das helle Design und das Icon auf dem iOS-Home-Bildschirm bekommt einen schwarzen Hintergrund. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.5.0
+ * Version: 1.5.1
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUV_THEME_VERSION', '1.5.0');
+define('STUV_THEME_VERSION', '1.5.1');
 
 /**
  * The theme script, inline in <head>.
@@ -31,11 +31,7 @@ function stuv_theme_script(): string {
   var root = document.documentElement;
   var mq = window.matchMedia('(prefers-color-scheme: dark)');
   var MODES = ['light', 'dark', 'system'];
-  var LABELS = {
-    light: 'Thema: Hell',
-    dark: 'Thema: Dunkel',
-    system: 'Thema: System',
-  };
+  var LABELS = { light: 'Thema: Hell', dark: 'Thema: Dunkel', system: 'Thema: System' };
 
   // localStorage throws in Safari's private mode rather than returning null.
   function stored() {
@@ -56,26 +52,23 @@ function stuv_theme_script(): string {
 
   function apply(m) {
     root.classList.toggle('dark', resolve(m) === 'dark');
-    var buttons = document.querySelectorAll('.stuv-theme-toggle');
-    for (var i = 0; i < buttons.length; i++) {
-      buttons[i].setAttribute('aria-label', LABELS[m]);
-    }
+    document.querySelectorAll('.stuv-theme-toggle').forEach(function (b) {
+      b.setAttribute('aria-label', LABELS[m]);
+    });
     // The check mark in the menu is what tells System apart from a fixed
     // choice; the trigger icon only ever shows the resolved theme.
-    var options = document.querySelectorAll('.stuv-theme-option');
-    for (var j = 0; j < options.length; j++) {
-      options[j].setAttribute(
-        'aria-checked',
-        options[j].dataset.themeSet === m ? 'true' : 'false'
-      );
-    }
+    document.querySelectorAll('.stuv-theme-option').forEach(function (o) {
+      o.setAttribute('aria-checked', String(o.dataset.themeSet === m));
+    });
   }
 
+  // Closing hides the option that has focus (Escape, or a pick by keyboard);
+  // hand focus back to the toggle instead of dropping it on <body>.
   function closeMenus() {
-    var open = document.querySelectorAll('.stuv-theme-switch[open]');
-    for (var i = 0; i < open.length; i++) {
-      open[i].removeAttribute('open');
-    }
+    document.querySelectorAll('.stuv-theme-switch[open]').forEach(function (d) {
+      if (d.contains(document.activeElement)) { d.querySelector('summary').focus(); }
+      d.removeAttribute('open');
+    });
   }
 
   apply(mode());
@@ -98,7 +91,6 @@ function stuv_theme_script(): string {
   // One listener covers both jobs: picking a mode from the menu, and the
   // outside-click dismissal that <details> does not do on its own.
   document.addEventListener('click', function (e) {
-    if (!e.target.closest) { return; }
     var option = e.target.closest('.stuv-theme-option');
     if (option) {
       var next = option.dataset.themeSet;

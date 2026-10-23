@@ -21,9 +21,8 @@ Vor jedem Deploy zusätzlich:
 ```bash
 source .env
 SKILL=.agents/skills/wordpress-default-editor
-for f in $(git ls-files 'data/*.html'); do
-  node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"
-done | grep -E ': [1-9][0-9]* invalid'
+node $SKILL/scripts/blockcheck/validate_blocks.cjs $(git ls-files 'data/*.html') \
+  | grep -E ': [1-9][0-9]* invalid'
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run
 ```
 
@@ -51,11 +50,13 @@ bearbeiteten Datei, und der nächste Deploy schreibt dann alles neu. Inhaltlich
 Gutenberg vergleicht gespeichertes Markup mit dem, was der Block selbst erzeugen
 würde. Weicht es ab, meldet der Editor „Dieser Block enthält unerwarteten oder
 ungültigen Inhalt“, und wer nur einen Text ändern wollte, kommt dann nicht
-weiter. Die Validator-Schleife im Kurzdurchlauf findet solche Blöcke vorher.
+weiter. Der Validator-Aufruf im Kurzdurchlauf findet solche Blöcke vorher.
 
-`validate_blocks.cjs` liest **nur sein erstes Argument**. Übergibst du einen
-Glob, prüft er eine Datei, ignoriert den Rest und gibt trotzdem einen sauberen
-Durchlauf aus. Deshalb läuft die Schleife Datei für Datei. Das Muster
+`validate_blocks.cjs` nimmt beliebig viele Dateien und prüft sie in einem
+Prozess. Das Laden des Gutenberg-Parsers dauert rund zwei Sekunden, die Dateien
+selbst gehen schnell; ein Aufruf pro Datei bräuchte für den ganzen Baum über
+eine Minute. Für jede Datei steht eine Zeile `=== <datei>: N invalid` in der
+Ausgabe. Das Muster
 `'data/*.html'` ist Absicht: Gits `*` passt auch über Schrägstriche hinweg und
 erfasst damit alle Dateien im Baum. `'data/**/*.html'` würde
 `header_blocks.html` und `footer_blocks.html` verfehlen, die in keinem
@@ -81,12 +82,8 @@ von Hand bearbeitet oder eine Quelle geändert hat, ohne neu zu generieren.
 
 ### Der Tool-Code
 
-Die Unittests der `tools/`-Skripte brauchen kein Netz und kein Pillow, nur die
-Standardbibliothek:
-
-```bash
-python3 -m unittest discover -s tools -p "test_*.py" -v
-```
+Die Unittests der `tools/`-Skripte (Aufruf im Kurzdurchlauf, mit `-v` für jede
+Testzeile) brauchen kein Netz und kein Pillow, nur die Standardbibliothek:
 
 - `test_gen_map.py` prüft die Geometrie: Projektion, Kachelmathematik,
   Pin-Platzierung. Es testet gegen `data/maps/campus.json` selbst und nicht
@@ -165,13 +162,7 @@ die Seite jedes Mal neu, aber in der Konsole darf keine Exception erscheinen.
 
 ### Der Dry-Run
 
-```bash
-source .env
-python3 .agents/skills/wordpress-default-editor/scripts/deploy.py \
-  --manifest data/manifest.json all --dry-run
-```
-
-Der Dry-Run prüft, ob die Quelldateien vorhanden sind, ob das Block-Markup
+Der Dry-Run (Aufruf im Kurzdurchlauf) prüft, ob die Quelldateien vorhanden sind, ob das Block-Markup
 balanciert ist, und zeigt die Bytezahlen. Er kontaktiert den Server **nicht**
 und vergleicht nichts mit dem, was dort liegt. Ein sauberer Dry-Run heißt also,
 dass die Dateien hochladbar sind; ob das Ergebnis richtig aussieht, sagt er
@@ -190,6 +181,11 @@ python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
 mit seiner Quelle im Repo. Nur dieser Schritt belegt, dass die Site ausliefert,
 was hier steht. Exit 0 heißt, alles stimmt überein; 1 heißt Drift, 2 heißt, ein
 Ziel ließ sich nicht abrufen. Mit `--diff` siehst du, was sich unterscheidet.
+Mit `--history` sucht es den Live-Stand eines abweichenden Ziels in der
+Git-Historie: `BEHIND` heißt, die Seite zeigt einen älteren Commit (die
+Ausgabe nennt ihn) oder ist leer, etwa eine neu angelegte; `EDITED` heißt, kein Commit hatte diesen Stand, er wurde
+also in wp-admin geändert (Exit 3). Über ein `EDITED`-Ziel schreibt `deploy.py`
+nur mit `--overwrite`.
 Den Page-Cache von WP-Optimize umgeht das Skript, weil es die REST-API liest und
 nicht das Frontend.
 
@@ -199,19 +195,68 @@ WordPress' REST-Sanitizer kann Teile des Custom-CSS entfernen. Deshalb gehört
 `verify_global_css.py` zu diesem Deploy dazu (Aufruf in `AGENTS.md`, Erklärung
 in `docs/tools.md`).
 
+## Überwachung zwischen den Deploys
+
+Die Action **Monitor** (`.github/workflows/monitor.yml`) liest die Live-Site,
+ohne etwas zu schreiben. Sie läuft im Environment `monitor`, ohne Freigabe
+(Einrichtung in `docs/ai-workflow.md`), und lässt sich unter **Actions →
+Monitor → Run workflow** auch von Hand starten; dann laufen alle Prüfungen.
+
+Täglich:
+
+- `verify_deploy.py --history`: Ein Ziel, das in wp-admin geändert wurde
+  (`EDITED`), lässt den Lauf scheitern. So fällt die Änderung am Tag danach auf
+  und nicht erst beim nächsten Deploy, der dann abbricht. `BEHIND` gibt nur
+  eine Warnung: Auf `main` liegen Commits, die noch niemand deployt hat.
+- `tools/check_plugins.py`: Jedes Plugin aus `wp-plugin/` muss installiert,
+  aktiv und in derselben Version sein. Ein vergessener Zip-Upload fällt sonst
+  niemandem auf.
+- `tools/site_state.py` vergleicht, was nur in wp-admin eingestellt wird, mit
+  `data/site-state.json`: Einstellungen, Theme, aktive Plugins, Seiten (Titel,
+  Slug, Status, Template), Dateien der Mediathek, die nicht in `data/media/`
+  liegen (in wp-admin hochgeladen oder im Repo gelöscht), die SEO-Angaben jeder
+  Seite (Titel, Beschreibung, Vorschaubild) und die Felder der beiden
+  Formulare. Bei einer Abweichung zeigt das Log den Diff. War die Änderung
+  gewollt, `python3 tools/site_state.py --write` ausführen und die Datei
+  committen; sonst die Einstellung in wp-admin zurücksetzen. Deployt wird die
+  Datei nie, und E-Mail-Adressen stehen absichtlich nicht darin, weil das Repo
+  öffentlich ist (`docs/architecture.md`).
+
+Montags:
+
+- `tools/check_links.py` ruft jeden externen Link der Seiten einmal auf.
+  `BROKEN` (404, 410, eine Domain ohne DNS-Eintrag, ein ungültiges Zertifikat,
+  jeweils auch beim zweiten Versuch) lässt den Lauf scheitern; `WARN` (etwa 403
+  von einem Bot-Schutz oder ein Timeout) und `MOVED` (Link landet auf einer
+  anderen Domain) sind Hinweise. Instagram, WhatsApp, Google Maps und der
+  Abo-Link des Kalenders lassen sich so nicht prüfen und werden übersprungen.
+
+Alle drei laufen auch lokal, die ersten beiden nach `source .env`:
+
+```bash
+python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
+  --manifest data/manifest.json --history
+python3 tools/check_plugins.py
+python3 tools/site_state.py
+python3 tools/check_links.py
+```
+
+Scheitert ein geplanter Lauf, schickt GitHub eine Mail an die Person, die den
+Zeitplan in `monitor.yml` zuletzt geändert hat. In einem öffentlichen Repo
+schaltet GitHub geplante Workflows nach 60 Tagen ohne Commit ab; dann unter
+**Actions → Monitor** wieder einschalten.
+
 ## Was keine dieser Prüfungen sieht
 
 Die Prüfungen oben lesen Quelltext; gerendert wird nichts. Kontraste rechnet
 `test_styles.py` aus, aber ob die Seite gut aussieht und auf ein Handy passt,
-siehst du nur, wenn du hinschaust:
+zeigt nur die gerenderte Seite. Nach jeder Änderung am Layout:
 
 - Seite aufrufen, hell **und** dunkel.
 - Das Fenster auf 360px Breite ziehen: Nichts darf seitlich scrollen, Buttons
   stehen untereinander und berühren sich nicht.
 - Einmal mit der Tab-Taste durch die Seite: Jeder Link, auch jede ganze Karte,
   zeigt einen sichtbaren Ring.
-- Bei Kartenänderungen die drei Deploy-Ziele zusammen deployen, sonst liegt das
-  alte Bild unter der neuen Geometrie (`docs/tools.md`).
 
 Wenn etwas schiefgegangen ist:
 
@@ -221,7 +266,11 @@ python3 .agents/skills/wordpress-default-editor/scripts/rollback.py <id> \
 ```
 
 Vor jedem Schreibvorgang legt der Client ein Backup unter
-`/tmp/wp_backup/<site-slug>/` ab. Medien deckt `rollback.py` nicht ab.
+`/tmp/wp_backup/<site-slug>/` ab. Für ein Bild, das `replace_media()` unter
+derselben URL ersetzt hat, liegt die alte Datei unter
+`/tmp/wp_backup/<site-slug>/media/`; zurück kommt sie mit
+`rollback.py --media <dateiname>`. Ein neu hochgeladenes Bild, das vorher nicht
+in der Mediathek war, braucht kein Backup: Die Datei liegt in `data/media/`.
 
 Nach einem Deploy über die Action liegen die Backups im Artefakt
 `wp-backup-<Nummer>` des Laufs. Entpackt nach `/tmp/wp_backup/` findet

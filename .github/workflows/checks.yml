@@ -17,7 +17,7 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
@@ -38,8 +38,6 @@ jobs:
           php wp-plugin/tests/test_theme.php
           TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 
-      # The skill's tests are the only ones with dependencies outside the
-      # standard library (a Flask mock of the WordPress REST API).
       - name: Skill tests
         working-directory: .agents/skills/wordpress-default-editor
         run: |
@@ -51,9 +49,9 @@ jobs:
         run: |
           BLOCKCHECK=.agents/skills/wordpress-default-editor/scripts/blockcheck
           npm install --prefix "$BLOCKCHECK" --silent --no-audit --no-fund
-          for f in $(git ls-files 'data/*.html'); do
-            node "$BLOCKCHECK/validate_blocks.cjs" "$f"
-          done | tee "$RUNNER_TEMP/blockcheck.log"
+          # One process for all files: loading the block library is the slow part.
+          node "$BLOCKCHECK/validate_blocks.cjs" $(git ls-files 'data/*.html') \
+            | tee "$RUNNER_TEMP/blockcheck.log"
           # One summary line per file, or the validator crashed on one.
           test "$(grep -c '^===' "$RUNNER_TEMP/blockcheck.log")" \
             -eq "$(git ls-files 'data/*.html' | wc -l)"

@@ -65,7 +65,9 @@ Zunächst einen Platzhalter eintragen.
 1. In wp-admin einloggen.
 2. Seiten → Erstellen.
 3. Titel eingeben (erscheint wegen des `page-no-title`-Templates nicht im
-   Frontend).
+   Frontend), aber keinen Inhalt: Eine leere Seite überschreibt der Deploy
+   ohne Rückfrage, Inhalt aus wp-admin hält er für eine Bearbeitung
+   (`EDITED`) und bricht ab.
 4. In der Seiten-Seitenleiste unter „Template“ die Vorlage `page-no-title`
    auswählen.
 5. Veröffentlichen.
@@ -102,6 +104,4 @@ https://stuv-heidenheim.de/dein-slug/
 Für einen Eintrag im Hauptmenü den Header-Block in
 `data/header_blocks.html` bearbeiten und `header` deployen.
 
-Danach die Live-URL aufrufen und prüfen, ob die Seite richtig aussieht. Der
-Dry-Run prüft nur lokal; ob die Page-ID zur gemeinten WordPress-Seite gehört,
-siehst du erst nach dem echten Deploy auf der Seite selbst.
+Danach die Live-URL aufrufen und prüfen, ob die Seite richtig aussieht.

@@ -5,30 +5,34 @@ Upload local files to the WP media library and print their source_url.
 Usage:
   python3 -m scripts.upload_media <file> [<file> ...] [--alt "text"]
 
-Re-running with the same filename is a no-op (returns the existing attachment)
-unless --force is passed. With multiple files, --alt applies to all of them;
-for per-file alt text, run the script once per file.
+Re-running with the same filename is a no-op (returns the existing attachment).
+--replace puts the file under the existing URL instead (replace_media: backup,
+delete, upload; undo with rollback.py --media). With multiple files, --alt
+applies to all of them; for per-file alt text, run the script once per file.
 """
 import argparse
 import sys
 import urllib.error
 
 try:  # run as a script: scripts/ is on sys.path
-    from wp_block_api import upload_media
-except ModuleNotFoundError:  # imported as scripts.upload_media (tests, -m)
-    from scripts.wp_block_api import upload_media
+    import wp_block_api as wp
+except ModuleNotFoundError:  # run as python3 -m scripts.upload_media
+    from scripts import wp_block_api as wp
 
 
 def main(argv):
     parser = argparse.ArgumentParser(description="Upload files to the WP media library")
     parser.add_argument("files", nargs="+", help="local file path(s) to upload")
     parser.add_argument("--alt", default=None, help="alt text applied to each upload")
-    parser.add_argument("--force", action="store_true", help="re-upload even if a same-named attachment exists")
+    parser.add_argument("--replace", action="store_true", help="replace a same-named attachment at its URL")
     args = parser.parse_args(argv)
 
     for path in args.files:
         try:
-            result = upload_media(path, alt_text=args.alt, reuse_existing=not args.force)
+            if args.replace:
+                result = wp.replace_media(path, alt_text=args.alt)
+            else:
+                result = wp.upload_media(path, alt_text=args.alt)
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
             print(f"HTTP {exc.code} uploading {path}: {body}", file=sys.stderr)

@@ -12,6 +12,7 @@ import json
 import pathlib
 import re
 from html.parser import HTMLParser
+from typing import NamedTuple
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 DATA = REPO / "data"
@@ -98,14 +99,13 @@ BLOCK_RE = re.compile(
 ROOT_TAG_RE = re.compile(r"\s*<([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>")
 
 
-class Block:
-    def __init__(self, name, attrs, raw_json, root_tag, root_attrs, line):
-        self.name = name
-        self.attrs = attrs
-        self.raw_json = raw_json
-        self.root_tag = root_tag
-        self.root_attrs = root_attrs
-        self.line = line
+class Block(NamedTuple):
+    name: str
+    attrs: dict
+    raw_json: str
+    root_tag: str
+    root_attrs: str
+    line: int
 
 
 def blocks(markup):
@@ -328,11 +328,10 @@ def _matching_brace(text, open_at):
     raise ValueError(f"unbalanced '{{' at offset {open_at}")
 
 
-class Rule:
-    def __init__(self, selectors, decls, media):
-        self.selectors = selectors
-        self.decls = decls
-        self.media = media
+class Rule(NamedTuple):
+    selectors: list
+    decls: dict
+    media: str
 
     @property
     def selector_text(self):

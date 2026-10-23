@@ -45,76 +45,79 @@ mit Block-Editor über die REST-API. Was nur für diese Site gilt, gehört nach
 Ein „Skill“ ist ein Markdown-Dokument mit einer Anleitung, die der Agent lädt,
 wenn sie zur Aufgabe passt, hier zusammen mit den Skripten, die sie beschreibt.
 Der Skill enthält alles Lauffähige, dazu eigene Tests unter `tests/`
-(`docs/testing.md`):
+(`docs/testing.md`). Welche Skripte es gibt und was sie tun, steht in seiner
+`SKILL.md` unter „Scripts“.
 
-| Skript                           | Zweck                                                             |
-| -------------------------------- | ----------------------------------------------------------------- |
-| `wp_block_api.py`                | REST-Client (Auth, Backup, eigener User-Agent)                    |
-| `deploy.py`                      | Deployer, gesteuert von `data/manifest.json`                      |
-| `rollback.py`                    | Deploy rückgängig machen (nicht für Medien)                       |
-| `upload_media.py`                | Bild-Upload                                                       |
-| `fix_has_text_color.py`          | Nachrüsten fehlender `has-text-color`-Klassen                     |
-| `verify_global_css.py`           | Prüft, ob WordPress das deployte CSS unbeschädigt gespeichert hat |
-| `blockcheck/validate_blocks.cjs` | Gutenberg-Block-Validator                                         |
-
-## Was ein Agent hier nicht darf
-
-Diese Grenzen stehen in `AGENTS.md`, und jede ist aus einem Schaden entstanden:
-
-- Generierte Dateien nie von Hand bearbeiten. Der nächste Generatorlauf
-  überschreibt die Karten-Blöcke und den Icon-CSS-Abschnitt ohne Meldung
-  (`docs/tools.md`).
-- Kein `--force` bei Medien. WordPress legt dann eine umbenannte Datei an
-  (`karte-…-1.webp`), auf die nichts verweist (`docs/tools.md`).
+Die Grenzen für den Agent stehen in `AGENTS.md`, und jede ist aus einem Schaden
+entstanden, etwa eine von Hand bearbeitete generierte Datei oder ein Bild, das
+als `-1`-Kopie neben dem alten landete (`docs/tools.md`).
 
 ## Deploy per GitHub Action
 
 Deployt wird über die Action **Deploy** (`.github/workflows/deploy.yml`), nicht
-mehr vom eigenen Rechner. Sie startet bei jedem Push auf `main`, der etwas unter
-`data/` oder an den Deploy-Skripten des Skills ändert, und von Hand unter
-**Actions → Deploy → Run workflow**. Andere Branches deployen nie.
+mehr vom eigenen Rechner. Gestartet wird sie nur von Hand, unter **Actions →
+Deploy → Run workflow** oder mit `gh workflow run deploy.yml`. Andere Branches
+deployen nie.
+
+Ein Push auf `main` startet nur die Prüfungen. So können mehrere Commits auf
+`main` liegen, bevor jemand deployt, und ein einziger Lauf bringt sie alle auf
+die Seite. Bis dahin meldet die Action **Monitor** täglich eine Warnung, dass
+die Seite hinter `main` liegt (`docs/testing.md`). Früher startete jeder Push
+einen Deploy; wer nicht jeden freigab, hatte bald eine Schlange wartender Läufe,
+in der der älteste alle anderen aufhielt.
 
 Geschrieben wird erst nach einer Freigabe: Das Environment `production` hat
 **Required reviewers**, und der Deploy-Job wartet, bis einer von ihnen unter
 **Review deployments** auf **Approve** klickt. An diesem Repo arbeiten
-wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler. Ohne die Freigabe stünde
-jeder unbedachte Commit sofort auf der öffentlichen Seite. Die Action ersetzt
+wechselnde StuV-Mitglieder, keine Vollzeit-Entwickler. Ohne die Freigabe
+könnte jeder mit Schreibrechten einen unfertigen Stand auf die öffentliche Seite
+bringen. Die Action ersetzt
 nur das lokale Skript, damit niemand dafür den Skill und eine `.env` mit
 Zugangsdaten braucht.
 
-Die Freigabe kommt vor dem Schritt, der die Ziele bestimmt. Wer freigibt, sieht
-also den Commit, aber nicht, was der Deploy auf der Live-Seite überschreibt.
-Wurde seit dem letzten Deploy in wp-admin etwas geändert, vorher lokal
-`verify_deploy.py --manifest data/manifest.json --diff` laufen lassen.
+Was jemand in wp-admin geändert hat, überschreibt die Action nicht stillschweigend.
+Sie vergleicht jedes Ziel mit der Live-Seite und sucht den Live-Stand in der
+Git-Historie. Steht er dort, hinkt die Seite nur hinterher (`BEHIND`), und der
+Deploy verliert nichts. Steht er nirgends, kann er nur aus wp-admin kommen
+(`EDITED`). Dann bricht der Lauf ab, bevor er irgendetwas schreibt, und der Diff
+im Log zeigt die Änderung. Weiter geht es auf einem von zwei Wegen:
 
-Geprüft wird dagegen auch automatisch: `.github/workflows/checks.yml` führt bei
-jedem Push die Prüfungen aus `docs/testing.md` aus. Der Lauf liest nur, braucht
-kein Secret und schreibt nichts auf die Seite. Die Deploy-Action ruft dieselben
-Prüfungen zuerst auf und deployt nur, wenn sie grün sind.
+- **Übernehmen:** die Änderung aus dem Diff in die Dateien unter `data/`
+  einarbeiten, committen und pushen. Weil WordPress Blöcke anders formatiert
+  als Prettier, gilt das Ziel danach meist immer noch als `EDITED`. Den Diff
+  prüfen (nur noch Formatierung?) und einen neuen Lauf mit dem Ziel unter
+  **overwrite** starten.
+- **Verwerfen:** einen neuen Lauf starten und das Ziel unter **overwrite**
+  eintragen. Die Änderung ist dann weg, das Backup im Artefakt bleibt.
+
+Die Freigabe kommt vor dieser Prüfung. Wer freigibt, muss also nicht selbst
+nachsehen, ob in wp-admin etwas geändert wurde.
 
 ### Was ein Lauf macht
 
 1. Alle Prüfungen aus `checks.yml`.
 2. Warten auf die Freigabe.
 3. Den Dry-Run.
-4. Die Ziele bestimmen. Mit `changed` (Standard, bei einem Push immer) vergleicht
-   `verify_deploy.py` jedes Ziel mit der Live-Seite und nimmt die, die
-   abweichen. Der Diff steht im Log; er zeigt auch, was eine Änderung in
-   wp-admin wäre, die der Deploy jetzt überschreibt. `media` läuft immer mit,
-   lädt aber nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt
-   `changed` gehen auch `all` oder einzelne Zielnamen, mit Leerzeichen
-   getrennt.
+4. Die Ziele bestimmen. `verify_deploy.py --history` vergleicht jedes Ziel mit
+   der Live-Seite und teilt die abweichenden in `BEHIND` und `EDITED` ein (siehe
+   oben). Mit `changed` (Standard) nimmt die Action alle
+   abweichenden. Ist eines der zu schreibenden Ziele `EDITED` und steht nicht
+   unter `overwrite`, bricht sie hier ab. `media` läuft immer mit, lädt aber
+   nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt `changed`
+   gehen auch `all` oder einzelne Zielnamen, mit Leerzeichen getrennt.
 5. Den Deploy, danach `verify_deploy.py` für die deployten Ziele und nach
    `global-styles` auch `verify_global_css.py`.
 6. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage
    lang (Rollback in `docs/testing.md`).
 
-Die Action deployt mit dem Skill aus demselben Commit wie der Inhalt. Warten
-mehrere Läufe, behält GitHub nur den neuesten; mit `changed` deckt er die Pushes
-davor mit ab.
+Die Action deployt mit dem Skill aus demselben Commit wie der Inhalt. Es läuft
+immer nur ein Deploy, und ein Lauf, der auf seine Freigabe wartet, zählt dabei
+mit: Ein zweiter Lauf wartet hinter ihm. Einen Lauf, den du nicht freigeben
+willst, deshalb unter **Review deployments** ablehnen, statt ihn liegen zu
+lassen; sonst bricht GitHub ihn erst nach 30 Tagen ab.
 
-Nicht über die Action laufen: ein Bild unter derselben URL ersetzen (löschen
-und neu hochladen, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in
+Nicht über die Action laufen: ein Bild unter derselben URL ersetzen
+(`replace_media()`, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in
 wp-admin, `docs/plugins.md`). Hängt eine Inhaltsänderung an einem Plugin (etwa
 `stuv-dsgvo` mit `global-styles`, `homepage` und `events`), erst das ZIP
 hochladen und dann den Deploy freigeben.
@@ -130,7 +133,22 @@ Unter **Settings → Environments** ein Environment `production` anlegen:
   schreiben) mit einem eigenen Application Password. So lässt sich der Zugang
   sperren, ohne jemandes persönlichen Login anzufassen.
 - **Required reviewers**: die Leute, die Deploys freigeben dürfen. Pflicht,
-  denn ohne sie deployt jeder Push auf `main` sofort.
+  denn ohne sie deployt jeder Lauf ohne Rückfrage.
 
 Starten darf die Action jeder mit Schreibrechten am Repo, freigeben nur die
 Reviewer.
+
+Für die Action **Monitor** (`docs/testing.md`) ein zweites Environment
+`monitor` anlegen:
+
+- **Deployment branches**: nur `main`.
+- **Variable** `WP_SITE` wie oben.
+- **Secrets** `WP_USER` und `WP_APP_PASS`: wieder ein eigener Benutzer mit
+  eigenem Application Password, Rolle Administrator. Nur Administratoren lesen
+  Template-Parts, Global Styles und die Plugin-Liste.
+- **Keine Reviewer.** Die Action läuft täglich und schreibt nichts; mit
+  Freigabe käme jeder Lauf erst an, wenn jemand klickt.
+
+Der Preis: Wer einen Workflow auf `main` pusht, kann dieses Passwort ohne
+Freigabe benutzen. Deshalb ein eigener Benutzer, den man sperren kann, ohne den
+Deploy-Zugang anzufassen.
