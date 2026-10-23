@@ -30,7 +30,7 @@ jobs:
       # The host publishes an AAAA record it does not route (AGENTS.md).
       WP_ADDRESS_FAMILY: ipv4
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # --history looks the live content up in every commit.
           fetch-depth: 0
@@ -71,7 +71,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '37 4 * * 1'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: External links
         run: python3 tools/check_links.py

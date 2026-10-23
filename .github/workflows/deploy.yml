@@ -56,7 +56,7 @@ jobs:
       MANIFEST: data/manifest.json
       SKILL_SCRIPTS: .agents/skills/wordpress-default-editor/scripts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # Full history: a live target that matches an older commit is behind
           # and safe to overwrite; one that matches none was edited in wp-admin.
