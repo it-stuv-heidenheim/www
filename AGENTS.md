@@ -19,7 +19,10 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
   reviewer of `production`; never remove that gate or deploy from another branch. Pushing to `main` therefore
   starts a deploy: push only what may go live. Locally:
   `deploy.py --manifest data/manifest.json all --dry-run` (no server), `deploy.py … <target>`, then
-  `verify_deploy.py --manifest data/manifest.json`, the only proof the site serves this repo. Undo:
+  `verify_deploy.py --manifest data/manifest.json`, the only proof the site serves this repo. A target whose live
+  content matches no commit (`verify_deploy.py … --history`: `EDITED`) was edited in wp-admin; `deploy.py` and the
+  Action refuse to write over it. Port the edit into `data/`, then deploy it with `--overwrite` (Action: `overwrite`
+  input). Undo:
   `rollback.py <id>`. After a `global-styles` deploy:
   `verify_global_css.py --marker .stuv-card --marker .stuv-icon-box --marker ":root.dark" --marker .stuv-wpforms --marker .stuv-body-muted --icon-marker=--ico-calendar`
 - Manifest source paths are relative to `data/`; a page is its directory's `*.html` joined in filename order.

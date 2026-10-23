@@ -190,6 +190,11 @@ python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
 mit seiner Quelle im Repo. Nur dieser Schritt belegt, dass die Site ausliefert,
 was hier steht. Exit 0 heißt, alles stimmt überein; 1 heißt Drift, 2 heißt, ein
 Ziel ließ sich nicht abrufen. Mit `--diff` siehst du, was sich unterscheidet.
+Mit `--history` sucht es den Live-Stand eines abweichenden Ziels in der
+Git-Historie: `BEHIND` heißt, die Seite zeigt einen älteren Commit (die
+Ausgabe nennt ihn); `EDITED` heißt, kein Commit hatte diesen Stand, er wurde
+also in wp-admin geändert (Exit 3). Über ein `EDITED`-Ziel schreibt `deploy.py`
+nur mit `--overwrite`.
 Den Page-Cache von WP-Optimize umgeht das Skript, weil es die REST-API liest und
 nicht das Frontend.
 

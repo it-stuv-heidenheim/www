@@ -11,7 +11,11 @@ Usage:
   python3 deploy.py --manifest <path> all --dry-run   # validate sources, no writes
   python3 deploy.py --manifest <path> <target>        # deploy one target
   python3 deploy.py --manifest <path> all             # deploy every target, in order
+  python3 deploy.py --manifest <path> <target> --overwrite  # even over a wp-admin edit
 
+Before any write, every target is checked against the site: one whose live
+content matches no commit (verify_deploy.py --history: EDITED) was edited in
+wp-admin, and the deploy stops without writing anything unless --overwrite.
 Structural targets are backed up and gated by save_structural (confirm +
 balanced markup). Global-styles targets are JSON-backed-up by apply_global_styles.
 Media targets upload a directory of files, reusing existing attachments by
@@ -100,6 +104,22 @@ def _deploy_global_styles(name, t, base, dry_run):
     return result
 
 
+def refuse_edited(names, manifest, base):
+    """Exit before the first write if a target serves an edit from wp-admin."""
+    try:
+        import verify_deploy as verify  # late: verify_deploy imports this module
+    except ModuleNotFoundError:
+        import scripts.verify_deploy as verify
+    edited = [n for n in names if manifest[n]["type"] != "media"
+              and verify.check_target(n, manifest[n], base, history=True)[0] == "edited"]
+    if edited:
+        sys.exit(
+            f"not deployed: {', '.join(edited)} serve content that no commit has, "
+            "an edit in wp-admin. See it with verify_deploy.py --diff --history, "
+            "port it into data/ or decide to drop it, then deploy with --overwrite."
+        )
+
+
 def deploy_one(name, manifest, base, dry_run=False):
     t = manifest[name]
     print(f"[{name}]")
@@ -116,6 +136,8 @@ def main(argv):
     parser.add_argument("target", nargs="?", help="a target name from --list, or 'all'")
     parser.add_argument("--list", action="store_true", help="list targets and exit")
     parser.add_argument("--dry-run", action="store_true", help="validate sources, no writes")
+    parser.add_argument("--overwrite", action="store_true",
+                        help="write even over content edited in wp-admin")
     args = parser.parse_args(argv)
 
     manifest_path = Path(args.manifest).resolve()
@@ -132,6 +154,8 @@ def main(argv):
     for n in names:
         if n not in manifest:
             sys.exit(f"unknown target {n!r}; have: {', '.join(manifest)}")
+    if not args.dry_run and not args.overwrite:
+        refuse_edited(names, manifest, base)
     for n in names:
         deploy_one(n, manifest, base, dry_run=args.dry_run)
 

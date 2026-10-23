@@ -2,6 +2,8 @@
 # content or the deploy scripts, or by hand (Actions → Deploy → Run workflow).
 # Either way the deploy job waits for a required reviewer of the `production`
 # environment before it writes: docs/ai-workflow.md, "Deploy per GitHub Action".
+# A target edited in wp-admin since the last deploy stops the run before any
+# write, unless the run is started by hand with that target under `overwrite`.
 # Needs that environment with the secrets WP_USER and WP_APP_PASS and the
 # variable WP_SITE (with https://).
 name: Deploy
@@ -18,6 +20,10 @@ on:
         description: "changed, all, or target names from data/manifest.json (space-separated)"
         default: changed
         required: true
+      overwrite:
+        description: "targets edited in wp-admin whose edit may be overwritten (space-separated, or all)"
+        default: ""
+        required: false
 
 # One deploy at a time; a second run waits instead of interleaving writes. Of
 # several waiting runs GitHub keeps only the newest; with `changed` it covers
@@ -50,10 +56,15 @@ jobs:
       # Through env, never `${{ }}` inside a script: no shell injection.
       # A push has no inputs and deploys what differs from the live site.
       TARGET: ${{ inputs.target || 'changed' }}
+      OVERWRITE: ${{ inputs.overwrite }}
       MANIFEST: data/manifest.json
       SKILL_SCRIPTS: .agents/skills/wordpress-default-editor/scripts
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: a live target that matches an older commit is behind
+          # and safe to overwrite; one that matches none was edited in wp-admin.
+          fetch-depth: 0
 
       - name: Configuration present
         run: |
@@ -64,36 +75,54 @@ jobs:
       - name: Dry run
         run: python3 "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" all --dry-run
 
-      # `changed` deploys every target whose live content differs from the
-      # repo, which also overwrites edits made in wp-admin: the diff below is
-      # what gets replaced. The approval comes before this step, so the
-      # reviewer does not see this diff; after edits in wp-admin, run
-      # verify_deploy.py --diff locally before approving. Media cannot be
-      # diffed and always runs; it only uploads files that are not in the
-      # library yet.
+      # Each target is BEHIND (the site serves an older commit, nothing is
+      # lost) or EDITED (content no commit has: an edit in wp-admin, which a
+      # deploy would destroy). `changed` deploys both kinds, but any EDITED
+      # target that is to be written stops the run before the first write,
+      # unless it is listed under `overwrite`. The diff in the log shows the
+      # edit. Media cannot be diffed and always runs; it only uploads files
+      # that are not in the library yet.
       - name: Pick targets
         run: |
+          set +e
+          out=$(python3 "$SKILL_SCRIPTS/verify_deploy.py" --manifest "$MANIFEST" --diff --history)
+          rc=$?
+          set -e
+          echo "$out"
+          [ "$rc" -ne 2 ] || { echo "::error::live site not readable"; exit 1; }
+          edited=$(echo "$out" | awk '$1 == "EDITED" { print $2 }')
           if [ "$TARGET" = changed ]; then
-            set +e
-            out=$(python3 "$SKILL_SCRIPTS/verify_deploy.py" --manifest "$MANIFEST" --diff)
-            rc=$?
-            set -e
-            echo "$out"
-            [ "$rc" -le 1 ] || { echo "::error::live site not readable"; exit 1; }
-            names="media $(echo "$out" | awk '$1 == "DIFF" { print $2 }')"
+            names="media $(echo "$out" | awk '$1 == "BEHIND" { print $2 }') $edited"
           else
             names="$TARGET"
           fi
-          set -f  # no glob expansion of the input
+          set -f  # no glob expansion of the inputs
           names=$(echo $names)
-          case "$names" in *[!a-z0-9\ -]*) echo "::error::bad target list: $names"; exit 1 ;; esac
+          overwrite=$(echo $OVERWRITE)
+          case "$names $overwrite" in *[!a-z0-9\ -]*) echo "::error::bad target list: $names / $overwrite"; exit 1 ;; esac
+          blocked=""
+          for n in $edited; do
+            case " $names " in *" $n "*|*" all "*) ;; *) continue ;; esac
+            case " $overwrite " in *" $n "*|*" all "*) ;; *) blocked="$blocked $n" ;; esac
+          done
+          if [ -n "$blocked" ]; then
+            msg="Edited in wp-admin, nothing deployed:$blocked. Port the edit (diff in the log) into data/, or run by hand with overwrite:$blocked"
+            echo "::error::$msg"
+            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
           echo "NAMES=$names" >> "$GITHUB_ENV"
+          echo "OVERWRITE_NAMES=$overwrite" >> "$GITHUB_ENV"
           echo "Deploying: $names" | tee -a "$GITHUB_STEP_SUMMARY"
+          [ -z "$overwrite" ] || echo "Overwriting wp-admin edits in: $overwrite" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy
         run: |
+          set -f
           for n in $NAMES; do
-            python3 "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" "$n"
+            # deploy.py checks again and refuses an EDITED target itself.
+            case " $OVERWRITE_NAMES " in *" $n "*|*" all "*) flag=--overwrite ;; *) flag= ;; esac
+            python3 "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" "$n" $flag
           done
 
       - name: Verify

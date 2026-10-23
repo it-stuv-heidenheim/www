@@ -82,10 +82,23 @@ jeder unbedachte Commit sofort auf der öffentlichen Seite. Die Action ersetzt
 nur das lokale Skript, damit niemand dafür den Skill und eine `.env` mit
 Zugangsdaten braucht.
 
-Die Freigabe kommt vor dem Schritt, der die Ziele bestimmt. Wer freigibt, sieht
-also den Commit, aber nicht, was der Deploy auf der Live-Seite überschreibt.
-Wurde seit dem letzten Deploy in wp-admin etwas geändert, vorher lokal
-`verify_deploy.py --manifest data/manifest.json --diff` laufen lassen.
+Was jemand in wp-admin geändert hat, überschreibt die Action nicht stillschweigend.
+Sie vergleicht jedes Ziel mit der Live-Seite und sucht den Live-Stand in der
+Git-Historie. Steht er dort, hinkt die Seite nur hinterher (`BEHIND`), und der
+Deploy verliert nichts. Steht er nirgends, kann er nur aus wp-admin kommen
+(`EDITED`). Dann bricht der Lauf ab, bevor er irgendetwas schreibt, und der Diff
+im Log zeigt die Änderung. Weiter geht es auf einem von zwei Wegen:
+
+- **Übernehmen:** die Änderung aus dem Diff in die Dateien unter `data/`
+  einarbeiten, committen und pushen. Weil WordPress Blöcke anders formatiert
+  als Prettier, gilt das Ziel danach meist immer noch als `EDITED`. Den Diff
+  prüfen (nur noch Formatierung?) und den Lauf von Hand mit dem Ziel unter
+  **overwrite** starten.
+- **Verwerfen:** den Lauf von Hand starten und das Ziel unter **overwrite**
+  eintragen. Die Änderung ist dann weg, das Backup im Artefakt bleibt.
+
+Die Freigabe kommt vor dieser Prüfung. Wer freigibt, muss also nicht selbst
+nachsehen, ob in wp-admin etwas geändert wurde.
 
 Geprüft wird dagegen auch automatisch: `.github/workflows/checks.yml` führt bei
 jedem Push die Prüfungen aus `docs/testing.md` aus. Der Lauf liest nur, braucht
@@ -97,13 +110,13 @@ Prüfungen zuerst auf und deployt nur, wenn sie grün sind.
 1. Alle Prüfungen aus `checks.yml`.
 2. Warten auf die Freigabe.
 3. Den Dry-Run.
-4. Die Ziele bestimmen. Mit `changed` (Standard, bei einem Push immer) vergleicht
-   `verify_deploy.py` jedes Ziel mit der Live-Seite und nimmt die, die
-   abweichen. Der Diff steht im Log; er zeigt auch, was eine Änderung in
-   wp-admin wäre, die der Deploy jetzt überschreibt. `media` läuft immer mit,
-   lädt aber nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt
-   `changed` gehen auch `all` oder einzelne Zielnamen, mit Leerzeichen
-   getrennt.
+4. Die Ziele bestimmen. `verify_deploy.py --history` vergleicht jedes Ziel mit
+   der Live-Seite und teilt die abweichenden in `BEHIND` und `EDITED` ein (siehe
+   oben). Mit `changed` (Standard, bei einem Push immer) nimmt die Action alle
+   abweichenden. Ist eines der zu schreibenden Ziele `EDITED` und steht nicht
+   unter `overwrite`, bricht sie hier ab. `media` läuft immer mit, lädt aber
+   nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt `changed`
+   gehen auch `all` oder einzelne Zielnamen, mit Leerzeichen getrennt.
 5. Den Deploy, danach `verify_deploy.py` für die deployten Ziele und nach
    `global-styles` auch `verify_global_css.py`.
 6. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage

@@ -6,8 +6,9 @@ description: 'Deploys, verifies and rolls back this repo''s WordPress block cont
 # WordPress REST tooling
 
 `data/` is the source of truth: change content there and deploy it. A direct
-REST write to a page is drift that the next deploy overwrites, so REST writes
-are for deploys, rollbacks, media and creating a resource.
+REST write or wp-admin edit is drift that blocks the next deploy of that
+target until it is ported into `data/` or dropped with `--overwrite`, so REST
+writes are for deploys, rollbacks, media and creating a resource.
 
 Run from the repo root with `SKILL=.agents/skills/wordpress-default-editor`
 after `source .env`. Each script's docstring and `--help` hold its full usage.
@@ -23,11 +24,16 @@ after `source .env`. Each script's docstring and `--help` hold its full usage.
 
 ## Scripts (`$SKILL/scripts/`)
 
-- `deploy.py --manifest M --list | all --dry-run | <target>` writes targets in
-  manifest order. `--dry-run` checks sources only, never the server.
-- `verify_deploy.py --manifest M [<target>] [--diff]` diffs live `content.raw`
-  and custom CSS against the sources: 0 match, 1 drift, 2 unfetchable. The only
-  proof a deploy landed.
+- `deploy.py --manifest M --list | all --dry-run | <target> [--overwrite]`
+  writes targets in manifest order. `--dry-run` checks sources only, never the
+  server. Before the first write it stops if a target is `EDITED` (below);
+  `--overwrite` writes anyway.
+- `verify_deploy.py --manifest M [<target>] [--diff] [--history]` diffs live
+  `content.raw`, custom CSS and global-styles tokens against the sources: 0
+  match, 1 drift, 2 unfetchable. The only proof a deploy landed. `--history`
+  sorts drift into `BEHIND` (live is an older commit, see the sha) and `EDITED`
+  (no commit has it: a wp-admin edit, exit 3). Needs full git history; with
+  none, everything that differs counts as `EDITED`.
 - `verify_global_css.py --marker SEL … --icon-marker=--ico-x`, after a
   `global-styles` write: 1 = component rules stripped, 2 = data-URI icons
   stripped.
