@@ -43,8 +43,8 @@ after `source .env`. Each script's docstring and `--help` hold its full usage.
   filename is already in the library.
 - `fix_has_text_color.py`: `add_missing_classes(html)` adds `has-text-color` /
   `wp-element-button`; gate the write with `assert_only_additions(old, new)`.
-- `blockcheck/validate_blocks.cjs <file>` runs the real Gutenberg parser and
-  reads only its first argument.
+- `blockcheck/validate_blocks.cjs <file>...` runs the real Gutenberg parser
+  over every file in one process (loading it takes ~2s; each file is fast).
 
 Manifest targets, paths relative to the manifest's directory:
 

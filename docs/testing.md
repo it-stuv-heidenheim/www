@@ -21,9 +21,8 @@ Vor jedem Deploy zusätzlich:
 ```bash
 source .env
 SKILL=.agents/skills/wordpress-default-editor
-for f in $(git ls-files 'data/*.html'); do
-  node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"
-done | grep -E ': [1-9][0-9]* invalid'
+node $SKILL/scripts/blockcheck/validate_blocks.cjs $(git ls-files 'data/*.html') \
+  | grep -E ': [1-9][0-9]* invalid'
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run
 ```
 
@@ -51,11 +50,13 @@ bearbeiteten Datei, und der nächste Deploy schreibt dann alles neu. Inhaltlich
 Gutenberg vergleicht gespeichertes Markup mit dem, was der Block selbst erzeugen
 würde. Weicht es ab, meldet der Editor „Dieser Block enthält unerwarteten oder
 ungültigen Inhalt“, und wer nur einen Text ändern wollte, kommt dann nicht
-weiter. Die Validator-Schleife im Kurzdurchlauf findet solche Blöcke vorher.
+weiter. Der Validator-Aufruf im Kurzdurchlauf findet solche Blöcke vorher.
 
-`validate_blocks.cjs` liest **nur sein erstes Argument**. Übergibst du einen
-Glob, prüft er eine Datei, ignoriert den Rest und gibt trotzdem einen sauberen
-Durchlauf aus. Deshalb läuft die Schleife Datei für Datei. Das Muster
+`validate_blocks.cjs` nimmt beliebig viele Dateien und prüft sie in einem
+Prozess. Das Laden des Gutenberg-Parsers dauert rund zwei Sekunden, die Dateien
+selbst gehen schnell; ein Aufruf pro Datei bräuchte für den ganzen Baum über
+eine Minute. Für jede Datei steht eine Zeile `=== <datei>: N invalid` in der
+Ausgabe. Das Muster
 `'data/*.html'` ist Absicht: Gits `*` passt auch über Schrägstriche hinweg und
 erfasst damit alle Dateien im Baum. `'data/**/*.html'` würde
 `header_blocks.html` und `footer_blocks.html` verfehlen, die in keinem

@@ -12,8 +12,8 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 - No build step, no root `package.json` (Prettier runs via `npx`; PHP is formatted by hand).
   `source .env` before talking to the host; `WP_SITE` includes `https://`, so strip it for ad-hoc `curl`.
 - Before every commit: `npx prettier --check .` and `python3 -m unittest discover -s tools -p "test_*.py"`.
-- `validate_blocks.cjs` reads only its first argument; sweep the tree after every edit or Prettier pass:
-  `for f in $(git ls-files 'data/*.html'); do node $SKILL/scripts/blockcheck/validate_blocks.cjs "$f"; done | grep -E ': [1-9][0-9]* invalid'` (silent = valid)
+- Sweep the tree with `validate_blocks.cjs` after every edit or Prettier pass (one process, all files):
+  `node $SKILL/scripts/blockcheck/validate_blocks.cjs $(git ls-files 'data/*.html') | grep -E ': [1-9][0-9]* invalid'` (silent = valid)
 - Deploy runs as `.github/workflows/deploy.yml` on `main`: on a push touching `data/**` or the skill's scripts, or
   by `workflow_dispatch`; environment `production`, scripts from the same commit. Every run waits for a required
   reviewer of `production`; never remove that gate or deploy from another branch. Pushing to `main` therefore
