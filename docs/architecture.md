@@ -38,7 +38,8 @@ Dateien, und ein Deploy schreibt sie über die REST-API auf die Live-Site.
   JSON-LD und `sitemap.xml`. Beschreibungen und Vorschaubild werden in wp-admin
   gepflegt und liegen in der Datenbank.
 - Was nur in wp-admin eingestellt wird: Einstellungen, Seitentitel, Slugs und
-  Templates, aktive Plugins, die Mediathek, die SEO-Texte und die Felder der
+  Templates, aktive Plugins, Dateien der Mediathek, die nicht aus
+  `data/media/` kommen, die SEO-Texte und die Felder der
   Formulare. Bearbeitet wird das in wp-admin, nicht hier. `data/site-state.json`
   hält aber fest, wie es gerade aussieht, und die Action **Monitor** meldet
   jede Abweichung (`docs/testing.md`). Ginge die Datenbank verloren, steht dort,

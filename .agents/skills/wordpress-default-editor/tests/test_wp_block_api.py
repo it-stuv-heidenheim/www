@@ -1,3 +1,4 @@
+import json
 import os
 import socket
 import subprocess
@@ -515,3 +516,104 @@ def test_find_media_by_filename_ignores_partial_name_matches(monkeypatch):
     monkeypatch.setattr(api, "_request", lambda *a, **k: _media_rows())
     assert api.find_media_by_filename("jan-klein.jpg")["id"] == 19
     assert api.find_media_by_filename("nope.jpg") is None
+
+
+# --- replacing an image at the same URL ------------------------------------
+#
+# The delete in a replace is the one step nothing else can undo: the old file
+# is gone from the server. replace_media() keeps a copy first, and
+# rollback.py --media puts it back.
+
+OLD_URL = "https://example.test/wp-content/uploads/jan.jpg"
+
+
+class FakeLibrary:
+    """Stands in for the media endpoints and records the order of the calls."""
+
+    def __init__(self, monkeypatch, tmp_path, existing=True, new_url=OLD_URL):
+        self.calls = []
+        self.uploads = []
+        self.old = {"id": 42, "source_url": OLD_URL, "alt_text": "Jan"} if existing else None
+        self.new_url = new_url
+        monkeypatch.setattr(api, "backup_dir", lambda: str(tmp_path))
+        monkeypatch.setattr(api, "find_media_by_filename", self.find)
+        monkeypatch.setattr(api, "_download", self.download)
+        monkeypatch.setattr(api, "delete_resource", self.delete)
+        monkeypatch.setattr(api, "upload_media", self.upload)
+
+    def find(self, filename):
+        return self.old
+
+    def download(self, url):
+        self.calls.append("download")
+        return b"old bytes"
+
+    def delete(self, endpoint, pid, force=True):
+        self.calls.append(f"delete {endpoint}/{pid}")
+
+    def upload(self, path, *, filename=None, alt_text=None, reuse_existing=True):
+        self.calls.append("upload")
+        with open(path, "rb") as f:
+            self.uploads.append({"bytes": f.read(), "filename": filename, "alt_text": alt_text,
+                                 "reuse_existing": reuse_existing})
+        return {"id": 43, "source_url": self.new_url}
+
+
+def test_replace_media_backs_up_before_it_deletes(monkeypatch, tmp_path):
+    lib = FakeLibrary(monkeypatch, tmp_path)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    api.replace_media(str(new))
+    assert lib.calls == ["download", "delete media/42", "upload"]
+    path, meta_path = api.media_backup_paths("jan.jpg")
+    assert open(path, "rb").read() == b"old bytes"
+    assert json.load(open(meta_path))["source_url"] == OLD_URL
+    assert lib.uploads[0]["reuse_existing"] is False
+
+
+def test_replace_media_keeps_the_alt_text(monkeypatch, tmp_path):
+    lib = FakeLibrary(monkeypatch, tmp_path)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    api.replace_media(str(new))
+    assert lib.uploads[0]["alt_text"] == "Jan"
+
+
+def test_replace_media_raises_when_the_url_changes(monkeypatch, tmp_path):
+    FakeLibrary(monkeypatch, tmp_path, new_url="https://example.test/wp-content/uploads/jan-1.jpg")
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    with pytest.raises(RuntimeError, match="jan-1.jpg"):
+        api.replace_media(str(new))
+    assert os.path.exists(api.media_backup_paths("jan.jpg")[0])
+
+
+def test_replace_media_without_an_old_file_only_uploads(monkeypatch, tmp_path):
+    lib = FakeLibrary(monkeypatch, tmp_path, existing=False)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    api.replace_media(str(new))
+    assert lib.calls == ["upload"]
+
+
+def test_rollback_media_restores_the_backup(monkeypatch, tmp_path):
+    import scripts.rollback as rb
+
+    lib = FakeLibrary(monkeypatch, tmp_path)
+    new = tmp_path / "jan.jpg"
+    new.write_bytes(b"new bytes")
+    api.replace_media(str(new))
+    rb.rollback_media("jan.jpg")
+    restored = lib.uploads[-1]
+    assert restored["bytes"] == b"old bytes" and restored["filename"] == "jan.jpg"
+    assert restored["alt_text"] == "Jan"
+    # The restore takes no backup of its own, so the one it restores survives.
+    assert open(api.media_backup_paths("jan.jpg")[0], "rb").read() == b"old bytes"
+
+
+def test_rollback_media_without_a_backup_exits(monkeypatch, tmp_path):
+    import scripts.rollback as rb
+
+    monkeypatch.setattr(rb, "media_backup_paths", lambda n: (str(tmp_path / n), str(tmp_path / n) + ".json"))
+    with pytest.raises(SystemExit):
+        rb.rollback_media("nope.jpg")

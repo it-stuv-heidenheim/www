@@ -69,22 +69,7 @@
       "submit": "Absenden"
     }
   },
-  "media": [
-    "jan.jpg",
-    "karte-campus-dark.webp",
-    "karte-campus-light.webp",
-    "karte-stadtgebiet-dark.webp",
-    "karte-stadtgebiet-light.webp",
-    "karte-stadtzentrum-dark.webp",
-    "karte-stadtzentrum-light.webp",
-    "kilian.jpg",
-    "og-stuv.jpg",
-    "stuv-dhbw-apple-touch-icon.png",
-    "stuv-dhbw-favicon.png",
-    "stuv-dhbw-logo-q.png",
-    "stuv-team-hero.jpg",
-    "stuv-team-hero.webp"
-  ],
+  "media_not_in_repo": [],
   "pages": {
     "events": {
       "comment_status": "closed",

@@ -80,9 +80,11 @@ Theme-Schalter der Seite ignorieren.
 
 **Vorsicht beim Ersetzen von Bildern.** Der `media`-Deploy überspringt
 vorhandene Dateinamen ohne Meldung, und `--force` legt `karte-…-1.webp` an, auf
-das keine CSS-Referenz zeigt. Der richtige Ablauf steht in `AGENTS.md` unter
-„Media“. Die Kartenbilder lassen sich aber auch mit `--render` neu erzeugen,
-und das ist der einfachere Weg.
+das keine CSS-Referenz zeigt. Ersetzt wird ein Bild deshalb mit
+`replace_media()` aus dem Skill (`AGENTS.md` unter „Media“): Es sichert die
+alte Datei, bevor es sie löscht, und `rollback.py --media <dateiname>` stellt
+sie wieder her. Die Kartenbilder lassen sich aber auch mit `--render` neu
+erzeugen, und das ist der einfachere Weg.
 
 ## `gen_icon_css.py`: die Icons
 

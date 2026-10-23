@@ -3,9 +3,10 @@
 
 deploy.py writes block content, template parts and global styles; everything
 else is set in wp-admin and stored only in the database: site settings, the
-active theme and plugins, page titles, slugs and templates, the media library,
-The SEO Framework's titles, descriptions and preview image, and the WPForms
-fields. data/site-state.json records it, so a change shows up as a diff and a
+active theme and plugins, page titles, slugs and templates, The SEO
+Framework's titles, descriptions and preview image, and the WPForms fields.
+Library files are listed only when data/media/ lacks them: uploaded in
+wp-admin, or left over after their file was removed from the repo. data/site-state.json records it, so a change shows up as a diff and a
 lost database can be set up again from the file.
 
 Nothing is written to the site, and this does not restore anything: the file
@@ -142,6 +143,7 @@ def fetch_state():
         "&_fields=slug,title," + ",".join(PAGE_FIELDS),
     )
     media = wp._request("GET", "media?per_page=100&_fields=source_url")
+    repo_media = {p.name for p in (sc.DATA / "media").iterdir() if not p.name.startswith(".")}
 
     seo, forms = {}, {}
     stamp = int(time.time())
@@ -161,7 +163,11 @@ def fetch_state():
             p["slug"]: {"title": p["title"]["raw"], **{k: p[k] for k in PAGE_FIELDS}}
             for p in pages
         },
-        "media": sorted(m["source_url"].rsplit("/", 1)[-1] for m in media),
+        # Files from data/media/ are the repo's own and come and go with a
+        # deploy; only the rest is state the repo would not know about.
+        "media_not_in_repo": sorted(
+            name for name in (m["source_url"].rsplit("/", 1)[-1] for m in media) if name not in repo_media
+        ),
         "seo": seo,
         "forms": forms,
     }

@@ -40,8 +40,8 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 ## Media
 
 - `deploy.py media` keeps an existing attachment of the same filename; `--force` orphans a `-1` copy. Replace at
-  the same URL: `wp.delete_resource("media", wp.find_media_by_filename(n)["id"], force=True)`, then
-  `wp.upload_media(path, reuse_existing=False)`, assert no `-1`. An ambiguity warning means clean up first.
+  the same URL with `wp.replace_media(path)` only (backs up the old file, deletes, uploads, raises if the URL
+  changed); undo: `rollback.py --media <filename>`. An ambiguity warning means clean up first.
   A map change deploys together: images, `global-styles`, `studentenleben`.
 
 ## Plugins (`wp-plugin/`, see `docs/plugins.md`)

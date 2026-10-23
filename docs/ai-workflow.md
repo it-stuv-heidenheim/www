@@ -51,7 +51,7 @@ Der Skill enthält alles Lauffähige, dazu eigene Tests unter `tests/`
 | -------------------------------- | ----------------------------------------------------------------- |
 | `wp_block_api.py`                | REST-Client (Auth, Backup, eigener User-Agent)                    |
 | `deploy.py`                      | Deployer, gesteuert von `data/manifest.json`                      |
-| `rollback.py`                    | Deploy rückgängig machen (nicht für Medien)                       |
+| `rollback.py`                    | Deploy oder ersetztes Bild rückgängig machen                      |
 | `upload_media.py`                | Bild-Upload                                                       |
 | `fix_has_text_color.py`          | Nachrüsten fehlender `has-text-color`-Klassen                     |
 | `verify_global_css.py`           | Prüft, ob WordPress das deployte CSS unbeschädigt gespeichert hat |
@@ -136,8 +136,8 @@ mit: Ein zweiter Lauf wartet hinter ihm. Einen Lauf, den du nicht freigeben
 willst, deshalb unter **Review deployments** ablehnen, statt ihn liegen zu
 lassen; sonst bricht GitHub ihn erst nach 30 Tagen ab.
 
-Nicht über die Action laufen: ein Bild unter derselben URL ersetzen (löschen
-und neu hochladen, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in
+Nicht über die Action laufen: ein Bild unter derselben URL ersetzen
+(`replace_media()`, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in
 wp-admin, `docs/plugins.md`). Hängt eine Inhaltsänderung an einem Plugin (etwa
 `stuv-dsgvo` mit `global-styles`, `homepage` und `events`), erst das ZIP
 hochladen und dann den Deploy freigeben.

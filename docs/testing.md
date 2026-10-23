@@ -223,7 +223,8 @@ Täglich:
   niemandem auf.
 - `tools/site_state.py` vergleicht, was nur in wp-admin eingestellt wird, mit
   `data/site-state.json`: Einstellungen, Theme, aktive Plugins, Seiten (Titel,
-  Slug, Status, Template), die Dateien der Mediathek, die SEO-Angaben jeder
+  Slug, Status, Template), Dateien der Mediathek, die nicht in `data/media/`
+  liegen (in wp-admin hochgeladen oder im Repo gelöscht), die SEO-Angaben jeder
   Seite (Titel, Beschreibung, Vorschaubild) und die Felder der beiden
   Formulare. Bei einer Abweichung zeigt das Log den Diff. War die Änderung
   gewollt, `python3 tools/site_state.py --write` ausführen und die Datei
@@ -279,7 +280,11 @@ python3 .agents/skills/wordpress-default-editor/scripts/rollback.py <id> \
 ```
 
 Vor jedem Schreibvorgang legt der Client ein Backup unter
-`/tmp/wp_backup/<site-slug>/` ab. Medien deckt `rollback.py` nicht ab.
+`/tmp/wp_backup/<site-slug>/` ab. Für ein Bild, das `replace_media()` unter
+derselben URL ersetzt hat, liegt die alte Datei unter
+`/tmp/wp_backup/<site-slug>/media/`; zurück kommt sie mit
+`rollback.py --media <dateiname>`. Ein neu hochgeladenes Bild, das vorher nicht
+in der Mediathek war, braucht kein Backup: Die Datei liegt in `data/media/`.
 
 Nach einem Deploy über die Action liegen die Backups im Artefakt
 `wp-backup-<Nummer>` des Laufs. Entpackt nach `/tmp/wp_backup/` findet

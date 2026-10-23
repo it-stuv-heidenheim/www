@@ -38,7 +38,8 @@ after `source .env`. Each script's docstring and `--help` hold its full usage.
   `global-styles` write: 1 = component rules stripped, 2 = data-URI icons
   stripped.
 - `rollback.py <id> [--endpoint E]` restores content and status from
-  `/tmp/wp_backup/<site>/`; the id may be `theme//slug`.
+  `/tmp/wp_backup/<site>/`; the id may be `theme//slug`. `rollback.py --media
+<filename>` puts back the image `replace_media()` replaced.
 - `upload_media.py <file> [--alt T]` returns the existing attachment when the
   filename is already in the library.
 - `fix_has_text_color.py`: `add_missing_classes(html)` adds `has-text-color` /
@@ -76,6 +77,11 @@ import wp_block_api as wp
   `"meta": {"wp_pattern_sync_status": "fully"}`.
 - `find_media_by_filename(name)` returns the newest match and warns on
   duplicates; `upload_media(path, reuse_existing=…)`.
+- `replace_media(path)` swaps the file behind an existing URL: WordPress never
+  overwrites an upload, so it saves the old file to `<backup dir>/media/`,
+  deletes the attachment, uploads into the freed name and raises if the URL
+  changed. Never delete an attachment by hand instead: that copy is the only
+  undo.
 
 ## Invalid blocks
 
