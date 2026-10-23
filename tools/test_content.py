@@ -23,7 +23,6 @@ CONTACTS = {
     "tel:+498001110111",  # Telefonseelsorge
     "tel:+498001110222",  # Telefonseelsorge
     "tel:+49731790315100",  # PBS Studierendenwerk Ulm
-    "tel:+497315022200",  # Nightline Ulm
     "mailto:vorsitz@stuv-heidenheim.de",
     "mailto:pbs@studierendenwerk-ulm.de",
     "instagram.com/stuvheidenheim",
