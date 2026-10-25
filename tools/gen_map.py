@@ -58,7 +58,7 @@ MAX_WIDTH = 2400
 
 # Both sets of pins run north-south, so their bare extent is portrait: the city
 # map would come out 800x1244 and stand ~1200 px tall at page width. The frame
-# has to use the image's true aspect ratio -- pin positions are percentages of
+# has to use the image's true aspect ratio: pin positions are percentages of
 # the whole image, so cropping to a nicer shape would slide every pin off its
 # building. Widening the box instead keeps the pins exactly where they are and
 # just shows more basemap around them.
@@ -71,7 +71,7 @@ MAX_WIDTH = 2400
 # bottom, which is where the outermost pins actually are.
 ASPECT = 16 / 9
 
-# CARTO's Positron and Dark Matter are deliberately washed out -- they are made
+# CARTO's Positron and Dark Matter are deliberately washed out. They are made
 # to sit *under* a data layer, and on Positron the land (247), the buildings
 # (237) and the roads (250) all live in the top 20 levels of white. Scaling every
 # pixel away from the basemap's own background level pulls those apart: the
@@ -101,7 +101,7 @@ USER_AGENT = "stuv-map-render/1.0 (+https://stuv-heidenheim.de)"
 TIP_BELOW = 25.0
 
 # Edge pins are placed by hand (edge_x/edge_y in data/maps/*.json) rather than
-# projected and clamped like other pins -- their real lat/lon only drives the
+# projected and clamped like other pins; their real lat/lon only drives the
 # distance/direction text in the tooltip now. These are the bounds those
 # hand-picked values must stay inside.
 #
@@ -114,7 +114,7 @@ TIP_BELOW = 25.0
 # .stuv-map-frame in component.css). Add the pin's own half-width and the CSS
 # arrow's overshoot past the circle and 15% is about the first safe column.
 #
-# Y is never cropped -- the canvas is exactly as tall as the frame. Only the pin
+# Y is never cropped: the canvas is exactly as tall as the frame. Only the pin
 # itself has to stay inside, and on the shortest frame the site renders (a phone,
 # ~218px tall) the 28px circle is 12.8% of that, so 6% puts the pin flush against
 # the edge with its rim just inside. The arrow beyond it is clipped at that size;
@@ -133,7 +133,7 @@ ATTRIBUTION = "© OpenStreetMap-Mitwirkende, © CARTO"
 # reviews, directions) instead of a dropped pin at bare coordinates. The address
 # keeps Google from guessing at a German place name and picking one in another
 # town. A pin whose legend name is not what Google calls the place carries a
-# maps_query of its own. Nothing is requested until a visitor clicks -- the
+# maps_query of its own. Nothing is requested until a visitor clicks, and the
 # basemap itself stays self-hosted.
 MAPS_URL = "https://www.google.com/maps/search/?api=1&query={query}"
 MARKER = (
@@ -310,7 +310,7 @@ def edge_pin_info(pin: dict, bbox: BBox) -> tuple[str, float, str]:
     """Direction, distance (m), and label for an off-map pin's tooltip text.
 
     The pin's percentage position relative to the rendered bbox decides only
-    which side(s) it lies beyond -- any value outside [0, 100] means the pin is
+    which side(s) it lies beyond: any value outside [0, 100] means the pin is
     off that edge of the frame. Where the pin is actually drawn is a separate,
     hand-placed edge_x/edge_y (see render_html and SAFE_ZONE_X/Y); this
     function never returns a screen position.
@@ -389,7 +389,7 @@ def render_image(data: dict, style: str):
 
 
 def webp_bytes(image) -> bytes:
-    # The stretch roughly doubles the WebP payload -- flat washed-out basemaps are
+    # The stretch roughly doubles the WebP payload: flat washed-out basemaps are
     # exactly what the encoder is good at, and contrast is entropy. 84 buys most of
     # that back and leaves no ringing on the labels at the size they are shown.
     buffer = io.BytesIO()
@@ -469,7 +469,7 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
     That means no <img>, hence no intrinsic size, hence the explicit ratio: without
     it the frame is 0 px tall until the background arrives and the whole page below
     it jumps. It rides in as --stuv-map-ratio rather than as aspect-ratio, because
-    component.css needs the number twice -- the frame is 3:2 on a phone and the
+    component.css needs the number twice: the frame is 3:2 on a phone and the
     image's own 16:9 on a desktop, and the inner .stuv-map-canvas is what always
     keeps the image's ratio, overflowing the frame's sides when the two disagree.
     The basemap and the pins share that canvas, so a crop moves them together and
@@ -542,7 +542,7 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
         f'  <figcaption class="stuv-map-caption">{ATTRIBUTION}</figcaption>',
         "</figure>",
     ]
-    out.append('<ol class="stuv-map-legend">')
+    out.append('<ol class="stuv-map-legend stuv-card">')
     for pin in data["pins"]:
         if pin.get("icon"):
             badge = (
@@ -552,7 +552,7 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
         else:
             badge = f'<span class="stuv-map-legend-num" aria-hidden="true">{pin["n"]}</span>'
         out += [
-            f'  <li id="karte-{map_id}-{pin["n"]}" class="stuv-card">',
+            f'  <li id="karte-{map_id}-{pin["n"]}">',
             f'    <p class="stuv-map-legend-head">{badge}'
             f'<strong>{esc(pin["name"])}</strong></p>',
             f'    <p class="stuv-map-legend-detail">{esc(pin["detail"])}</p>',

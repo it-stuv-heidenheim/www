@@ -133,17 +133,22 @@ Ohne Abhängigkeiten, ohne Netz, ohne WordPress:
 php wp-plugin/tests/test_normalize.php
 php wp-plugin/tests/test_cache.php
 php wp-plugin/tests/test_theme.php
+php wp-plugin/tests/test_ics.php
 TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 ```
 
-Die Zeitzone ist Absicht. Der Speiseplan rechnet in Europe/Berlin, und der Test
-soll zeigen, dass das auch stimmt, wenn die Maschine woanders steht: Um 00:30
-Uhr Berliner Zeit muss ein Besucher in Los Angeles den richtigen Berliner Tag
-sehen. In der eigenen Zeitzone ausgeführt, beweist der Test nichts.
+Die Zeitzone ist Absicht. Speiseplan und Terminliste rechnen in Europe/Berlin,
+und der Test soll zeigen, dass das auch stimmt, wenn die Maschine woanders
+steht: Um 00:30 Uhr Berliner Zeit muss ein Besucher in Los Angeles den richtigen
+Berliner Tag sehen. In der eigenen Zeitzone ausgeführt, beweist der Test nichts.
 
-Die Fixtures in `wp-plugin/tests/fixtures/` sind mitgeschnittene Antworten von
-`api.dhbw.app`. Sie stehen in `.prettierignore` und müssen Byte für Byte
-unverändert bleiben, sonst sind sie keine Aufzeichnung mehr.
+Die JSON-Fixtures in `wp-plugin/tests/fixtures/` sind mitgeschnittene Antworten
+von `api.dhbw.app`. Sie stehen in `.prettierignore` und müssen Byte für Byte
+unverändert bleiben, sonst sind sie keine Aufzeichnung mehr. `events.ics`
+daneben ist von Hand geschrieben: Der echte Kalender enthält Namen und
+E-Mail-Adressen, und jeder Fall, den `inc/ics.php` behandelt (Serie mit
+`EXDATE`, verschobener und abgesagter Einzeltermin, ganztägig über mehrere Tage,
+unbekannte Regel …), steht darin als eigener Termin.
 
 `test_theme.php` deckt die Jahreszahl im Copyright der Fußzeile ab, die
 `stuv-theme` beim Ausliefern aktualisiert. Der Rest von `stuv-theme` und
@@ -153,8 +158,8 @@ Plugin und mit abgeschaltetem JavaScript. In keinem der drei Fälle darf ein
 leerer Kasten stehen bleiben oder beim Seitenaufbau eine Anfrage an
 `calendar.google.com` gehen (Netzwerk-Tab der Entwicklerwerkzeuge).
 
-Ein vierter Durchgang prüft die gespeicherte Zustimmung: Kalender laden, auf die
-andere Seite wechseln (dort lädt er jetzt direkt), unter dem Kalender „Nicht
+Ein vierter Durchgang prüft die gespeicherte Zustimmung: Kalender laden, die
+Seite neu laden (der Kalender lädt jetzt direkt), unter dem Kalender „Nicht
 mehr automatisch laden“ klicken und neu laden. Dann muss der Platzhalter zurück
 sein, und beim Seitenaufbau darf wieder nichts an `calendar.google.com` gehen.
 Danach dasselbe in einem privaten Fenster mit blockiertem Speicher: Dort fragt
@@ -164,12 +169,17 @@ die Seite jedes Mal neu, aber in der Konsole darf keine Exception erscheinen.
 
 Der Dry-Run (Aufruf im Kurzdurchlauf) prüft, ob die Quelldateien vorhanden sind, ob das Block-Markup
 balanciert ist, und zeigt die Bytezahlen. Er kontaktiert den Server **nicht**
-und vergleicht nichts mit dem, was dort liegt. Ein sauberer Dry-Run heißt also,
+und vergleicht nichts mit dem, was dort liegt; deshalb läuft er auch in
+`checks.yml` bei jedem Push mit. Ein sauberer Dry-Run heißt also,
 dass die Dateien hochladbar sind; ob das Ergebnis richtig aussieht, sagt er
 nicht. Ob eine Page-ID zur gemeinten Seite gehört, zeigt erst die Prüfung nach
 dem echten Deploy.
 
 ### Nach jedem Deploy
+
+`deploy.py` liest jedes Ziel gleich nach dem Schreiben zurück und bricht ab,
+wenn es nicht mit der Quelle übereinstimmt. Für den Stand aller Ziele, auch
+ohne Deploy:
 
 ```bash
 source .env
@@ -178,7 +188,7 @@ python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
 ```
 
 `verify_deploy.py` holt jedes Deploy-Ziel über die REST-API und vergleicht es
-mit seiner Quelle im Repo. Nur dieser Schritt belegt, dass die Site ausliefert,
+mit seiner Quelle im Repo. Nur dieser Vergleich belegt, dass die Site ausliefert,
 was hier steht. Exit 0 heißt, alles stimmt überein; 1 heißt Drift, 2 heißt, ein
 Ziel ließ sich nicht abrufen. Mit `--diff` siehst du, was sich unterscheidet.
 Mit `--history` sucht es den Live-Stand eines abweichenden Ziels in der
@@ -191,9 +201,11 @@ nicht das Frontend.
 
 ### Nach dem `global-styles`-Deploy
 
-WordPress' REST-Sanitizer kann Teile des Custom-CSS entfernen. Deshalb gehört
-`verify_global_css.py` zu diesem Deploy dazu (Aufruf in `AGENTS.md`, Erklärung
-in `docs/tools.md`).
+WordPress' REST-Sanitizer kann Teile des Custom-CSS entfernen. Deshalb prüft
+`deploy.py` nach jedem `global-styles`-Deploy, ob die `markers` und der
+`icon_marker` des Ziels in `data/manifest.json` noch im gespeicherten CSS
+stehen (`verify_global_css.py`, Erklärung in `docs/tools.md`). Eine neue
+Komponente, deren Regeln verloren gehen könnten, bekommt dort einen Marker.
 
 ## Überwachung zwischen den Deploys
 

@@ -66,76 +66,27 @@ jobs:
             [ -n "${!v}" ] || { echo "::error::$v is not set in the production environment"; exit 1; }
           done
 
-      - name: Dry run
-        run: python3 "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" all --dry-run
-
-      # Each target is BEHIND (the site serves an older commit, nothing is
-      # lost) or EDITED (content no commit has: an edit in wp-admin, which a
-      # deploy would destroy). `changed` deploys both kinds, but any EDITED
-      # target that is to be written stops the run before the first write,
-      # unless it is listed under `overwrite`. The diff in the log shows the
-      # edit. Media cannot be diffed and always runs; it only uploads files
-      # that are not in the library yet.
-      - name: Pick targets
-        run: |
-          set +e
-          out=$(python3 "$SKILL_SCRIPTS/verify_deploy.py" --manifest "$MANIFEST" --diff --history)
-          rc=$?
-          set -e
-          echo "$out"
-          [ "$rc" -ne 2 ] || { echo "::error::live site not readable"; exit 1; }
-          edited=$(echo "$out" | awk '$1 == "EDITED" { print $2 }')
-          if [ "$TARGET" = changed ]; then
-            names="media $(echo "$out" | awk '$1 == "BEHIND" { print $2 }') $edited"
-          else
-            names="$TARGET"
-          fi
-          set -f  # no glob expansion of the inputs
-          names=$(echo $names)
-          overwrite=$(echo $OVERWRITE)
-          case "$names $overwrite" in *[!a-z0-9\ -]*) echo "::error::bad target list: $names / $overwrite"; exit 1 ;; esac
-          blocked=""
-          for n in $edited; do
-            case " $names " in *" $n "*|*" all "*) ;; *) continue ;; esac
-            case " $overwrite " in *" $n "*|*" all "*) ;; *) blocked="$blocked $n" ;; esac
-          done
-          if [ -n "$blocked" ]; then
-            msg="Edited in wp-admin, nothing deployed:$blocked. Port the edit (diff in the log) into data/, or run by hand with overwrite:$blocked"
-            echo "::error::$msg"
-            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
-          echo "NAMES=$names" >> "$GITHUB_ENV"
-          echo "OVERWRITE_NAMES=$overwrite" >> "$GITHUB_ENV"
-          echo "Deploying: $names" | tee -a "$GITHUB_STEP_SUMMARY"
-          [ -z "$overwrite" ] || echo "Overwriting wp-admin edits in: $overwrite" | tee -a "$GITHUB_STEP_SUMMARY"
-
+      # deploy.py does the rest (its docstring): sorts every target into BEHIND
+      # (the site serves an older commit, nothing is lost) or EDITED (content
+      # no commit has: an edit in wp-admin, which a deploy would destroy), picks
+      # them for `changed` together with media, stops before the first write if
+      # an EDITED target is not listed under `overwrite`, then writes each
+      # target and reads it back. The log shows the diff of every target that
+      # differs. `--` keeps the inputs from being read as options.
       - name: Deploy
+        shell: bash
         run: |
-          set -f
-          for n in $NAMES; do
-            # deploy.py checks again and refuses an EDITED target itself.
-            case " $OVERWRITE_NAMES " in *" $n "*|*" all "*) flag=--overwrite ;; *) flag= ;; esac
-            python3 "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" "$n" $flag
-          done
+          set -f  # no glob expansion of the inputs
+          python3 -u "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" \
+            ${OVERWRITE:+--overwrite "$OVERWRITE"} -- $TARGET 2>&1 \
+            | tee "$RUNNER_TEMP/deploy.log"
 
-      - name: Verify
+      - name: Summary
+        if: always()
         run: |
-          case " $NAMES " in
-            *" all "*) python3 "$SKILL_SCRIPTS/verify_deploy.py" --manifest "$MANIFEST" --diff ;;
-            *) for n in $NAMES; do
-                 python3 "$SKILL_SCRIPTS/verify_deploy.py" --manifest "$MANIFEST" --diff "$n"
-               done ;;
-          esac
-
-      - name: Verify global CSS
-        if: contains(format(' {0} ', env.NAMES), ' global-styles ') || contains(format(' {0} ', env.NAMES), ' all ')
-        run: |
-          python3 "$SKILL_SCRIPTS/verify_global_css.py" \
-            --marker .stuv-card --marker .stuv-icon-box \
-            --marker ":root.dark" --marker .stuv-wpforms \
-            --marker .stuv-body-muted \
-            --icon-marker=--ico-calendar
+          [ -f "$RUNNER_TEMP/deploy.log" ] || exit 0
+          { echo '```text'; grep -iE '^Deploying:|error: ' "$RUNNER_TEMP/deploy.log"; echo '```'; } \
+            >> "$GITHUB_STEP_SUMMARY"
 
       # The runner's /tmp is gone after the run; keep the pre-write backups
       # so rollback.py can still restore from them (docs/testing.md).

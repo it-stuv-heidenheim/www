@@ -130,6 +130,7 @@ eingebackene Farbe).
 
 **Nach dem Deploy prüfen.** WordPress' REST-Sanitizer kann Data-URIs aus dem
 Custom-CSS-Feld entfernen. Ob die Icons angekommen sind, sagt
-`verify_global_css.py` (Aufruf in `AGENTS.md`). Exit-Code 2 heißt, dass sie
+`verify_global_css.py`, das `deploy.py` nach jedem `global-styles`-Deploy
+selbst aufruft (die Marker stehen in `data/manifest.json`). Exit-Code 2 heißt, dass sie
 entfernt wurden; dann müssen sie stattdessen im `core/html`-Block des Headers
 stehen.

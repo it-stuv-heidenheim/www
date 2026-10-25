@@ -10,7 +10,7 @@
   );
   --stuv-primary-surface: var(--stuv-primary);
   --stuv-muted: var(--wp--preset--color--muted, #f4f4f5);
-  --stuv-muted-foreground: var(--wp--preset--color--muted-foreground, #71717a);
+  --stuv-muted-foreground: var(--wp--preset--color--muted-foreground, #52525b);
   --stuv-border: var(--wp--preset--color--border, #e4e4e7);
   --stuv-radius: var(--wp--custom--stuv-radius, 0.5rem);
   --stuv-radius-sm: calc(var(--stuv-radius) - 0.125rem);
@@ -30,6 +30,13 @@
   --space-12: calc(var(--spacing) * 12);
   --space-16: calc(var(--spacing) * 16);
   --space-20: calc(var(--spacing) * 20);
+  /* Five type sizes; heading and display grow at 640px and 768px. Every
+     font-size below uses one of these. */
+  --text-small: var(--wp--preset--font-size--small, 0.875rem);
+  --text-body: var(--wp--preset--font-size--medium, 1rem);
+  --text-title: var(--wp--preset--font-size--large, 1.25rem);
+  --text-heading: 1.75rem;
+  --text-display: 2.25rem;
   --stuv-ring: var(--stuv-primary);
   --stuv-accent: var(--stuv-muted);
   --stuv-input: #8e8e96;
@@ -62,6 +69,8 @@
   );
   --stuv-primary-wash: color-mix(in srgb, var(--stuv-primary) 5%, transparent);
   --stuv-band-solid: color-mix(in srgb, black 3%, var(--stuv-background) 97%);
+  --stuv-logo-text: #546371;
+  --stuv-logo-rule: #c3cad1;
 }
 :root.dark {
   color-scheme: dark;
@@ -97,6 +106,8 @@
   );
   --stuv-primary-wash: color-mix(in srgb, var(--stuv-primary) 10%, transparent);
   --stuv-band-solid: color-mix(in srgb, white 3%, var(--stuv-background) 97%);
+  --stuv-logo-text: #d4d4d8;
+  --stuv-logo-rule: #52525b;
 }
 /* gen_icon_css:start — erzeugt von tools/gen_icon_css.py; nicht von Hand bearbeiten */
 :root {
@@ -162,6 +173,22 @@ h6 {
     "SOFT" 50,
     "WONK" 1;
 }
+h1 {
+  font-size: var(--text-display);
+}
+h2,
+.stuv-h2 {
+  font-size: var(--text-heading);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+h3,
+h4,
+.stuv-h3,
+.stuv-h3-sm {
+  font-size: var(--text-title);
+  line-height: 1.3;
+}
 p {
   line-height: 1.6;
 }
@@ -200,9 +227,6 @@ a {
   border: 1px solid var(--stuv-card-border);
   border-radius: var(--stuv-radius-lg);
   padding: var(--space-6);
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.05),
-    0 1px 2px -1px rgba(0, 0, 0, 0.05);
 }
 .wp-block-column {
   display: flex;
@@ -280,7 +304,7 @@ a {
   margin: 0;
   padding: var(--space-8) var(--space-6);
   text-align: left;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   color: var(--stuv-muted-foreground);
 }
@@ -309,24 +333,17 @@ a {
 
 .stuv-dsgvo-note {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   color: var(--stuv-muted-foreground);
   max-width: 28rem;
   line-height: 1.5;
-}
-
-.stuv-dsgvo-note a,
-.stuv-dsgvo-fallback a {
-  color: var(--stuv-primary);
-  text-decoration: underline;
-  text-underline-offset: 4px;
 }
 
 .stuv-dsgvo-revoke {
   margin: 0;
   padding: var(--space-3) var(--space-6);
   border-top: 1px solid var(--stuv-border);
-  font-size: 0.8125rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   color: var(--stuv-muted-foreground);
   text-align: left;
@@ -370,7 +387,7 @@ a {
   border-radius: var(--stuv-radius);
   font-family: inherit;
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   line-height: 1.25;
   text-align: center;
   cursor: pointer;
@@ -413,6 +430,27 @@ a {
 .wp-block-button.is-style-overlay .wp-block-button__link:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+.stuv-section-primary
+  .wp-block-button:not(.is-style-outline, .is-style-overlay)
+  .wp-block-button__link {
+  background: #fff;
+  color: var(--stuv-primary-surface);
+}
+.stuv-section-primary
+  .wp-block-button:not(.is-style-outline, .is-style-overlay)
+  .wp-block-button__link:hover {
+  background: color-mix(in srgb, #fff 90%, var(--stuv-primary-surface));
+}
+.stuv-section-primary .wp-block-button.is-style-overlay .wp-block-button__link {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.7);
+}
+.stuv-section-primary
+  .wp-block-button.is-style-overlay
+  .wp-block-button__link:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: #fff;
+}
 
 :is(a, button).stuv-button-link {
   background: transparent;
@@ -421,36 +459,46 @@ a {
   padding: 0;
   text-align: inherit;
 }
+/* The theme sets every link to a 1px underline with !important. */
 :is(a, button).stuv-button-link:hover {
-  text-decoration-thickness: 2px;
+  text-decoration-thickness: 2px !important;
 }
 
 .wp-block-button.stuv-button-lg .wp-block-button__link {
   min-height: 2.75rem;
   padding-inline: var(--space-8);
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 :is(.wp-block-button__link, .stuv-button-outline, .stuv-button-link) .stuv-ico {
   background-color: currentColor;
 }
 
-.stuv-kicker {
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--stuv-primary);
-}
 p.stuv-section-intro {
   max-width: 42rem;
   margin-inline: 0 !important;
   margin-top: var(--space-6);
-  font-size: 1.25rem;
+  font-size: var(--text-title);
 }
 p.stuv-section-intro.has-text-align-center {
   margin-inline: auto !important;
+}
+/* Directly in a section the intro starts where the content column (and the
+   heading above it) starts, not at the section's padding edge. */
+.stuv-section > p.stuv-section-intro:not(.has-text-align-center) {
+  margin-left: max(
+    0px,
+    (100% - var(--wp--style--global--content-size, 56rem)) / 2
+  ) !important;
+}
+/* Heading and intro sit directly in the section; what follows keeps a fixed
+   distance, smaller under an h3. A block margin set inline still wins. */
+.stuv-section > p.stuv-section-intro + *,
+.stuv-section > p.stuv-section-intro + [hidden] + * {
+  margin-block-start: var(--space-12);
+}
+.stuv-section > .stuv-h3 + p.stuv-section-intro + * {
+  margin-block-start: var(--space-6);
 }
 .stuv-logo-mark {
   display: block;
@@ -475,14 +523,18 @@ header.wp-block-template-part {
 .stuv-header-nav-wrap {
   flex: 1 1 auto;
 }
-.stuv-header .wp-block-navigation-item__content {
-  font-size: 0.875rem;
-  font-weight: 500;
+/* Core sets the link itself to color: inherit at higher specificity, so the
+   colour goes on the list item. */
+.stuv-header .wp-block-navigation-item {
   color: var(--stuv-muted-foreground);
   transition: color 0.15s ease;
 }
-.stuv-header .wp-block-navigation-item__content:hover {
+.stuv-header .wp-block-navigation-item:hover {
   color: var(--stuv-foreground);
+}
+.stuv-header .wp-block-navigation-item__content {
+  font-size: var(--text-small);
+  font-weight: 500;
 }
 @media (max-width: 1023px) {
   .stuv-header {
@@ -515,9 +567,15 @@ header.wp-block-template-part {
     color: var(--stuv-foreground) !important;
   }
   .wp-block-navigation__responsive-container.is-menu-open
+    .wp-block-navigation-item {
+    color: inherit;
+  }
+  .stuv-header
+    .wp-block-navigation__responsive-container.is-menu-open
+    .wp-block-navigation__responsive-container-content
     .wp-block-navigation-item__content {
     padding: var(--space-2) 0;
-    font-size: 1.25rem;
+    font-size: var(--text-title);
     line-height: 1.25;
   }
 }
@@ -684,8 +742,8 @@ header.wp-block-template-part {
   transform: rotate(180deg);
 }
 .stuv-hero-title {
-  font-size: 2.25rem;
-  line-height: 1.1;
+  font-size: var(--text-display);
+  line-height: 1.05;
   font-weight: 300;
   letter-spacing: -0.025em;
   font-variation-settings:
@@ -694,8 +752,8 @@ header.wp-block-template-part {
     "opsz" 144;
 }
 p.stuv-hero-subtitle {
-  font-size: 1.25rem;
-  line-height: 1.625;
+  font-size: var(--text-title);
+  line-height: 1.6;
   max-width: 42rem;
 }
 .stuv-page-header .stuv-hero-subtitle {
@@ -727,36 +785,23 @@ p.stuv-hero-subtitle {
     max-width: 48rem;
   }
 }
-.stuv-h2 {
-  font-size: 1.875rem;
-}
-.stuv-h3 {
-  font-size: 1.25rem;
-  line-height: 1.3;
-}
-.stuv-h3-sm {
-  font-size: 1.125rem;
-  line-height: 1.3;
-}
 .stuv-body-muted,
 .stuv-quicklink-desc {
-  font-size: 1rem;
+  font-size: var(--text-body);
   color: var(--stuv-muted-foreground);
 }
 @media (min-width: 640px) {
-  .stuv-hero-title {
-    font-size: 3.5rem;
-  }
-  .stuv-h2 {
-    font-size: 2.25rem;
+  :root {
+    --text-heading: var(--wp--preset--font-size--x-large, 2.25rem);
+    --text-display: 3.5rem;
   }
 }
 @media (min-width: 768px) {
+  :root {
+    --text-display: var(--wp--preset--font-size--xx-large, 4.5rem);
+  }
   .stuv-section {
     padding: var(--space-16) var(--space-8);
-  }
-  .stuv-hero-title {
-    font-size: 4.5rem;
   }
 }
 
@@ -775,7 +820,7 @@ p.stuv-hero-subtitle {
   border-radius: 9999px;
   background: var(--stuv-primary-surface);
   color: var(--stuv-primary-foreground);
-  font-size: 0.75rem;
+  font-size: var(--text-small);
   font-weight: 600;
   line-height: 1.25;
   transition:
@@ -801,13 +846,49 @@ span.stuv-badge {
   gap: var(--space-1);
   margin-top: var(--space-3);
   color: var(--stuv-primary);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
+}
+.stuv-section.stuv-stats-section {
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-16);
+}
+.stuv-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-8) var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 768px) {
+  .stuv-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.stuv-stats > li {
+  margin: 0;
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--stuv-primary);
+  color: var(--stuv-muted-foreground);
+  line-height: 1.4;
+}
+.stuv-stats strong {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--stuv-foreground);
+  font-family: var(--wp--preset--font-family--fraunces, Georgia, serif);
+  font-size: var(--text-display);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 .wp-site-blocks > .wp-block-template-part {
   margin-block-start: 0;
 }
 .stuv-footer {
+  --stuv-logo-text: #d4d4d8;
+  --stuv-logo-rule: #52525b;
   color: #fafafa;
   background: #09090b;
   border-top: 1px solid #27272a;
@@ -820,14 +901,12 @@ span.stuv-badge {
   margin: 0;
 }
 .stuv-footer li {
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5rem;
 }
 .stuv-footer h3 {
   color: #a1a1aa;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 500;
 }
 .stuv-footer a {
@@ -846,7 +925,7 @@ span.stuv-badge {
 }
 .stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-field-label {
   display: block;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   font-weight: 500;
   line-height: 1;
   color: var(--stuv-foreground);
@@ -862,7 +941,7 @@ span.stuv-badge {
   width: 100%;
   padding: var(--space-2) var(--space-3);
   box-sizing: border-box;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   line-height: 1.25rem;
   color: var(--stuv-foreground);
   background: var(--stuv-background);
@@ -922,7 +1001,7 @@ span.stuv-badge {
   width: 100%;
   padding: var(--space-3) var(--space-6);
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   color: var(--stuv-primary-foreground);
   background: var(--stuv-primary-surface);
   border: none;
@@ -952,7 +1031,7 @@ span.stuv-badge {
   align-items: center;
   gap: var(--space-1_5);
   color: var(--stuv-destructive);
-  font-size: 0.75rem;
+  font-size: var(--text-small);
   margin-top: var(--space-1);
 }
 .stuv-wpforms .wpforms-container-full .wpforms-form label.wpforms-error::before,
@@ -995,7 +1074,7 @@ span.stuv-badge {
   border: 1px solid var(--stuv-destructive);
   border-radius: var(--stuv-radius);
   color: var(--stuv-foreground);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-4);
 }
@@ -1102,8 +1181,87 @@ summary:focus-visible,
   border-radius: 9999px;
   background: color-mix(in srgb, var(--stuv-primary) 10%, transparent);
   color: var(--stuv-primary);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   font-weight: 500;
+}
+
+.stuv-card.stuv-person {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--space-4);
+}
+.stuv-person > figure,
+.stuv-person > h3 {
+  margin: 0;
+}
+.stuv-person-quote {
+  position: relative;
+  grid-column: 1 / -1;
+  margin: var(--space-6) 0 0;
+  font-family: var(--wp--preset--font-family--fraunces, Georgia, serif);
+  font-size: var(--text-title);
+  line-height: 1.5;
+  quotes: "„" "“";
+}
+.stuv-person-quote::before,
+.stuv-person-quote::after {
+  position: absolute;
+}
+.stuv-person-quote::before {
+  content: open-quote;
+  transform: translateX(-100%);
+}
+.stuv-person-quote::after {
+  content: close-quote;
+}
+
+/* Photos. An image block with .stuv-media is a rounded photo; its aspect
+   ratio comes from the block (aspectRatio + scale cover). .stuv-split puts
+   text and a photo side by side from 1024px on, the photo below the text
+   before that. */
+.stuv-media {
+  margin: 0;
+}
+.stuv-media img {
+  display: block;
+  width: 100%;
+  border-radius: var(--stuv-radius-lg);
+}
+.stuv-split {
+  display: grid;
+  gap: var(--space-8);
+}
+.stuv-split > * {
+  margin: 0;
+}
+@media (min-width: 1024px) {
+  .stuv-split {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: center;
+    gap: var(--space-12);
+  }
+}
+/* A photo as the first block of a card runs to the card's edges. */
+.stuv-card > .stuv-media:first-child {
+  margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) var(--space-4);
+}
+.stuv-card > .stuv-media:first-child img {
+  border-radius: calc(var(--stuv-radius-lg) - 1px)
+    calc(var(--stuv-radius-lg) - 1px) 0 0;
+}
+.stuv-photo-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.stuv-photo-strip > * {
+  margin: 0;
+}
+@media (min-width: 640px) {
+  .stuv-photo-strip {
+    gap: var(--space-6);
+  }
 }
 
 .stuv-trust-row {
@@ -1111,7 +1269,7 @@ summary:focus-visible,
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-6) var(--space-12);
-  font-size: 1rem;
+  font-size: var(--text-body);
   color: var(--stuv-muted-foreground);
 }
 .stuv-trust-row > p {
@@ -1175,7 +1333,7 @@ summary:focus-visible,
   border-radius: 9999px;
   background: var(--stuv-card);
   color: var(--stuv-foreground);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   font-weight: 500;
   transition:
     border-color 0.15s ease,
@@ -1261,7 +1419,7 @@ summary:focus-visible,
   text-align: center;
   line-height: 0;
 }
-.stuv-linktree-logo img {
+.stuv-linktree-logo svg {
   width: 100%;
   max-width: 22rem;
   height: auto;
@@ -1292,7 +1450,7 @@ summary:focus-visible,
 }
 .stuv-linktree-subtitle {
   display: block;
-  font-size: 1rem;
+  font-size: var(--text-body);
   color: var(--stuv-muted-foreground);
 }
 .stuv-linktree-list .wp-block-button {
@@ -1302,7 +1460,7 @@ summary:focus-visible,
   width: 100%;
   padding: var(--space-4) var(--space-6);
   border-radius: 1rem;
-  font-size: 1.125rem;
+  font-size: var(--text-body);
 }
 
 .stuv-mensa {
@@ -1320,7 +1478,7 @@ summary:focus-visible,
 
 .stuv-mensa-lead {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: var(--text-title);
   font-weight: 600;
 }
 
@@ -1340,7 +1498,7 @@ summary:focus-visible,
   background: transparent;
   color: var(--stuv-muted-foreground);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   cursor: pointer;
 }
 
@@ -1381,19 +1539,93 @@ summary:focus-visible,
 
 .stuv-mensa-meal-name {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 .stuv-mensa-meal-price {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 500;
   white-space: nowrap;
 }
 .stuv-mensa-hours {
   margin: var(--space-4) 0 0;
   color: var(--stuv-muted-foreground);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
+}
+
+.stuv-events-fallback,
+.stuv-events-empty {
+  margin: 0;
+  color: var(--stuv-muted-foreground);
+}
+.stuv-events-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stuv-event {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-4) 0;
+}
+.stuv-event:first-child {
+  padding-top: 0;
+}
+.stuv-event:last-child {
+  padding-bottom: 0;
+}
+.stuv-event + .stuv-event {
+  border-top: 1px solid var(--stuv-border);
+}
+.stuv-event-date {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  padding-block: var(--space-2);
+  border-radius: var(--stuv-radius);
+  background: var(--stuv-primary-wash);
+  line-height: 1;
+}
+.stuv-event-month {
+  color: var(--stuv-muted-foreground);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+.stuv-event-day {
+  margin-top: var(--space-1);
+  color: var(--stuv-primary);
+  font-family: var(--wp--preset--font-family--fraunces, Georgia, serif);
+  font-size: var(--text-heading);
+}
+.stuv-event-body {
+  min-width: 0;
+}
+.stuv-event-title {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.stuv-event-meta {
+  margin: var(--space-0_5) 0 0;
+  color: var(--stuv-muted-foreground);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+.stuv-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .stuv-theme-switch {
@@ -1456,7 +1688,8 @@ summary:focus-visible,
   border-radius: calc(var(--stuv-radius) - 2px);
   background: transparent;
   color: var(--stuv-foreground);
-  font-size: 0.875rem;
+  font-family: inherit;
+  font-size: var(--text-small);
   text-align: left;
   cursor: pointer;
 }
@@ -1507,7 +1740,7 @@ summary:focus-visible,
   border-radius: 9999px;
   background: var(--stuv-primary-surface);
   color: var(--stuv-primary-foreground);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   font-weight: 600;
   line-height: 1;
 }
@@ -1546,9 +1779,9 @@ summary:focus-visible,
   border-radius: var(--stuv-radius);
   background: var(--stuv-foreground);
   color: var(--stuv-background);
-  font-size: 0.75rem;
+  font-size: var(--text-small);
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
   text-align: left;
   opacity: 0;
   visibility: hidden;
@@ -1596,35 +1829,57 @@ summary:focus-visible,
 }
 .stuv-map-caption {
   margin-top: var(--space-2);
-  font-size: 0.75rem;
-  line-height: 1.4;
+  font-size: var(--text-small);
+  line-height: 1.5;
   color: var(--stuv-muted-foreground);
 }
 .stuv-map-legend {
   list-style: none;
   margin: var(--space-6) 0 0;
-  padding: 0;
+  padding: var(--space-2) var(--space-6);
   display: grid;
-  gap: var(--space-4);
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  grid-template-columns: 1fr;
+  column-gap: var(--space-8);
+}
+@media (min-width: 768px) {
+  .stuv-map-legend {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stuv-map-legend > li:nth-child(2) {
+    border-top: 0;
+  }
 }
 .stuv-map-legend > li {
-  padding: var(--space-5);
+  display: grid;
+  grid-template-columns: 1.75rem 1fr auto;
+  align-content: start;
+  align-items: center;
+  column-gap: var(--space-2);
+  margin: 0 calc(var(--space-3) * -1);
+  padding: var(--space-3);
+  border-top: 1px solid var(--stuv-border);
+}
+.stuv-map-legend > li:first-child {
+  border-top: 0;
 }
 .stuv-map-legend > li:target {
-  border-color: var(--stuv-primary);
+  border-radius: var(--stuv-radius);
+  background: var(--stuv-primary-wash);
 }
 .stuv-map-legend p {
   margin-block: 0;
 }
-.stuv-map-legend p + p {
-  margin-top: var(--space-2);
-}
 .stuv-map-legend-head {
+  grid-column: 1 / 3;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 1rem;
+  font-size: var(--text-body);
+}
+.stuv-map-legend > li > p:last-child {
+  grid-column: 3;
+  grid-row: 1;
+  font-size: var(--text-small);
 }
 .stuv-map-legend-num {
   flex: 0 0 auto;
@@ -1634,7 +1889,8 @@ summary:focus-visible,
 }
 .stuv-map-legend-detail,
 .stuv-map-legend-note {
-  font-size: 0.875rem;
+  grid-column: 2 / 4;
+  font-size: var(--text-small);
   color: var(--stuv-muted-foreground);
 }
 @media (max-width: 639px) {
@@ -1658,24 +1914,23 @@ summary:focus-visible,
   .stuv-logo-mark {
     height: 2rem;
     max-width: 100%;
-    object-fit: contain;
-    object-position: left center;
   }
   .stuv-header-actions .wp-block-button__link {
     padding-inline: var(--space-3);
-    font-size: 0.8125rem;
+    font-size: var(--text-small);
+    white-space: nowrap;
   }
   .stuv-wpforms .wpforms-container-full .wpforms-form input[type="text"],
   .stuv-wpforms .wpforms-container-full .wpforms-form input[type="email"],
   .stuv-wpforms .wpforms-container-full .wpforms-form textarea,
   .stuv-wpforms .wpforms-container-full .wpforms-form select {
-    font-size: 16px;
+    font-size: var(--text-body);
   }
   .stuv-linktree-hero {
     padding-top: var(--space-8) !important;
     padding-bottom: var(--space-8) !important;
   }
-  .stuv-linktree-logo img {
+  .stuv-linktree-logo svg {
     max-width: 16rem;
   }
 
@@ -1692,7 +1947,7 @@ summary:focus-visible,
     height: 1.25rem;
   }
   .stuv-linktree-subtitle {
-    font-size: 0.875rem;
+    font-size: var(--text-small);
   }
   .stuv-linktree-list .stuv-card + .stuv-card {
     margin-top: var(--space-2);

@@ -7,23 +7,23 @@ Dateien, und ein Deploy schreibt sie über die REST-API auf die Live-Site.
 
 ## Verzeichnisstruktur
 
-| Pfad                        | Zweck                                                                                                                                                                |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data/sections/`            | Startseiten-Sektionen, in Dateinamen-Reihenfolge zusammengefügt (Page-ID 9)                                                                                          |
-| `data/pages/<slug>/`        | Unterseiten: `ueber-uns`, `events`, `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`                                                                        |
-| `data/patterns/`            | Synchronisierte Muster (Vorsitz), eingebunden per `wp:block`                                                                                                         |
-| `data/header_blocks.html`   | Header-Template-Part                                                                                                                                                 |
-| `data/footer_blocks.html`   | Footer-Template-Part                                                                                                                                                 |
-| `data/global-styles.json`   | Design-Tokens (Layout-Breiten, Farbpalette, Typografie)                                                                                                              |
-| `data/styles/component.css` | Komponentenklassen (`.stuv-card`, `.stuv-icon-box`, `.stuv-button-*`) + Dark-Mode-Regeln                                                                             |
-| `data/media/`               | Bilder (WebP/JPG/PNG), deployt über das `media`-Ziel                                                                                                                 |
-| `data/maps/`                | Kartendefinitionen für `tools/gen_map.py`                                                                                                                            |
-| `data/site-state.json`      | Abbild dessen, was nur in wp-admin eingestellt wird (`docs/testing.md`, „Überwachung“); wird nicht deployt                                                           |
-| `data/manifest.json`        | Deploy-Ziele: Name → REST-Endpunkt, ID, Quelldatei                                                                                                                   |
-| `.agents/skills/`           | Das Deploy-Tooling: Skill `wordpress-default-editor` (`docs/ai-workflow.md`)                                                                                         |
-| `tools/`                    | Generatoren und Hilfsskripte (`docs/tools.md`)                                                                                                                       |
-| `wp-plugin/`                | Drei WordPress-Plugins: `stuv-mensa` (Live-Speiseplan), `stuv-theme` (Dark-Mode-Toggle) und `stuv-dsgvo` (Klick-zum-Laden für die Kalender), siehe `docs/plugins.md` |
-| `docs/`                     | Diese Doku, gelesen auf GitHub                                                                                                                                       |
+| Pfad                        | Zweck                                                                                                                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data/sections/`            | Startseiten-Sektionen, in Dateinamen-Reihenfolge zusammengefügt (Page-ID 9)                                                                                                                       |
+| `data/pages/<slug>/`        | Unterseiten: `ueber-uns`, `events`, `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`                                                                                                     |
+| `data/patterns/`            | Synchronisierte Muster (Vorsitz), eingebunden per `wp:block`                                                                                                                                      |
+| `data/header_blocks.html`   | Header-Template-Part                                                                                                                                                                              |
+| `data/footer_blocks.html`   | Footer-Template-Part                                                                                                                                                                              |
+| `data/global-styles.json`   | Design-Tokens (Layout-Breiten, Farbpalette, Typografie)                                                                                                                                           |
+| `data/styles/component.css` | Komponentenklassen (`.stuv-card`, `.stuv-icon-box`, `.stuv-button-*`) + Dark-Mode-Regeln                                                                                                          |
+| `data/media/`               | Bilder (WebP/JPG/PNG), deployt über das `media`-Ziel                                                                                                                                              |
+| `data/maps/`                | Kartendefinitionen für `tools/gen_map.py`                                                                                                                                                         |
+| `data/site-state.json`      | Abbild dessen, was nur in wp-admin eingestellt wird (`docs/testing.md`, „Überwachung“); wird nicht deployt                                                                                        |
+| `data/manifest.json`        | Deploy-Ziele: Name → REST-Endpunkt, ID, Quelldatei                                                                                                                                                |
+| `.agents/skills/`           | Das Deploy-Tooling: Skill `wordpress-default-editor` (`docs/ai-workflow.md`)                                                                                                                      |
+| `tools/`                    | Generatoren und Hilfsskripte (`docs/tools.md`)                                                                                                                                                    |
+| `wp-plugin/`                | Vier WordPress-Plugins: `stuv-mensa` (Live-Speiseplan), `stuv-events` (Terminliste), `stuv-theme` (Dark-Mode-Toggle) und `stuv-dsgvo` (Klick-zum-Laden für den Kalender), siehe `docs/plugins.md` |
+| `docs/`                     | Diese Doku, gelesen auf GitHub                                                                                                                                                                    |
 
 ## Was nicht in diesem Repo liegt
 

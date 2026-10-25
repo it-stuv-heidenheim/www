@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 
 import pytest
 
@@ -107,24 +108,114 @@ def test_main_resolves_sources_relative_to_manifest(tmp_path, capsys):
     assert "balanced OK" in out
 
 
-def test_deploy_refuses_a_wp_admin_edit_unless_overwrite(tmp_path, monkeypatch):
-    (tmp_path / "page.html").write_text(BALANCED)
-    (tmp_path / "manifest.json").write_text(json.dumps({"homepage": {
-        "type": "structural", "endpoint": "pages", "id": 9,
-        "source": "page.html", "status": "publish",
-    }}))
-    live = BALANCED.replace("Hallo", "aus wp-admin")  # no commit has it
-    saved = []
-    monkeypatch.setattr(wp, "fetch_raw",
-                        lambda e, i: {"content": {"raw": live}, "status": "publish"})
-    monkeypatch.setattr(wp, "backup", lambda e, i: None)
-    monkeypatch.setattr(wp, "save_structural",
-                        lambda e, i, content, status, *, confirm: saved.append(content))
+class FakeSite:
+    """Pages by id, served the way fetch_raw returns them; a save changes them."""
+
+    def __init__(self, monkeypatch, pages, accepts_writes=True):
+        self.pages, self.saved = dict(pages), []
+        monkeypatch.setattr(wp, "fetch_raw", lambda e, i: {
+            "content": {"raw": self.pages[i]}, "status": "publish"})
+        monkeypatch.setattr(wp, "backup", lambda e, i: None)
+
+        def save(e, i, content, status, *, confirm):
+            self.saved.append(i)
+            if accepts_writes:
+                self.pages[i] = content
+        monkeypatch.setattr(wp, "save_structural", save)
+
+
+def _git(cwd, *args):
+    subprocess.run(
+        ["git", "-C", str(cwd), "-c", "user.name=t", "-c", "user.email=t@t",
+         "-c", "commit.gpgsign=false", *args],
+        check=True, capture_output=True,
+    )
+
+
+@pytest.fixture
+def repo(tmp_path):
+    """Three pages, each "Alt" in the first commit and "Hallo" now, plus media."""
+    targets = {}
+    for i, name in enumerate(["home", "about", "events"], start=1):
+        (tmp_path / f"{name}.html").write_text(BALANCED.replace("Hallo", "Alt"))
+        targets[name] = {"type": "structural", "endpoint": "pages", "id": i,
+                         "source": f"{name}.html", "status": "publish"}
+    targets["media"] = {"type": "media", "source": "img"}
+    (tmp_path / "img").mkdir()
+    (tmp_path / "manifest.json").write_text(json.dumps(targets))
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-q", "-m", "alt")
+    for name in ["home", "about", "events"]:
+        (tmp_path / f"{name}.html").write_text(BALANCED)
+    _git(tmp_path, "commit", "-q", "-am", "neu")
+    return tmp_path
+
+
+ALT, EDIT = BALANCED.replace("Hallo", "Alt"), BALANCED.replace("Hallo", "aus wp-admin")
+
+
+def test_changed_deploys_what_is_behind_or_edited_and_media(repo, monkeypatch, capsys):
+    site = FakeSite(monkeypatch, {1: BALANCED, 2: ALT, 3: EDIT})
+    monkeypatch.setattr(deploy, "_deploy_media", lambda *a: None)
+    deploy.main(["--manifest", str(repo / "manifest.json"), "changed", "--overwrite", "events"])
+    assert site.saved == [2, 3], "home matches already; about is behind, events edited"
+    out = capsys.readouterr().out
+    assert "Deploying: about events media" in out
+    assert out.count("verified: live matches") == 2
+
+
+def test_deploy_refuses_a_wp_admin_edit_unless_overwrite(repo, monkeypatch):
+    site = FakeSite(monkeypatch, {1: EDIT, 2: BALANCED, 3: BALANCED})
+    m = str(repo / "manifest.json")
+    for argv in (["home"], ["changed"], ["all"], ["home", "--overwrite", "about"]):
+        with pytest.raises(SystemExit, match="--overwrite home"):
+            deploy.main(["--manifest", m, *argv])
+    assert site.saved == [], "a refusal comes before the first write"
+    deploy.main(["--manifest", m, "home", "--overwrite"])
+    assert site.saved == [1]
+
+
+def test_overwrite_names_only_the_targets_it_lists(repo, monkeypatch):
+    site = FakeSite(monkeypatch, {1: EDIT, 2: BALANCED, 3: EDIT})
+    m = str(repo / "manifest.json")
+    with pytest.raises(SystemExit, match="not deployed: events"):
+        deploy.main(["--manifest", m, "home", "events", "--overwrite", "home"])
+    deploy.main(["--manifest", m, "home", "events", "--overwrite", "home,events"])
+    assert site.saved == [1, 3]
+
+
+def test_a_write_the_site_does_not_serve_stops_the_run(repo, monkeypatch):
+    site = FakeSite(monkeypatch, {1: ALT, 2: ALT, 3: ALT}, accepts_writes=False)
+    with pytest.raises(SystemExit, match="home: live differs after the write"):
+        deploy.main(["--manifest", str(repo / "manifest.json"), "changed"])
+    assert site.saved == [1], "nothing after the failed target is written"
+
+
+def test_global_styles_markers_are_checked_after_the_write(tmp_path, monkeypatch):
+    (tmp_path / "tokens.json").write_text("{}")
+    (tmp_path / "c.css").write_text(".stuv-card{color:red}")
+    (tmp_path / "manifest.json").write_text(json.dumps({"global-styles": {
+        "type": "global-styles", "tokens": "tokens.json", "css": "c.css",
+        "markers": [".stuv-card", ".stuv-gone"]}}))
+    live = {"styles": {"css": ""}}
+    monkeypatch.setattr(wp, "get_global_styles", lambda *a, **k: live)
+
+    def apply(settings, styles, *, confirm):
+        live["styles"] = styles
+        return {"id": 7}
+    monkeypatch.setattr(wp, "apply_global_styles", apply)
     m = str(tmp_path / "manifest.json")
+    with pytest.raises(SystemExit, match="custom CSS lost rules"):
+        deploy.main(["--manifest", m, "global-styles", "--overwrite"])
 
-    with pytest.raises(SystemExit, match="homepage"):
-        deploy.main(["--manifest", m, "homepage"])
-    assert saved == []
+    (tmp_path / "c.css").write_text(".stuv-card{} .stuv-gone{}")
+    deploy.main(["--manifest", m, "global-styles", "--overwrite"])
 
-    deploy.main(["--manifest", m, "homepage", "--overwrite"])
-    assert saved == [BALANCED]
+
+def test_unknown_names_and_mixed_selectors_are_rejected(repo):
+    m = str(repo / "manifest.json")
+    with pytest.raises(SystemExit, match="unknown target 'nope'"):
+        deploy.main(["--manifest", m, "home", "--overwrite", "nope"])
+    with pytest.raises(SystemExit):
+        deploy.main(["--manifest", m, "changed", "home"])

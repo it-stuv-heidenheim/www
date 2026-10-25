@@ -36,6 +36,7 @@ jobs:
           php wp-plugin/tests/test_normalize.php
           php wp-plugin/tests/test_cache.php
           php wp-plugin/tests/test_theme.php
+          php wp-plugin/tests/test_ics.php
           TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 
       - name: Skill tests
@@ -56,6 +57,10 @@ jobs:
           test "$(grep -c '^===' "$RUNNER_TEMP/blockcheck.log")" \
             -eq "$(git ls-files 'data/*.html' | wc -l)"
           ! grep -E ': [1-9][0-9]* invalid' "$RUNNER_TEMP/blockcheck.log"
+
+      # Sources readable, block markup balanced; no server, no secrets.
+      - name: Deploy dry run
+        run: python3 .agents/skills/wordpress-default-editor/scripts/deploy.py --manifest data/manifest.json all --dry-run
 
       - name: Icon CSS matches Phosphor
         run: |
