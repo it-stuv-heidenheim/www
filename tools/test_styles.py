@@ -29,7 +29,7 @@ PAIRS = [
     ("--stuv-muted-foreground", "page", TEXT),
     ("--stuv-muted-foreground", "band", TEXT),
     ("--stuv-muted-foreground", "card", TEXT),
-    # Links and the section kicker are primary-coloured text.
+    # Links are primary-coloured text.
     ("--stuv-primary", "page", TEXT),
     ("--stuv-primary", "band", TEXT),
     ("--stuv-primary", "card", TEXT),
@@ -152,13 +152,26 @@ class TestCssInvariants(unittest.TestCase):
             with self.subTest(selector=rule.selector_text):
                 self.assertNotEqual(rule.decls.get("text-overflow"), "ellipsis")
 
+    def test_font_sizes_come_from_the_scale(self):
+        # Five sizes (--text-small … --text-display); a literal size in a rule
+        # is a sixth one. Blocks may set the three static sizes inline.
+        for rule in self.rules:
+            size = rule.decls.get("font-size")
+            if size is not None:
+                with self.subTest(selector=rule.selector_text):
+                    self.assertRegex(size, r"^var\(--text-(small|body|title|heading|display)\)$")
+        for f in sc.deployed_files():
+            for size in re.findall(r"font-size:\s*([^;\"]+)", f.read_text()):
+                with self.subTest(file=str(f.relative_to(sc.REPO)), size=size):
+                    self.assertIn(size.strip(), {"0.875rem", "1rem", "1.25rem"})
+
     def test_every_custom_property_is_defined(self):
         defined = set(sc.root_custom_properties(dark=True))
         defined |= {p for r in self.rules for p in r.decls if p.startswith("--")}
         # Inline custom properties set on a block's own element (map images).
         defined |= {"--stuv-map-light", "--stuv-map-dark", "--stuv-map-ratio", "--stuv-map-icon"}
         markup = self.css + "".join(f.read_text() for f in sc.deployed_files())
-        used = set(re.findall(r"var\((--stuv-[a-z0-9-]+|--space-[a-z0-9_-]+)", markup))
+        used = set(re.findall(r"var\((--stuv-[a-z0-9-]+|--space-[a-z0-9_-]+|--text-[a-z]+)", markup))
         self.assertEqual(sorted(used - defined), [])
 
 

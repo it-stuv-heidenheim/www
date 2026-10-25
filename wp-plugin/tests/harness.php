@@ -24,6 +24,11 @@ function check(string $name, $actual, $expected): void {
 
 register_shutdown_function(function (): void {
     global $failed;
+    // A fatal error also ends in shutdown; without this it would read as a pass.
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        $failed++;
+    }
     echo $failed ? "\n$failed failed\n" : "\nall passed\n";
     exit($failed ? 1 : 0);
 });

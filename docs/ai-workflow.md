@@ -95,19 +95,19 @@ nachsehen, ob in wp-admin etwas geändert wurde.
 
 ### Was ein Lauf macht
 
-1. Alle Prüfungen aus `checks.yml`.
+1. Alle Prüfungen aus `checks.yml`, darunter der Dry-Run.
 2. Warten auf die Freigabe.
-3. Den Dry-Run.
-4. Die Ziele bestimmen. `verify_deploy.py --history` vergleicht jedes Ziel mit
-   der Live-Seite und teilt die abweichenden in `BEHIND` und `EDITED` ein (siehe
-   oben). Mit `changed` (Standard) nimmt die Action alle
+3. `deploy.py`, mit denselben Zielen und `--overwrite` wie lokal. Es vergleicht
+   jedes Ziel mit der Live-Seite und teilt die abweichenden in `BEHIND` und
+   `EDITED` ein (siehe oben). Mit `changed` (Standard) nimmt es alle
    abweichenden. Ist eines der zu schreibenden Ziele `EDITED` und steht nicht
-   unter `overwrite`, bricht sie hier ab. `media` läuft immer mit, lädt aber
-   nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt `changed`
-   gehen auch `all` oder einzelne Zielnamen, mit Leerzeichen getrennt.
-5. Den Deploy, danach `verify_deploy.py` für die deployten Ziele und nach
-   `global-styles` auch `verify_global_css.py`.
-6. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage
+   unter `overwrite`, bricht es ab, bevor es schreibt. `media` läuft immer mit,
+   lädt aber nur Dateien hoch, die noch nicht in der Mediathek liegen. Statt
+   `changed` gehen auch `all` oder einzelne Zielnamen, mit Leerzeichen
+   getrennt. Jedes geschriebene Ziel liest es sofort zurück und bricht ab,
+   wenn die Seite es nicht so ausliefert; nach `global-styles` prüft es auch
+   die `markers` aus `data/manifest.json`.
+4. Die Backups vor dem Schreiben als Artefakt `wp-backup-<Nummer>`, 30 Tage
    lang (Rollback in `docs/testing.md`).
 
 Die Action deployt mit dem Skill aus demselben Commit wie der Inhalt. Es läuft
@@ -119,7 +119,7 @@ lassen; sonst bricht GitHub ihn erst nach 30 Tagen ab.
 Nicht über die Action laufen: ein Bild unter derselben URL ersetzen
 (`replace_media()`, `AGENTS.md` unter „Media“) und die Plugins (ZIP-Upload in
 wp-admin, `docs/plugins.md`). Hängt eine Inhaltsänderung an einem Plugin (etwa
-`stuv-dsgvo` mit `global-styles`, `homepage` und `events`), erst das ZIP
+`stuv-events` mit `global-styles`, `homepage` und `events`), erst das ZIP
 hochladen und dann den Deploy freigeben.
 
 ### Einmalige Einrichtung
@@ -149,6 +149,6 @@ Für die Action **Monitor** (`docs/testing.md`) ein zweites Environment
 - **Keine Reviewer.** Die Action läuft täglich und schreibt nichts; mit
   Freigabe käme jeder Lauf erst an, wenn jemand klickt.
 
-Der Preis: Wer einen Workflow auf `main` pusht, kann dieses Passwort ohne
+Allerdings kann jeder, der einen Workflow auf `main` pusht, dieses Passwort ohne
 Freigabe benutzen. Deshalb ein eigener Benutzer, den man sperren kann, ohne den
 Deploy-Zugang anzufassen.

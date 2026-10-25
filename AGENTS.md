@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Content source of the live WordPress site of StuV DHBW Heidenheim (`stuv-heidenheim.de`, Twenty Twenty-Five
-block theme): block HTML, design tokens, component CSS, three plugins, map and icon generators. This file
+block theme): block HTML, design tokens, component CSS, four plugins, map and icon generators. This file
 instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` lists every check command.
 
 ## Tooling, deploy, host
@@ -17,14 +17,11 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 - Deploy runs as `.github/workflows/deploy.yml` on `main`, by `workflow_dispatch` only (`gh workflow run deploy.yml`);
   a push runs only the checks, so `main` may hold undeployed commits. Environment `production`, scripts from the
   same commit. Every run waits for a required reviewer of `production`; never remove that gate, add a push
-  trigger or deploy from another branch. Start a deploy only when asked. Locally:
-  `deploy.py --manifest data/manifest.json all --dry-run` (no server), `deploy.py … <target>`, then
-  `verify_deploy.py --manifest data/manifest.json`, the only proof the site serves this repo. A target whose live
-  content matches no commit (`verify_deploy.py … --history`: `EDITED`) was edited in wp-admin; `deploy.py` and the
-  Action refuse to write over it. Port the edit into `data/`, then deploy it with `--overwrite` (Action: `overwrite`
-  input). Undo:
-  `rollback.py <id>`. After a `global-styles` deploy:
-  `verify_global_css.py --marker .stuv-card --marker .stuv-icon-box --marker ":root.dark" --marker .stuv-wpforms --marker .stuv-body-muted --icon-marker=--ico-calendar`
+  trigger or deploy from another branch. Start a deploy only when asked. Locally, the same as the Action:
+  `deploy.py --manifest data/manifest.json changed` (or target names); it reads every written target back, and
+  checks the `markers` of `global-styles`. A target whose live content matches no commit (`EDITED`) was edited in
+  wp-admin, and the deploy stops before writing. Port the edit into `data/`, then deploy with
+  `--overwrite <target>` (Action: `overwrite` input). Undo: `rollback.py <id>`.
 - Manifest source paths are relative to `data/`; a page is its directory's `*.html` joined in filename order.
   `data/parked/` is never deployed. The Vorsitz grid is synced pattern 212 (`pattern-vorsitz`).
 - Generated regions, edit only their sources: maps between `gen_map:` markers (`data/maps/*.json`, then
@@ -42,15 +39,16 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 - `deploy.py media` and `upload_media.py` keep an existing attachment of the same filename, so a changed file never
   goes up that way. Replace at the same URL with `upload_media.py --replace <file>` only (`replace_media()`: backs up
   the old file, deletes, uploads, raises if the URL changed); undo: `rollback.py --media <filename>`. An ambiguity
-  warning means clean up first. A map change deploys together: both images with `--replace`, `global-styles`,
-  `studentenleben`.
+  warning means clean up first. A map change: both images with `--replace`, then a `changed` deploy.
 
 ## Plugins (`wp-plugin/`, see `docs/plugins.md`)
 
 - Shipped as zips (`./wp-plugin/build.sh`, upload in wp-admin), never by `deploy.py`. A version bump changes the
   header `Version` and the `STUV_*_VERSION` constant together; `tools/check_plugins.py` compares with the site.
 - `stuv-dsgvo`: calendar iframes carry `data-stuv-src` and no `src`, so nothing reaches Google before a click;
-  a loaded embed always shows `.stuv-dsgvo-revoke`. Deploy together: zip, `global-styles`, `homepage`, `events`.
+  a loaded embed always shows `.stuv-dsgvo-revoke`. A change ships as the zip, then a `changed` deploy.
+- `stuv-events`: the server reads the public calendar feed, so the event lists need no consent; the browser never
+  parses a timestamp. Markup without the plugin shows `.stuv-events-fallback`. Same shipping order as above.
 
 ## Block content
 

@@ -3,10 +3,10 @@
 Farben, Schrift, Abstände, Karten, Buttons. Zwei Dateien teilen sich die
 Arbeit:
 
-| Datei                       | Enthält                   | Beispiel                                  |
-| --------------------------- | ------------------------- | ----------------------------------------- |
-| `data/global-styles.json`   | Tokens: die Werte         | Rot ist `#E2001A`, Inhalt ist 56rem breit |
-| `data/styles/component.css` | Komponenten: die Bauteile | eine Karte hat 1px Rand und Schatten      |
+| Datei                       | Enthält                   | Beispiel                                         |
+| --------------------------- | ------------------------- | ------------------------------------------------ |
+| `data/global-styles.json`   | Tokens: die Werte         | Rot ist `#E2001A`, Inhalt ist 56rem breit        |
+| `data/styles/component.css` | Komponenten: die Bauteile | eine Karte hat 1px Rand, Schatten nur beim Hover |
 
 Die Grundregel: Ein Wert gehört in die Tokens, ein Aussehen in die
 Komponenten. Für eine andere Markenfarbe änderst du einen Token, für rundere
@@ -36,7 +36,7 @@ Datei auf dem Server.
 | `background`         | `#ffffff`          | Seitenhintergrund                |
 | `foreground`         | `#0a0a0a`          | Fließtext                        |
 | `muted`              | `#f4f4f5`          | gedämpfte Flächen                |
-| `muted-foreground`   | `#71717a`          | Sekundärtext                     |
+| `muted-foreground`   | `#52525b`          | Sekundärtext, Intros, Kartentext |
 | `border`             | `#e4e4e7`          | Ränder                           |
 | `band`               | `rgba(0,0,0,0.03)` | Hintergrund der Sektionsstreifen |
 
@@ -53,8 +53,10 @@ Fensterbreite braucht `align:full` im Block.
 
 **Die Schrift:** Überschriften (`h1` bis `h6`) setzt Fraunces, eine
 Serifenschrift, über `styles.elements.heading` in den Tokens. Der Fließtext steht
-auf Inter mit System-Fallbacks; Inter wird nirgends geladen, sichtbar ist also
-die Systemschrift (San Francisco, Segoe UI …).
+auf Atkinson Hyperlegible Next, ebenfalls selbst gehostet (siehe unten), mit
+der Systemschrift als Fallback (San Francisco, Segoe UI …). Die Schrift ist auf
+Lesbarkeit gezeichnet: Zeichen, die sich sonst leicht verwechseln (I, l, 1 oder
+O, 0), haben deutlich verschiedene Formen.
 
 Fraunces hat neben Gewicht und optischer Größe zwei eigene Achsen, die
 `component.css` in der `h1`–`h6`-Regel per `font-variation-settings` setzt:
@@ -67,20 +69,49 @@ und bis zu 4.5rem groß. Darunter folgt die übliche Regel für Display-Serifen:
 Größe stellt der Browser selbst nach der Schriftgröße ein. Kleine Überschriften
 sind dadurch schon kräftiger gezeichnet und wirken bei mehr als 400 fett.
 
-Fraunces liegt selbst gehostet auf dem Server, nicht bei Google: Ein Abruf von
+**Die Schriftgrößen:** Es gibt fünf, als Variablen oben in `component.css`, und
+jedes `font-size` dort nutzt eine davon (`tools/test_styles.py` prüft das):
+
+| Variable         | Größe               | Wofür                                              |
+| ---------------- | ------------------- | -------------------------------------------------- |
+| `--text-small`   | 0.875rem            | Buttons, Navigation, Badges, Formulare, Hinweise   |
+| `--text-body`    | 1rem                | Fließtext                                          |
+| `--text-title`   | 1.25rem             | `h3`, `h4`, Kartentitel, Intro unter Überschriften |
+| `--text-heading` | 1.75 → 2.25rem      | `h2`                                               |
+| `--text-display` | 2.25 → 3.5 → 4.5rem | `h1`, Hero-Titel                                   |
+
+Die beiden großen wachsen ab 640px und 768px; die Media Queries ändern nur
+die Variablen, nicht die Regeln. Die Größen-Presets in `global-styles.json`
+(`small` bis `xx-large`) haben dieselben Werte, damit der Editor nur Größen der
+Skala anbietet; am Block selbst sind nur die drei festen erlaubt (0.875rem,
+1rem, 1.25rem). Die Überschriften bekommen ihre Größe vom Element: Ein `h3`
+ohne Klasse ist schon richtig, `.stuv-h2`, `.stuv-h3` und `.stuv-h3-sm` sind
+nur noch gleichbedeutende Namen dafür. Kleine Versalzeilen mit Sperrung gibt es
+nicht, auch keine roten Zeilen über einer Überschrift (Kicker); was dort
+stünde, gehört in die Überschrift oder den ersten Satz. Die Überschriften der
+Fußzeile stehen in normaler Schreibung.
+
+Beide Schriften liegen selbst gehostet auf dem Server, nicht bei Google: Ein Abruf von
 `fonts.googleapis.com` schickt bei jedem Seitenaufruf die IP-Adresse an Google,
-und das ist ohne Einwilligung nicht DSGVO-konform. Die Datei ist der variable
+und das ist ohne Einwilligung nicht DSGVO-konform. Die Fraunces-Datei ist der variable
 Latin-Schnitt mit allen vier Achsen (Gewichte 100 bis 900, 121 KB, deckt
 Umlaute, ß, € und Typografie-Zeichen ab; Quelle `@fontsource-variable/fraunces`
-5.3.0, `fraunces-latin-full-normal.woff2`) und liegt mit ihrer Lizenz (SIL OFL)
-unter `data/fonts/`. Der Schnitt ohne `SOFT`-Achse wäre 67 KB groß, hätte aber
-nur die spitzen Serifen.
+5.3.0, `fraunces-latin-full-normal.woff2`) und liegt mit ihrer Lizenz (SIL OFL,
+`OFL-Fraunces.txt`) unter `data/fonts/`. Der Schnitt ohne `SOFT`-Achse wäre
+67 KB groß, hätte aber nur die spitzen Serifen. Atkinson Hyperlegible Next ist
+der variable Latin-Schnitt mit der Gewichtsachse (Gewichte 200 bis 800, 34 KB;
+Quelle `@fontsource-variable/atkinson-hyperlegible-next` 5.3.0,
+`atkinson-hyperlegible-next-latin-wght-normal.woff2`, Lizenz
+`OFL-Atkinson-Hyperlegible-Next.txt`). Den kursiven Schnitt lädt die Seite
+nicht, weil sie keinen Kursivtext hat. Der Pfeil → fehlt im Latin-Schnitt und
+kommt aus der Systemschrift.
 Auf dem Server liegt sie in der Font Library von WordPress unter
 `/wp-content/uploads/fonts/`; der `fontFace`-Eintrag in `data/global-styles.json` zeigt
-dorthin, und WordPress druckt daraus selbst die `@font-face`-Regel. Die Datei
-geht mit keinem Deploy-Ziel raus. Einmal hochgeladen wird sie über die
-REST-Route `wp/v2/font-families/<id>/font-faces`. Fehlt die Datei, fallen die Überschriften auf
-Georgia zurück.
+dorthin, und WordPress druckt daraus selbst die `@font-face`-Regel. Die Dateien
+gehen mit keinem Deploy-Ziel raus. Einmal hochgeladen werden sie über die
+REST-Route `wp/v2/font-families/<id>/font-faces` (für eine neue Familie vorher
+`wp/v2/font-families` anlegen). Fehlt eine Datei, fallen die Überschriften auf
+Georgia und der Fließtext auf die Systemschrift zurück.
 
 **Eigene Tokens** (`settings.custom`): bisher nur der Eckenradius
 `stuvRadius: 0.5rem`. WordPress übersetzt den camelCase-Namen zu
@@ -103,13 +134,19 @@ Die Familien:
 | `.stuv-card`, `.stuv-card-*`             | Karten samt Cover-Link, Hover und Fokusring               |
 | `.stuv-button-*`                         | Buttons außerhalb von Button-Blöcken, siehe unten         |
 | `.stuv-icon-box`, `.stuv-ico-*`          | Icons; `--ico-*` ist generiert, siehe `docs/tools.md`     |
-| `.stuv-h2`, `.stuv-h3`                   | Überschriften-Größen                                      |
-| `.stuv-badge*`, `.stuv-chip*`            | Pillen; Chips als Sprungleiste (Über uns)                 |
-| `.stuv-kicker`                           | Rote Zeile über einer Überschrift, die eine Sektionsart   |
+| `.stuv-h2`, `.stuv-h3`                   | Namen für die Größen von `h2` und `h3`                    |
+| `.stuv-badge*`, `.stuv-chip*`            | Pillen; Chips als Sprungleiste (Studentenleben)           |
 | `.stuv-crisis`, `.stuv-topic-list`       | Krisenhinweis und Themenliste (Kummer Karsten)            |
 | `.stuv-steps`                            | Nummerierte Schritte als `<ol>` (Kummer Karsten)          |
 | `.stuv-schedule`                         | Liste aus Name und Termin (Hochschulsport, Startseite)    |
 | `.stuv-map-*`                            | Kartenrahmen, Pins, Legende                               |
+| `.stuv-events`, `.stuv-event-*`          | Terminliste mit Datumskachel (`stuv-events`-Plugin)       |
+| `.stuv-stats`                            | Zahlenreihe unter dem Hero (Startseite)                   |
+| `.stuv-person`, `.stuv-person-quote`     | Vorsitz-Karte: Foto neben Name, Zitat darunter            |
+| `.stuv-media`                            | Foto (Bild-Block); in einer Karte oben randlos            |
+| `.stuv-split`                            | Text neben Foto ab 1024px (Seitenkopf, Werde aktiv)       |
+| `.stuv-photo-strip`                      | Drei Fotos in einer Reihe (Mitmachen auf Über uns)        |
+| `.stuv-sr-only`                          | Nur für Screenreader sichtbarer Text                      |
 | `.stuv-mensa-*`                          | Speiseplan-Widget                                         |
 | `.stuv-wpforms`                          | WPForms-Formularstyling (siehe `docs/content-editing.md`) |
 | `.stuv-header`, `.stuv-footer`           | Kopf- und Fußzeile                                        |
@@ -230,6 +267,21 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
   `.stuv-footer` wirkt es nicht.
 - **Der Footer ist immer dunkel.** Seine Hex-Werte sind die aus `:root.dark`
   und müssen von Hand mitgezogen werden.
+- **Das Logo ist Inline-SVG.** WordPress nimmt keine SVG-Uploads an (siehe
+  `plugins.md`), und ein PNG hätte im Dark Mode und in der immer dunklen
+  Fußzeile seine graue Schrift behalten. Die Kopfzeile enthält das Logo darum
+  als `<g id="stuv-logo">`, Fußzeile und Linktree-Seite zeigen es per
+  `<use href="#stuv-logo">`. Schrift und Trennstrich färben
+  `--stuv-logo-text` und `--stuv-logo-rule`; `.stuv-footer` setzt sie fest auf
+  die dunklen Werte. Selektoren aus `component.css` erreichen die Kopie in
+  `<use>` nicht, Custom Properties dagegen schon; deshalb steht die Farbe als
+  `style="fill: var(…)"` im SVG und nicht in einer Regel für dessen Pfade. Die
+  Quelle ist `data/media/.stuv-dhbw-logo.svg` mit auf eine Nachkommastelle
+  gerundeten Pfaden.
+- **Kartenlegenden** sind eine Karte mit Zeilen, keine Karte je Ort:
+  `gen_map.py` schreibt `stuv-card` an die `<ol>`. Jede Zeile ist ein Grid mit
+  Symbol, Name und Link in der ersten Zeile; `align-content: start` hält die
+  Zeilen oben, wenn die Nachbarzeile höher ist.
 - **Hero-Übergang:** Die 6rem Verlauf entsprechen dem inline
   `padding-bottom: 6rem` der Hero-Gruppe in `01-hero.html`. Die Zwischenstopps
   folgen einer Smoothstep-Kurve, damit an beiden Enden keine harte Kante
@@ -260,16 +312,18 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
 - **Buttons sind Button-Blöcke** (`wp:buttons` mit `wp:button`), keine Links in
   einem Absatz. Die Variante ist der Block-Stil: ohne Stil (oder „Füllen“) rot
   gefüllt, `is-style-outline` mit Kontur, `is-style-overlay` halbtransparent für
-  Hero-Bild und rote Streifen (angemeldet von `stuv-theme`, siehe
-  `plugins.md`). `stuv-button-lg` macht einen Button größer (Hero). Ein Icon ist
-  ein `<span class="stuv-ico stuv-ico-…">` im Link, vor oder nach dem Text; es
-  nimmt die Schriftfarbe des Buttons an. Außerhalb eines Button-Blocks, im
-  Markup eines Plugins, gibt es `stuv-button-outline` für ein `<button>`.
-  `stuv-button-link` ist ein Textlink mit Pfeil oder Icon im Fließtext, kein
-  Button-Block. Mobil stehen die Buttons eines Blocks untereinander in voller
-  Breite, und ein langer Text bricht im Button um, statt herauszuragen.
-- **Sektions-Kicker** ist immer `.stuv-kicker` am Absatz, ohne Inline-Stil.
-  Nur das Hero-Cover setzt zusätzlich Weiß als Blockfarbe.
+  das Hero-Bild (angemeldet von `stuv-theme`, siehe `plugins.md`). Auf dem roten
+  Streifen (`.stuv-section-primary`) wird der ungestylte Button weiß mit roter
+  Schrift, die Hauptaktion; `is-style-overlay` ist dort durchsichtig mit weißem
+  Rand, die Nebenaktion. Die halbtransparente Füllung des Hero-Bilds hätte auf
+  Rot unter 4,5:1 für die weiße Schrift gelegen. `stuv-button-lg` macht einen
+  Button größer (Hero). Ein Icon ist ein `<span class="stuv-ico stuv-ico-…">` im
+  Link, vor oder nach dem Text; es nimmt die Schriftfarbe des Buttons an.
+  Außerhalb eines Button-Blocks, im Markup eines Plugins, gibt es
+  `stuv-button-outline` für ein `<button>`. `stuv-button-link` ist ein Textlink
+  mit Pfeil oder Icon im Fließtext, kein Button-Block. Mobil stehen die Buttons
+  eines Blocks untereinander in voller Breite, und ein langer Text bricht im
+  Button um, statt herauszuragen.
 - **WPForms** (zusätzlich zur Ahnenketten-Regel in `docs/content-editing.md`):
   - Die Textfarbe steht bei `:focus` und `:focus:invalid` noch einmal, weil
     WPForms dort eigene Farben setzt (`textarea:focus` mit 0,3,2,

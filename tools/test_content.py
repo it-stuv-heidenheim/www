@@ -123,7 +123,7 @@ class TestMarkup(unittest.TestCase):
                 self.assertNotRegex(f.read_text(), r"background(-color)?:\s*var\(--stuv-primary\)")
 
     def test_no_inline_text_transform(self):
-        # Section labels use .stuv-kicker; inline uppercase means a hand-rolled one.
+        # The site sets no small uppercase labels; inline uppercase means a hand-rolled one.
         for f in FILES:
             with self.subTest(file=str(f.relative_to(sc.REPO))):
                 self.assertNotRegex(f.read_text(), r'style="[^"]*text-transform')

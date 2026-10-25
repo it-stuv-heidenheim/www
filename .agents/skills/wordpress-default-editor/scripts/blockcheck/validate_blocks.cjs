@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 /*
- * Ground-truth block validation using the REAL Gutenberg parser.
+ * Block validation with Gutenberg's own parser and save().
  *
  * Usage:
  *   node validate_blocks.cjs <file-with-raw-block-markup>... [--limit N] [--json]
  *
- * The input file must contain the RAW block markup (the `content.raw` you get from
+ * The input file must contain the raw block markup (the `content.raw` you get from
  * GET /wp-json/wp/v2/{type}/{id}?context=edit). For each block whose stored HTML does
- * NOT match what its save() regenerates, this prints the block type, the exact
+ * not match what its save() regenerates, this prints the block type, the exact
  * "Expected …, saw …" reason, the parsed style attributes, and the original markup.
  *
- * First run auto-installs @wordpress/blocks, @wordpress/block-library, jsdom into this
- * directory. NOTE: it installs the LATEST packages; if the live site runs an older
- * WordPress, a handful of save() details can differ — match versions when in doubt
- * (the WordPress version is in the front-end <meta name="generator"> tag).
+ * The first run installs the latest @wordpress/blocks, @wordpress/block-library and
+ * jsdom into this directory. If the live site runs an older WordPress, a handful of
+ * save() details can differ; match versions when in doubt (the WordPress version is
+ * in the front-end <meta name="generator"> tag).
  */
 const { execSync } = require("child_process");
 const fs = require("fs");
@@ -67,7 +67,7 @@ for (const [k, v] of Object.entries(globals)) global[k] = v;
 const { parse } = require("@wordpress/blocks");
 const { registerCoreBlocks } = require("@wordpress/block-library");
 
-// Gutenberg logs every validation failure via console.warn/error/info — silence during parse.
+// Gutenberg logs every validation failure via console.warn/error/info; silence it during parse.
 function silent(fn) {
   const keep = {};
   for (const m of ["log", "info", "warn", "error", "debug"]) {

@@ -69,8 +69,8 @@ Die Seite ist aus HTML-Dateien in `data/` aufgebaut:
 
 Bei vielen Absätzen stehen Schriftgröße und Farbe nicht am Block, sondern an
 einer Klasse in `data/styles/component.css`: `.stuv-body-muted` für den grauen
-Fließtext in Karten und Listen, `.stuv-kicker` für die kleine rote
-Überschrift-Zeile über einer Sektion. Der Block trägt nur noch die Klasse.
+Fließtext in Karten und Listen, `.stuv-section-intro` für Größe und Breite des
+Einleitungssatzes unter einer Sektionsüberschrift. Der Block trägt nur noch die Klasse.
 
 Beim Ändern von Text merkst du davon nichts. Siehst du aber im Editor in der
 rechten Seitenleiste unter **Farbe** oder **Typografie** nach, steht dort „kein
@@ -155,6 +155,18 @@ lassen.
 
 5. Die Seite deployen (siehe Abschnitt Deploy).
 
+## Fotos im Seitenkopf, in Karten und als Leiste
+
+Fotos neben dem Seitentitel, oben in den Eventarten-Karten und in der Leiste
+unter „Mitmachen“ sind Bild-Blöcke mit der Klasse `stuv-media`; das
+Seitenverhältnis steht im Block (`"aspectRatio":"4/3","scale":"cover"`), den
+Rest regelt `component.css` (siehe `.stuv-media` in `docs/design-system.md`).
+Ein Foto tauschst du wie oben beschrieben, unter neuem Dateinamen. Vorher
+zuschneiden und verkleinern: WebP, 1200 px breit im Seitenkopf, 960 px in
+Karten, 640 px in der Leiste, und ohne Metadaten (`magick … -strip`), denn
+Kamera- und Drohnenfotos tragen oft GPS-Koordinaten. Erkennbare Personen nur
+mit deren Einverständnis.
+
 ## Nach einer Wahl: die Übergabe
 
 Nach jeder Wahl wechselt der Vorsitz, oft auch Referate. Diese Liste in einem
@@ -175,10 +187,9 @@ uns):
 **Referate** (`data/pages/ueber-uns/02-referate.html`): Die Karten nennen keine
 Namen, ändern sich also nur, wenn ein Referat dazukommt oder wegfällt.
 
-- [ ] Karte kopieren oder löschen, dazu den Eintrag in der Sprungleiste oben in
-      derselben Datei. Der `anchor` der Karte (`#finanzen`) ist ein Linkziel:
-      `events/05-cta.html` verlinkt `#event`, `studentenleben/08-sport.html`
-      `#sport`. Fällt ein Referat mit Linkziel weg, schlägt `test_content.py`
+- [ ] Karte kopieren oder löschen. Der `anchor` der Karte (`#finanzen`) ist
+      ein Linkziel: `events/05-cta.html` verlinkt `#event`,
+      `studentenleben/08-sport.html` `#sport`. Fällt ein Referat mit Linkziel weg, schlägt `test_content.py`
       fehl und nennt den Link.
 - [ ] Bekommt ein Referat einen eigenen Kanal (Instagram, Mail), die Adresse
       in `CONTACTS` in `tools/test_content.py` eintragen, sonst schlägt der
@@ -338,19 +349,19 @@ SKILL=.agents/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run
 ```
 
-Ausgabe prüfen. Wenn alles passt, die geänderten Ziele deployen:
+Ausgabe prüfen. Wenn alles passt, deployen. `changed` nimmt wie die Action
+alles, was von der Live-Seite abweicht, dazu `media`:
 
 ```bash
-python3 $SKILL/scripts/deploy.py --manifest data/manifest.json <zielname>
+python3 $SKILL/scripts/deploy.py --manifest data/manifest.json changed
 ```
 
-Zielnamen aus `data/manifest.json`: `homepage`, `ueber-uns`, `events`,
-`studentenleben`, `kontakt`, `kummer-karsten`, `linktree`, `header`, `footer`,
-`global-styles`, `media`, `pattern-vorsitz`.
-
-- Bild geändert: zuerst `media`, dann die Seite deployen.
-- Farben oder Styles geändert: `global-styles` deployen.
-- Header oder Footer geändert: `header` bzw. `footer` deployen.
+Einzelne Ziele gehen auch, mehrere mit Leerzeichen getrennt (`deploy.py …
+homepage events`). Zielnamen aus `data/manifest.json`: `homepage`, `ueber-uns`,
+`events`, `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`, `header`,
+`footer`, `global-styles`, `media`, `pattern-vorsitz`. Ein in wp-admin
+geändertes Ziel schreibt `deploy.py` nur mit `--overwrite <zielname>`
+(`docs/ai-workflow.md`).
 
 Nach dem Deploy die Live-Seite aufrufen und die Änderung prüfen. Alle Prüfungen
 stehen in `docs/testing.md`.

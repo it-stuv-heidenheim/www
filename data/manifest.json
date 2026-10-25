@@ -2,7 +2,15 @@
   "global-styles": {
     "type": "global-styles",
     "tokens": "global-styles.json",
-    "css": "styles/component.css"
+    "css": "styles/component.css",
+    "markers": [
+      ".stuv-card",
+      ".stuv-icon-box",
+      ":root.dark",
+      ".stuv-wpforms",
+      ".stuv-body-muted"
+    ],
+    "icon_marker": "--ico-calendar"
   },
   "header": {
     "type": "structural",

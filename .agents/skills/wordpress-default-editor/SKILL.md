@@ -24,19 +24,23 @@ after `source .env`. Each script's docstring and `--help` hold its full usage.
 
 ## Scripts (`$SKILL/scripts/`)
 
-- `deploy.py --manifest M --list | all --dry-run | <target> [--overwrite]`
+- `deploy.py --manifest M --list | all --dry-run | changed | <target>... [--overwrite [T...]]`
   writes targets in manifest order. `--dry-run` checks sources only, never the
-  server. Before the first write it stops if a target is `EDITED` (below);
-  `--overwrite` writes anyway.
+  server (except `changed`, which has to read it). `changed` picks every
+  target that is `BEHIND` or `EDITED` (below), plus media. Before the first
+  write it stops if a target is `EDITED`; `--overwrite` lists the targets that
+  may be overwritten anyway (bare: all). After each write it reads the target
+  back and stops if the site does not serve it, or if a global-styles target
+  lost one of its `markers`.
 - `verify_deploy.py --manifest M [<target>] [--diff] [--history]` diffs live
   `content.raw`, custom CSS and global-styles tokens against the sources: 0
   match, 1 drift, 2 unfetchable. The only proof a deploy landed. `--history`
   sorts drift into `BEHIND` (live is an older commit, see the sha) and `EDITED`
   (no commit has it: a wp-admin edit, exit 3). Needs full git history; with
   none, everything that differs counts as `EDITED`.
-- `verify_global_css.py --marker SEL … --icon-marker=--ico-x`, after a
-  `global-styles` write: 1 = component rules stripped, 2 = data-URI icons
-  stripped.
+- `verify_global_css.py --marker SEL … --icon-marker=--ico-x`: the marker
+  check `deploy.py` runs itself after a `global-styles` write; 1 = component
+  rules stripped, 2 = data-URI icons stripped.
 - `rollback.py <id> [--endpoint E]` restores content and status from
   `/tmp/wp_backup/<site>/`; the id may be `theme//slug`. `rollback.py --media
 <filename>` puts back the image `replace_media()` replaced.
@@ -52,7 +56,8 @@ Manifest targets, paths relative to the manifest's directory:
   `*.html` join in filename order), optional `status` (otherwise fetched).
   Template parts use endpoint `template-parts` and id `theme//slug`.
 - `global-styles`: `tokens` (theme.json-shaped) plus optional `css` for the
-  custom-CSS field.
+  custom-CSS field, and optional `markers` (strings the stored CSS must still
+  contain) and `icon_marker` (a custom property that must keep its data: URI).
 - `media`: a directory, non-recursive, dotfiles skipped. A failed file prints
   `SKIP`, the rest continue, and the run exits non-zero.
 

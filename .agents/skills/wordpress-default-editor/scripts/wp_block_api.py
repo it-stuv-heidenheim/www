@@ -23,9 +23,8 @@ import urllib.request
 # so a host that publishes an unroutable AAAA record stalls each request for
 # the whole read timeout before urllib falls back to IPv4. That turns a normal
 # `deploy.py all` into a run of many minutes that gets killed before it
-# finishes -- and it looks like a slow server rather than a broken route,
-# because curl and browsers hide the same misconfiguration behind Happy
-# Eyeballs. urllib has no equivalent, so cap each connect attempt instead.
+# finishes. It looks like a slow server rather than a broken route, because
+# curl and browsers hide the same misconfiguration behind Happy Eyeballs. urllib has no equivalent, so cap each connect attempt instead.
 
 # Seconds to spend on any single address before moving to the next.
 _CONNECT_TIMEOUT = float(os.environ.get("WP_CONNECT_TIMEOUT", "5"))
@@ -35,7 +34,7 @@ _CONNECT_TIMEOUT = float(os.environ.get("WP_CONNECT_TIMEOUT", "5"))
 _preferred_addr = {}
 
 # Capping the per-address budget still pays that cap once per process, and each
-# script (deploy, verify, upload) is its own process -- so a host whose AAAA is
+# script (deploy, verify, upload) is its own process, so a host whose AAAA is
 # permanently unroutable costs a stall on every command. Set
 # WP_ADDRESS_FAMILY=ipv4 to drop IPv6 candidates before connecting at all.
 # Unset (the default) tries every address, which is what a healthy dual-stack
@@ -118,8 +117,8 @@ def _connect_any(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address
 
 class _FallbackHTTPConnection(http.client.HTTPConnection):
     # HTTPConnection.connect() calls self._create_connection(), so swapping the
-    # factory keeps proxy tunnelling -- and, for the HTTPS subclass, the TLS
-    # wrap -- exactly as the stdlib does them. Python 3.14 assigns
+    # factory keeps proxy tunnelling (and, for the HTTPS subclass, the TLS
+    # wrap) exactly as the stdlib does them. Python 3.14 assigns
     # _create_connection as an *instance* attribute in __init__, which shadows
     # a class-level override, so it has to be set after super().__init__().
     def __init__(self, *args, **kwargs):
@@ -266,9 +265,9 @@ def find_media_by_filename(filename):
     Used to make upload_media() idempotent across re-runs: WordPress dedupes
     nothing on its own, it just appends '-1', '-2', ... to the filename.
 
-    One filename can match several attachments -- uploading the same name while
+    One filename can match several attachments: uploading the same name while
     "organize uploads into month/year folders" is toggled leaves both
-    uploads/2026/07/x.jpg and uploads/x.jpg -- and the caller usually goes on to
+    uploads/2026/07/x.jpg and uploads/x.jpg. The caller usually goes on to
     delete what it finds, so the choice must not depend on whatever order the
     endpoint felt like returning. Pin the order, take the newest, and say so
     when the library is ambiguous.
@@ -289,7 +288,7 @@ def find_media_by_filename(filename):
         ids = ", ".join(str(i["id"]) for i in matches)
         print(
             f"warning: {len(matches)} attachments are named {filename} (ids {ids}); "
-            f"using {matches[0]['id']}. Delete the stale ones -- content referencing "
+            f"using {matches[0]['id']}. Delete the stale ones; content referencing "
             "the others will not be updated.",
             file=sys.stderr,
         )
