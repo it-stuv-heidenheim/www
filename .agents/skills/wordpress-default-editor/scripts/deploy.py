@@ -17,22 +17,13 @@ import json
 import sys
 from pathlib import Path
 
+import verify_deploy
 import verify_global_css
 import wp_block_api as wp
+from verify_deploy import _read_source
 
 
-def _read_source(base, rel):
-    """A source is either one .html file or a directory of *.html joined in name order."""
-    path = base / rel
-    if path.is_dir():
-        files = sorted(path.glob("*.html"))
-        if not files:
-            raise FileNotFoundError(f"no *.html in {path}")
-        return "\n\n".join(f.read_text() for f in files)
-    return path.read_text()
-
-
-def _deploy_structural(name, t, base, dry_run):
+def _deploy_structural(t, base, dry_run):
     content = _read_source(base, t["source"])
     wp.assert_balanced_blocks(content)  # fail fast, before any write
     endpoint, rid, status = t["endpoint"], t["id"], t.get("status")
@@ -47,7 +38,7 @@ def _deploy_structural(name, t, base, dry_run):
     return result
 
 
-def _deploy_media(name, t, base, dry_run):
+def _deploy_media(t, base, dry_run):
     source_dir = base / t["source"]
     if not source_dir.is_dir():
         raise FileNotFoundError(f"media source {t['source']} is not a directory")
@@ -76,7 +67,7 @@ def _deploy_media(name, t, base, dry_run):
     return results
 
 
-def _deploy_global_styles(name, t, base, dry_run):
+def _deploy_global_styles(t, base, dry_run):
     tokens = json.loads((base / t["tokens"]).read_text())
     styles = tokens.get("styles") or {}
     css_rel = t.get("css")
@@ -93,22 +84,17 @@ def _deploy_global_styles(name, t, base, dry_run):
     return result
 
 
-def _verify():
-    import verify_deploy  # late: verify_deploy imports this module
-    return verify_deploy
-
-
 def plan(selector, manifest, base):
     """{name: status} from verify_deploy.check_target(history=True) for the
     non-media targets `selector` may write, printed with their diffs."""
-    verify = _verify()
     candidates = list(manifest) if selector in (["all"], ["changed"]) else selector
     statuses = {}
     for n in candidates:
         if manifest[n]["type"] == "media":
             continue
         try:
-            status, detail = verify.check_target(n, manifest[n], base, show_diff=True, history=True)
+            status, detail = verify_deploy.check_target(n, manifest[n], base,
+                                                        show_diff=True, history=True)
         except Exception as exc:  # a target that cannot be read is not a pass
             sys.exit(f"error: live site not readable ({n}: {type(exc).__name__}: {exc})")
         statuses[n] = status
@@ -140,7 +126,7 @@ def refuse_edited(names, statuses, overwrite):
 
 def check_written(name, t, base):
     """Exit if the site does not serve what was just written to `name`."""
-    status, detail = _verify().check_target(name, t, base, show_diff=True)
+    status, detail = verify_deploy.check_target(name, t, base, show_diff=True)
     if status not in ("match", "skip"):
         sys.exit(f"error: {name}: live differs after the write: {detail}\n"
                  "Undo with rollback.py from the backup.")
@@ -156,10 +142,10 @@ def deploy_one(name, manifest, base, dry_run=False):
     t = manifest[name]
     print(f"[{name}]")
     if t["type"] == "global-styles":
-        return _deploy_global_styles(name, t, base, dry_run)
+        return _deploy_global_styles(t, base, dry_run)
     if t["type"] == "media":
-        return _deploy_media(name, t, base, dry_run)
-    return _deploy_structural(name, t, base, dry_run)
+        return _deploy_media(t, base, dry_run)
+    return _deploy_structural(t, base, dry_run)
 
 
 def _names(values):

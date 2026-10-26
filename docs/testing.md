@@ -43,7 +43,7 @@ Nur Standardbibliothek:
 
 ```bash
 cd .agents/skills/wordpress-default-editor
-python3 -m venv .venv && .venv/bin/pip install -r tests/requirements.txt   # pytest, flask
+python3 -m venv .venv && .venv/bin/pip install -r tests/requirements.txt   # pytest
 .venv/bin/python -m pytest -q
 cd -
 
@@ -76,6 +76,7 @@ Die Prüfungen lesen nur Quelltext. Nach jeder Layout-Änderung die Seite ansehe
 ```bash
 python3 .agents/skills/wordpress-default-editor/scripts/rollback.py <id> --endpoint pages
 python3 .agents/skills/wordpress-default-editor/scripts/rollback.py --media <dateiname>
+python3 .agents/skills/wordpress-default-editor/scripts/rollback.py --global-styles
 ```
 
 Backups liegen unter `/tmp/wp_backup/<site-slug>/` (Bilder in `media/`); nach einem Action-Deploy im Artefakt `wp-backup-<Nummer>`, entpackt nach `/tmp/wp_backup/` nutzbar, wenn `WP_SITE` gleich lautet. Oft einfacher: `git revert` und neu deployen.

@@ -18,7 +18,17 @@ import sys
 from pathlib import Path
 
 import wp_block_api as wp
-from deploy import _read_source
+
+
+def _read_source(base, rel):
+    """A source is either one .html file or a directory of *.html joined in name order."""
+    path = base / rel
+    if path.is_dir():
+        files = sorted(path.glob("*.html"))
+        if not files:
+            raise FileNotFoundError(f"no *.html in {path}")
+        return "\n\n".join(f.read_text() for f in files)
+    return path.read_text()
 
 
 def _fetch_live(t):

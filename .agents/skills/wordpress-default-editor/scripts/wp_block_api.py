@@ -145,15 +145,25 @@ def _rest_base():
 
 
 def _send(req, timeout, retries):
-    """Open req and decode its JSON, retrying rate limits and server errors with backoff."""
+    """Open req and decode its JSON, retrying with backoff. A write retries only on 429 and 503,
+    which turn the request away; after a 500, 502 or 504 it may have landed (an upload twice
+    becomes name-1.jpg). The HTTPError raised carries WordPress's error code and message."""
+    retry_on = (429, 500, 502, 503, 504) if req.get_method() == "GET" else (429, 503)
     for attempt in range(retries):
         try:
             with _opener.open(req, timeout=timeout) as response:
                 return json.loads(response.read())
         except urllib.error.HTTPError as exc:
-            if exc.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
+            if exc.code in retry_on and attempt < retries - 1:
                 time.sleep(2 ** attempt)
                 continue
+            body = exc.read().decode("utf-8", "replace")
+            try:
+                error = json.loads(body)
+                body = f"{error['code']}: {error.get('message', '')}".rstrip(": ")
+            except (ValueError, TypeError, KeyError):  # a proxy's HTML page, say
+                body = " ".join(re.sub(r"<[^>]+>", " ", body).split())[:200]
+            exc.msg = f"{exc.msg} on {req.get_method()} {req.full_url}: {body}"
             raise
 
 
@@ -167,10 +177,7 @@ def _request(method, path, data=None, retries=3):
 
 def fetch_raw(endpoint, pid):
     """Fetch raw block markup and status for a page/post."""
-    return _request(
-        "GET",
-        f"{endpoint}/{pid}?context=edit&_fields=id,title,content,status",
-    )
+    return _request("GET", f"{endpoint}/{pid}?context=edit&_fields=id,title,content,status")
 
 
 def save_content(endpoint, pid, new_content, status):
@@ -216,10 +223,9 @@ def find_by_slug(endpoint, slug):
     return items[0] if items else None
 
 
-def delete_resource(endpoint, pid, force=True):
-    """Delete a resource. Used to undo a create_resource()."""
-    suffix = "?force=true" if force else ""
-    return _request("DELETE", f"{endpoint}/{pid}{suffix}")
+def delete_resource(endpoint, pid):
+    """Delete a resource for good, skipping the trash. Used to undo a create_resource()."""
+    return _request("DELETE", f"{endpoint}/{pid}?force=true")
 
 
 # --- Media library uploads ---
@@ -321,7 +327,7 @@ def replace_media(file_path, *, filename=None, alt_text=None, backup=True):
             backup_media(old)
         if alt_text is None:
             alt_text = old.get("alt_text") or None
-        delete_resource("media", old["id"], force=True)
+        delete_resource("media", old["id"])
     new = upload_media(file_path, filename=filename, alt_text=alt_text, reuse_existing=False)
     if old and new["source_url"] != old["source_url"]:
         raise RuntimeError(
@@ -403,20 +409,21 @@ def get_global_styles(gid=None):
     return _request("GET", f"global-styles/{gid}?context=edit")
 
 
+def global_styles_backup_path(gid):
+    return os.path.join(backup_dir(), f"global-styles__{gid}_original.json")
+
+
 def apply_global_styles(settings_patch=None, styles_patch=None, *, gid=None, confirm):
     """Deep-merge a theme.json-shaped patch into the user global-styles record.
 
-    Needs confirm=True; writes a JSON backup first (undo: POST its {settings, styles} back).
+    Needs confirm=True; writes a JSON backup first (undo: rollback.py --global-styles).
     """
     if not confirm:
         raise ValueError("global-styles writes require confirm=True after human review")
     gid = gid or discover_global_styles_id()
-    current = _request("GET", f"global-styles/{gid}?context=edit")
-
-    out_dir = backup_dir()
-    os.makedirs(out_dir, exist_ok=True)
-    backup_path = os.path.join(out_dir, f"global-styles__{gid}_original.json")
-    with open(backup_path, "w", encoding="utf-8") as fh:
+    current = get_global_styles(gid)
+    os.makedirs(backup_dir(), exist_ok=True)
+    with open(global_styles_backup_path(gid), "w", encoding="utf-8") as fh:
         json.dump(current, fh, indent=2)
 
     payload = json.dumps(

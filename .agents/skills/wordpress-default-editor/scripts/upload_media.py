@@ -30,9 +30,7 @@ def main(argv):
             else:
                 result = wp.upload_media(path, alt_text=args.alt)
         except urllib.error.HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            print(f"HTTP {exc.code} uploading {path}: {body}", file=sys.stderr)
-            sys.exit(1)
+            sys.exit(f"{path}: {exc}")
         print(f"{path} -> {result['source_url']} (id {result['id']})")
 
 
