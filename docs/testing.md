@@ -1,24 +1,13 @@
 # Prüfen und Testen
 
-Alles hier läuft lokal, vor dem Deploy. Dieselben Prüfungen (ohne Dry-Run und
-ohne die Schritte nach dem Deploy) laufen außerdem bei jedem Push in GitHub
-Actions (`.github/workflows/checks.yml`). Die Deploy-Action
-(`.github/workflows/deploy.yml`) führt sie vor jedem Deploy aus, dazu den
-Dry-Run und die Prüfungen nach dem Deploy (`docs/ai-workflow.md`). Die Befehle
-unten brauchst du für lokale Läufe.
-
-## Der Kurzdurchlauf
-
-Vor jedem Commit:
+`checks.yml` führt die Prüfungen bei jedem Push aus, die Deploy-Action vor jedem Deploy ([ai-workflow.md](ai-workflow.md)). Lokal:
 
 ```bash
-npx prettier --check .
+# vor jedem Commit
+npx prettier --check .            # --write korrigiert
 python3 -m unittest discover -s tools -p "test_*.py"
-```
 
-Vor jedem Deploy zusätzlich:
-
-```bash
+# vor jedem Deploy zusätzlich (grep ohne Ausgabe: alle Blöcke gültig)
 source .env
 SKILL=.agents/skills/wordpress-default-editor
 node $SKILL/scripts/blockcheck/validate_blocks.cjs $(git ls-files 'data/*.html') \
@@ -26,110 +15,38 @@ node $SKILL/scripts/blockcheck/validate_blocks.cjs $(git ls-files 'data/*.html')
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run
 ```
 
-Gibt die `grep`-Zeile nichts aus, sind alle Blöcke gültig.
+- **Prettier** formatiert HTML, CSS, JSON, Markdown, JS; PHP von Hand (kein `package.json`). Ein Formatierlauf ändert oft die Bytes vieler Deploy-Ziele, inhaltlich nichts.
+- **Block-Validierung:** Weicht Markup von `save()` ab, meldet der Editor „unerwarteten oder ungültigen Inhalt“. Ein Prozess für alle Dateien (der Parser lädt 2 s); `'data/*.html'` erfasst dank Gits `*` auch Unterverzeichnisse und die Header-/Footer-Dateien.
+- **Dry-Run:** Quellen vorhanden, Markup balanciert; fragt den Server nicht.
 
-## Die einzelnen Prüfungen
-
-### Formatierung
-
-```bash
-npx prettier --check .    # prüfen
-npx prettier --write .    # korrigieren
-```
-
-Prettier formatiert Block-HTML, CSS, JSON, Markdown und JS. Für PHP bräuchte es
-`@prettier/plugin-php` als installierte Abhängigkeit, und das Repo hat kein
-`package.json`; den PHP-Stil musst du also von Hand treffen.
-
-Ein Formatierlauf ändert die Bytes **aller** Deploy-Ziele, nicht nur die der
-bearbeiteten Datei, und der nächste Deploy schreibt dann alles neu. Inhaltlich
-ändert sich dabei nichts.
-
-### Block-Validierung
-
-Gutenberg vergleicht gespeichertes Markup mit dem, was der Block selbst erzeugen
-würde. Weicht es ab, meldet der Editor „Dieser Block enthält unerwarteten oder
-ungültigen Inhalt“, und wer nur einen Text ändern wollte, kommt dann nicht
-weiter. Der Validator-Aufruf im Kurzdurchlauf findet solche Blöcke vorher.
-
-`validate_blocks.cjs` nimmt beliebig viele Dateien und prüft sie in einem
-Prozess. Das Laden des Gutenberg-Parsers dauert rund zwei Sekunden, die Dateien
-selbst gehen schnell; ein Aufruf pro Datei bräuchte für den ganzen Baum über
-eine Minute. Für jede Datei steht eine Zeile `=== <datei>: N invalid` in der
-Ausgabe. Das Muster
-`'data/*.html'` ist Absicht: Gits `*` passt auch über Schrägstriche hinweg und
-erfasst damit alle Dateien im Baum. `'data/**/*.html'` würde
-`header_blocks.html` und `footer_blocks.html` verfehlen, die in keinem
-Unterverzeichnis liegen.
-
-### Generierte Dateien
-
-So prüfst du, ob die committeten generierten Dateien noch zu ihren Quellen
-passen (Details in `docs/tools.md`):
+## Generierte Dateien
 
 ```bash
-python3 tools/gen_map.py campus --check
-python3 tools/gen_map.py stadtgebiet --check
-python3 tools/gen_map.py stadtzentrum --check
-
+python3 tools/gen_map.py campus --check        # ebenso stadtgebiet, stadtzentrum
 npm install --prefix /tmp/phosphor @phosphor-icons/core@2.1.1 >/dev/null
 PHOSPHOR_ICON_DIR=/tmp/phosphor/node_modules/@phosphor-icons/core/assets/regular \
   python3 tools/gen_icon_css.py --check
 ```
 
-Erwartet: keine Ausgabe, Exit 0. Drift heißt, dass jemand eine generierte Datei
-von Hand bearbeitet oder eine Quelle geändert hat, ohne neu zu generieren.
+Drift heißt: Generiertes von Hand bearbeitet oder Quelle nicht neu generiert ([tools.md](tools.md)).
 
-### Der Tool-Code
+## Unittests in `tools/`
 
-Die Unittests der `tools/`-Skripte (Aufruf im Kurzdurchlauf, mit `-v` für jede
-Testzeile) brauchen kein Netz und kein Pillow, nur die Standardbibliothek:
+Nur Standardbibliothek:
 
-- `test_gen_map.py` prüft die Geometrie: Projektion, Kachelmathematik,
-  Pin-Platzierung. Es testet gegen `data/maps/campus.json` selbst und nicht
-  gegen eine Kopie. Eine abgeschriebene Fixture würde unbemerkt von der echten
-  Karte abweichen, und die Tests prüften dann Pins, die es nicht mehr gibt.
-- `test_map_data.py` prüft die committeten Kartendaten. Eine Kartendatei kann
-  syntaktisch fehlerfrei und trotzdem unbrauchbar sein, etwa mit einem Pin
-  außerhalb des Bildes oder einem Render, der so groß ist, dass WordPress ihn
-  beim Upload herunterrechnet. Dann zeigt die `source_url` nicht mehr auf das
-  Bild, das wir gebaut haben. Beides fängt diese Datei ab.
-- `test_content.py` prüft das Block-HTML aller Deploy-Ziele auf das, was der
-  Gutenberg-Validator durchlässt: interne Links und Anker, die es nicht gibt;
-  Linktexte wie „Zur Seite“ oder gleicher Text mit verschiedenen Zielen; Block-
-  JSON, das etwas anderes sagt als das `style`-Attribut daneben (der Editor
-  übernimmt beim nächsten Öffnen den JSON-Wert, und die Seite sieht plötzlich
-  anders aus); unbalancierte Tags; `stuv-`-Klassen, die `component.css` nicht
-  kennt; Kontaktadressen, die nicht in der Liste `CONTACTS` stehen (ein
-  vertippter Instagram-Name oder eine falsche Krisennummer fällt so auf); und
-  den Krisenhinweis, der auf Kummer Karsten vor dem Formular stehen muss. Eine
-  neue Kontaktadresse trägst du dort in `CONTACTS` ein.
-- `test_styles.py` rechnet die Farbtoken aus `component.css` und
-  `global-styles.json` so aus wie der Browser und prüft die Kontraste, die
-  Besucher sehen: Text auf Seite, Band und Karte, Fokusring, Formularränder,
-  hell und dunkel. Dazu Regeln für `component.css` selbst: kein
-  `outline: none`, Fokus als Outline statt Schatten (den entfernt der
-  Windows-Kontrastmodus), ein Fokusring auf der Karte für jede Klasse eines
-  kartenfüllenden Links, keine abgeschnittenen Texte mit `…`.
+- `test_gen_map.py`: Projektion, Kacheln, Pins, gegen das echte `data/maps/campus.json`.
+- `test_map_data.py`: Pins im Bild, Render unter WordPress' Herunterrechnen-Grenze.
+- `test_content.py`: interne Links und Anker, nichtssagende oder mehrdeutige Linktexte, Block-JSON gegen `style`-Attribut, Tag-Balance, unbekannte `stuv-`-Klassen, Kontakte außerhalb von `CONTACTS` (neue dort eintragen), Krisenhinweis vor dem Formular auf Kummer Karsten.
+- `test_styles.py`: Kontraste (Text, Fokusring, Formularränder; hell und dunkel), kein `outline: none`, Fokus als Outline, Fokusring für jede Kartenlink-Klasse, kein Abschneiden mit `…`.
 
-### Der Skill
-
-Die Tests des Deploy-Toolings brauchen als Einzige in diesem Repo Pakete
-außerhalb der Standardbibliothek: `pytest` und `flask`, Letzteres für einen
-nachgebauten WordPress-Server, gegen den `deploy.py` und der REST-Client
-schreiben. Am einfachsten in einer virtuellen Umgebung:
+## Skill und Plugins
 
 ```bash
 cd .agents/skills/wordpress-default-editor
-python3 -m venv .venv && .venv/bin/pip install -r tests/requirements.txt
+python3 -m venv .venv && .venv/bin/pip install -r tests/requirements.txt   # pytest, flask
 .venv/bin/python -m pytest -q
-```
+cd -
 
-### Die Plugins
-
-Ohne Abhängigkeiten, ohne Netz, ohne WordPress:
-
-```bash
 php wp-plugin/tests/test_normalize.php
 php wp-plugin/tests/test_cache.php
 php wp-plugin/tests/test_theme.php
@@ -137,115 +54,43 @@ php wp-plugin/tests/test_ics.php
 TZ=America/Los_Angeles node --test 'wp-plugin/tests/*.test.js'
 ```
 
-Die Zeitzone ist Absicht. Speiseplan und Terminliste rechnen in Europe/Berlin,
-und der Test soll zeigen, dass das auch stimmt, wenn die Maschine woanders
-steht: Um 00:30 Uhr Berliner Zeit muss ein Besucher in Los Angeles den richtigen
-Berliner Tag sehen. In der eigenen Zeitzone ausgeführt, beweist der Test nichts.
+Die fremde Zeitzone ist Absicht: Der Berliner Tag muss überall stimmen. Die JSON-Fixtures in `wp-plugin/tests/fixtures/` sind Mitschnitte von `api.dhbw.app` und bleiben Byte für Byte (`.prettierignore`); `events.ics` ist von Hand geschrieben (der echte Kalender enthält persönliche Daten), ein Termin je Fall.
 
-Die JSON-Fixtures in `wp-plugin/tests/fixtures/` sind mitgeschnittene Antworten
-von `api.dhbw.app`. Sie stehen in `.prettierignore` und müssen Byte für Byte
-unverändert bleiben, sonst sind sie keine Aufzeichnung mehr. `events.ics`
-daneben ist von Hand geschrieben: Der echte Kalender enthält Namen und
-E-Mail-Adressen, und jeder Fall, den `inc/ics.php` behandelt (Serie mit
-`EXDATE`, verschobener und abgesagter Einzeltermin, ganztägig über mehrere Tage,
-unbekannte Regel …), steht darin als eigener Termin.
+`stuv-theme` und `stuv-dsgvo` sind sonst Browser-Code. `stuv-dsgvo` von Hand prüfen, mit Plugin, ohne Plugin und ohne JavaScript: nie ein leerer Kasten, beim Seitenaufbau keine Anfrage an `calendar.google.com` (Netzwerk-Tab). Dann: laden, neu laden (lädt direkt), „Nicht mehr automatisch laden“, neu laden (Platzhalter, keine Anfrage). Im privaten Fenster mit blockiertem Speicher: jedes Mal fragen, keine Exception.
 
-`test_theme.php` deckt die Jahreszahl im Copyright der Fußzeile ab, die
-`stuv-theme` beim Ausliefern aktualisiert. Der Rest von `stuv-theme` und
-`stuv-dsgvo` ist Browser-Code, den du von Hand prüfst. `stuv-dsgvo` testest du dreimal: mit
-aktivem Plugin (Platzhalter, ein Klick lädt den Kalender), mit deaktiviertem
-Plugin und mit abgeschaltetem JavaScript. In keinem der drei Fälle darf ein
-leerer Kasten stehen bleiben oder beim Seitenaufbau eine Anfrage an
-`calendar.google.com` gehen (Netzwerk-Tab der Entwicklerwerkzeuge).
+## Nach dem Deploy
 
-Ein vierter Durchgang prüft die gespeicherte Zustimmung: Kalender laden, die
-Seite neu laden (der Kalender lädt jetzt direkt), unter dem Kalender „Nicht
-mehr automatisch laden“ klicken und neu laden. Dann muss der Platzhalter zurück
-sein, und beim Seitenaufbau darf wieder nichts an `calendar.google.com` gehen.
-Danach dasselbe in einem privaten Fenster mit blockiertem Speicher: Dort fragt
-die Seite jedes Mal neu, aber in der Konsole darf keine Exception erscheinen.
+`deploy.py` liest jedes Ziel zurück und prüft nach `global-styles` die `markers` und den `icon_marker` aus `data/manifest.json` (eine neue, gefährdete Komponente bekommt dort einen Marker). Stand aller Ziele, auch ohne Deploy:
 
-### Der Dry-Run
+```bash
+python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
+  --manifest data/manifest.json        # --diff zeigt Unterschiede, --history BEHIND/EDITED
+```
 
-Der Dry-Run (Aufruf im Kurzdurchlauf) prüft, ob die Quelldateien vorhanden sind, ob das Block-Markup
-balanciert ist, und zeigt die Bytezahlen. Er kontaktiert den Server **nicht**
-und vergleicht nichts mit dem, was dort liegt; deshalb läuft er auch in
-`checks.yml` bei jedem Push mit. Ein sauberer Dry-Run heißt also,
-dass die Dateien hochladbar sind; ob das Ergebnis richtig aussieht, sagt er
-nicht. Ob eine Page-ID zur gemeinten Seite gehört, zeigt erst die Prüfung nach
-dem echten Deploy.
+Exit 0 gleich, 1 Drift, 2 nicht abrufbar, 3 `EDITED`. Es liest die REST-API, nicht den WP-Optimize-Cache.
 
-### Nach jedem Deploy
+Die Prüfungen lesen nur Quelltext. Nach jeder Layout-Änderung die Seite ansehen: hell **und** dunkel, 360px breit (kein seitliches Scrollen, Buttons berühren sich nicht), einmal mit Tab durch (jeder Link und jede Karte zeigt einen Ring).
 
-`deploy.py` liest jedes Ziel gleich nach dem Schreiben zurück und bricht ab,
-wenn es nicht mit der Quelle übereinstimmt. Für den Stand aller Ziele, auch
-ohne Deploy:
+## Rollback
+
+```bash
+python3 .agents/skills/wordpress-default-editor/scripts/rollback.py <id> --endpoint pages
+python3 .agents/skills/wordpress-default-editor/scripts/rollback.py --media <dateiname>
+```
+
+Backups liegen unter `/tmp/wp_backup/<site-slug>/` (Bilder in `media/`); nach einem Action-Deploy im Artefakt `wp-backup-<Nummer>`, entpackt nach `/tmp/wp_backup/` nutzbar, wenn `WP_SITE` gleich lautet. Oft einfacher: `git revert` und neu deployen.
+
+## Überwachung
+
+Die Action **Monitor** (`monitor.yml`, Environment `monitor`) liest nur; von Hand gestartet laufen alle Prüfungen.
+
+- Täglich `verify_deploy.py --history`: `EDITED` scheitert, `BEHIND` warnt (undeployte Commits).
+- Täglich `tools/check_plugins.py`: jedes Plugin installiert, aktiv, gleiche Version.
+- Täglich `tools/site_state.py`: wp-admin-Stand gegen `data/site-state.json`. Gewollte Änderung: `tools/site_state.py --write` und committen; sonst in wp-admin zurücksetzen.
+- Montags `tools/check_links.py`: `BROKEN` scheitert, `WARN` und `MOVED` sind Hinweise.
 
 ```bash
 source .env
-python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
-  --manifest data/manifest.json
-```
-
-`verify_deploy.py` holt jedes Deploy-Ziel über die REST-API und vergleicht es
-mit seiner Quelle im Repo. Nur dieser Vergleich belegt, dass die Site ausliefert,
-was hier steht. Exit 0 heißt, alles stimmt überein; 1 heißt Drift, 2 heißt, ein
-Ziel ließ sich nicht abrufen. Mit `--diff` siehst du, was sich unterscheidet.
-Mit `--history` sucht es den Live-Stand eines abweichenden Ziels in der
-Git-Historie: `BEHIND` heißt, die Seite zeigt einen älteren Commit (die
-Ausgabe nennt ihn) oder ist leer, etwa eine neu angelegte; `EDITED` heißt, kein Commit hatte diesen Stand, er wurde
-also in wp-admin geändert (Exit 3). Über ein `EDITED`-Ziel schreibt `deploy.py`
-nur mit `--overwrite`.
-Den Page-Cache von WP-Optimize umgeht das Skript, weil es die REST-API liest und
-nicht das Frontend.
-
-### Nach dem `global-styles`-Deploy
-
-WordPress' REST-Sanitizer kann Teile des Custom-CSS entfernen. Deshalb prüft
-`deploy.py` nach jedem `global-styles`-Deploy, ob die `markers` und der
-`icon_marker` des Ziels in `data/manifest.json` noch im gespeicherten CSS
-stehen (`verify_global_css.py`, Erklärung in `docs/tools.md`). Eine neue
-Komponente, deren Regeln verloren gehen könnten, bekommt dort einen Marker.
-
-## Überwachung zwischen den Deploys
-
-Die Action **Monitor** (`.github/workflows/monitor.yml`) liest die Live-Site,
-ohne etwas zu schreiben. Sie läuft im Environment `monitor`, ohne Freigabe
-(Einrichtung in `docs/ai-workflow.md`), und lässt sich unter **Actions →
-Monitor → Run workflow** auch von Hand starten; dann laufen alle Prüfungen.
-
-Täglich:
-
-- `verify_deploy.py --history`: Ein Ziel, das in wp-admin geändert wurde
-  (`EDITED`), lässt den Lauf scheitern. So fällt die Änderung am Tag danach auf
-  und nicht erst beim nächsten Deploy, der dann abbricht. `BEHIND` gibt nur
-  eine Warnung: Auf `main` liegen Commits, die noch niemand deployt hat.
-- `tools/check_plugins.py`: Jedes Plugin aus `wp-plugin/` muss installiert,
-  aktiv und in derselben Version sein. Ein vergessener Zip-Upload fällt sonst
-  niemandem auf.
-- `tools/site_state.py` vergleicht, was nur in wp-admin eingestellt wird, mit
-  `data/site-state.json`: Einstellungen, Theme, aktive Plugins, Seiten (Titel,
-  Slug, Status, Template), Dateien der Mediathek, die nicht in `data/media/`
-  liegen (in wp-admin hochgeladen oder im Repo gelöscht), die SEO-Angaben jeder
-  Seite (Titel, Beschreibung, Vorschaubild) und die Felder der beiden
-  Formulare. Bei einer Abweichung zeigt das Log den Diff. War die Änderung
-  gewollt, `python3 tools/site_state.py --write` ausführen und die Datei
-  committen; sonst die Einstellung in wp-admin zurücksetzen. Deployt wird die
-  Datei nie, und E-Mail-Adressen stehen absichtlich nicht darin, weil das Repo
-  öffentlich ist (`docs/architecture.md`).
-
-Montags:
-
-- `tools/check_links.py` ruft jeden externen Link der Seiten einmal auf.
-  `BROKEN` (404, 410, eine Domain ohne DNS-Eintrag, ein ungültiges Zertifikat,
-  jeweils auch beim zweiten Versuch) lässt den Lauf scheitern; `WARN` (etwa 403
-  von einem Bot-Schutz oder ein Timeout) und `MOVED` (Link landet auf einer
-  anderen Domain) sind Hinweise. Instagram, WhatsApp, Google Maps und der
-  Abo-Link des Kalenders lassen sich so nicht prüfen und werden übersprungen.
-
-Alle drei laufen auch lokal, die ersten beiden nach `source .env`:
-
-```bash
 python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
   --manifest data/manifest.json --history
 python3 tools/check_plugins.py
@@ -253,39 +98,4 @@ python3 tools/site_state.py
 python3 tools/check_links.py
 ```
 
-Scheitert ein geplanter Lauf, schickt GitHub eine Mail an die Person, die den
-Zeitplan in `monitor.yml` zuletzt geändert hat. In einem öffentlichen Repo
-schaltet GitHub geplante Workflows nach 60 Tagen ohne Commit ab; dann unter
-**Actions → Monitor** wieder einschalten.
-
-## Was keine dieser Prüfungen sieht
-
-Die Prüfungen oben lesen Quelltext; gerendert wird nichts. Kontraste rechnet
-`test_styles.py` aus, aber ob die Seite gut aussieht und auf ein Handy passt,
-zeigt nur die gerenderte Seite. Nach jeder Änderung am Layout:
-
-- Seite aufrufen, hell **und** dunkel.
-- Das Fenster auf 360px Breite ziehen: Nichts darf seitlich scrollen, Buttons
-  stehen untereinander und berühren sich nicht.
-- Einmal mit der Tab-Taste durch die Seite: Jeder Link, auch jede ganze Karte,
-  zeigt einen sichtbaren Ring.
-
-Wenn etwas schiefgegangen ist:
-
-```bash
-python3 .agents/skills/wordpress-default-editor/scripts/rollback.py <id> \
-  --endpoint pages
-```
-
-Vor jedem Schreibvorgang legt der Client ein Backup unter
-`/tmp/wp_backup/<site-slug>/` ab. Für ein Bild, das `replace_media()` unter
-derselben URL ersetzt hat, liegt die alte Datei unter
-`/tmp/wp_backup/<site-slug>/media/`; zurück kommt sie mit
-`rollback.py --media <dateiname>`. Ein neu hochgeladenes Bild, das vorher nicht
-in der Mediathek war, braucht kein Backup: Die Datei liegt in `data/media/`.
-
-Nach einem Deploy über die Action liegen die Backups im Artefakt
-`wp-backup-<Nummer>` des Laufs. Entpackt nach `/tmp/wp_backup/` findet
-`rollback.py` sie, sofern `WP_SITE` in der `.env` genau so lautet wie in der
-Action. Meist einfacher: den Commit mit `git revert` zurücknehmen und die Action
-erneut starten.
+Fehlschläge mailt GitHub an die Person, die den Zeitplan zuletzt geändert hat. Nach 60 Tagen ohne Commit schaltet GitHub geplante Workflows ab; unter **Actions → Monitor** wieder einschalten.

@@ -1,341 +1,81 @@
 # Plugins
 
-Vier WordPress-Plugins liegen in `wp-plugin/`: `stuv-mensa` (Live-Speiseplan),
-`stuv-events` (Terminliste aus dem Google-Kalender), `stuv-theme`
-(Dark-Mode-Umschalter) und `stuv-dsgvo` (Klick-zum-Laden für den
-Kalender-Embed). Jedes davon macht etwas, das Block-HTML und CSS allein nicht
-können.
+`wp-plugin/` ist die Quelle; Änderungen auf dem Server gehen beim nächsten Upload verloren. Fällt ein Plugin aus, fehlt nur seine Funktion, ohne toten Button oder Fehlermeldung.
 
-`wp-plugin/` ist die Quelle der Wahrheit. Die Kopien auf dem Server sind
-Artefakte; wer sie dort direkt bearbeitet, verliert die Änderung beim nächsten
-Upload.
+| Plugin        | Zweck                         | Ohne Plugin                                   |
+| ------------- | ----------------------------- | --------------------------------------------- |
+| `stuv-mensa`  | Live-Speiseplan               | Speiseplan fehlt auf Studentenleben           |
+| `stuv-events` | Nächste Termine als Liste     | Hinweis auf den Kalender                      |
+| `stuv-theme`  | Dark-Mode-Umschalter          | immer hell, kein Schalter                     |
+| `stuv-dsgvo`  | Kalender lädt erst nach Klick | kein Kalender, stattdessen ein Link zu Google |
 
-| Plugin        | Zweck                         | Bei Deaktivierung                                     |
-| ------------- | ----------------------------- | ----------------------------------------------------- |
-| `stuv-mensa`  | Live-Speiseplan der Mensa     | Speiseplan verschwindet von der Studentenleben-Seite  |
-| `stuv-events` | Nächste Termine als Liste     | Statt der Liste steht ein Hinweis auf den Kalender    |
-| `stuv-theme`  | Dark-Mode-Umschalter          | Seite friert im Hellmodus ein, Schalter verschwindet  |
-| `stuv-dsgvo`  | Kalender lädt erst nach Klick | Kalender verschwindet, stattdessen ein Link zu Google |
+JavaScript gehört in ein Plugin, nie in Block-HTML: `<script>` übersteht den REST-Schreibvorgang nur dank `unfiltered_html` und verschwände bei jeder Härtung kommentarlos. Normale Plugins statt `mu-plugins`, weil es keinen Shell-Zugang gibt.
 
-Fällt ein Plugin aus, fehlt nur seine Funktion. Es bleibt kein toter Button und
-keine Fehlermeldung zurück.
-
-## Warum überhaupt Plugins
-
-Plugins gehen nicht über die Content-REST-API, also deployt `deploy.py` sie
-auch nicht.
-
-Ein `<script>` direkt in einem Block würde heute funktionieren: Auf diesem
-Server ist `unfiltered_html` aktiv, Skript-Tags in Block-Inhalten überstehen den
-REST-Schreibvorgang also. Das gilt aber nur, solange der Deploy-Benutzer
-Administrator ist und niemand `DISALLOW_UNFILTERED_HTML` setzt. Jede Härtung des
-Servers würde die Skripte ohne Fehler und ohne Warnung entfernen. JavaScript
-gehört deshalb in ein Plugin mit ordentlichem Enqueue, nie in Block-HTML.
-
-Es sind normale Plugins und keine `mu-plugins` (must-use, laden automatisch und
-lassen sich nicht deaktivieren), weil es keinen Shell-Zugang zum Host gibt und
-man ohne ihn nicht nach `wp-content/mu-plugins/` kommt. Mit SSH wäre der Umzug
-dorthin eine Verbesserung, die keine Code-Änderung bräuchte.
-
-## Builden und installieren
+## Bauen und installieren
 
 ```bash
-./wp-plugin/build.sh              # alle builden
-./wp-plugin/build.sh stuv-mensa   # nur eines
+./wp-plugin/build.sh              # alle, oder: ./wp-plugin/build.sh stuv-mensa
 ```
 
-Ergebnis: `wp-plugin/<plugin>.zip` (git-ignoriert, es ist ein Artefakt).
+`wp-plugin/<plugin>.zip` in wp-admin → Plugins → Installieren → **Plugin hochladen**, Ersetzen bestätigen. Eine neue Version ändert Header-`Version` und `STUV_*_VERSION` zusammen (die Konstante ist Cache-Buster der JS-Datei; `tools/test_plugins.py` prüft es). Hängt Inhalt am Plugin: erst ZIP, dann Deploy.
 
-Installation: wp-admin → Plugins → Installieren → **Plugin hochladen** → Zip
-auswählen → Aktivieren. Bei einem Update fragt WordPress, ob die vorhandene
-Version ersetzt werden soll; das bestätigst du.
+## `stuv-mensa`
 
-## `stuv-mensa`: der Speiseplan
+`api.dhbw.app` sendet keine CORS-Header, also holt WordPress den Plan und liefert ihn unter `/wp-json/stuv/v1/mensa` aus; Gerichtsbilder kommen über `/wp-json/stuv/v1/mensa/image/<id>`, damit upstream keine Besucher-IP sieht. Nur Ids aus dem aktuellen Plan werden ausgeliefert; `stuv_mensa_safe_image_type()` lässt nur Rasterbilder durch (kein SVG, sonst `application/octet-stream`, dazu `nosniff`).
 
-Der Speiseplan kommt von `api.dhbw.app`. Der Browser kann diese API nicht
-direkt aufrufen: Sie sendet keine CORS-Header, und die Same-Origin-Policy
-blockiert den Aufruf. Das Plugin holt die Daten deshalb serverseitig und
-liefert sie von der eigenen Domain aus:
+Cache (`inc/cache.php`, Laufzeiten oben in `stuv-mensa.php`): kalt wird geholt; abgelaufen holt genau ein Request (Sperre 60 s), alle anderen bekommen den alten Stand, auch wenn upstream ausfällt. `dropPastDays()` in `mensa.js` wirft vergangene Tage weg; bleibt nichts, steht „Zurzeit ist kein Speiseplan verfügbar.“ `inc/normalize.php` fängt ab, dass upstream lokale Mitternacht als UTC stempelt; das Allergen-Feld ist immer leer.
 
-```
-Browser  →  /wp-json/stuv/v1/mensa  →  WordPress  →  api.dhbw.app
-         ←        JSON              ←   (Cache)    ←
-```
+Fehlt der Speiseplan spurlos, liefert meist `/wp-json/` 404 (Permalinks neu speichern, [content-editing.md](content-editing.md)); `mensa.js` bricht dann still ab.
 
-Zwei öffentliche, nur lesende REST-Routen:
+## `stuv-events`
 
-| Route                               | Zweck                                      |
-| ----------------------------------- | ------------------------------------------ |
-| `/wp-json/stuv/v1/mensa`            | der normalisierte Speiseplan               |
-| `/wp-json/stuv/v1/mensa/image/<id>` | Gerichtsbild, durchgereicht statt verlinkt |
+Startseite (4 Termine) und Events-Seite (8) zeigen die nächsten Termine aus dem öffentlichen Google-Kalender. Der Server holt den iCal-Feed (`STUV_EVENTS_FEED`), Besucher laden nichts von Google, also braucht es keine Einwilligung. Route `/wp-json/stuv/v1/events`, Cache wie bei `stuv-mensa` (30 min frisch), Antwort höchstens 2 MB.
 
-Die Bild-Route streamt das Bild durch den Server, damit `api.dhbw.app` keine
-Besucher-IP sieht. Bei den Karten gilt dieselbe Überlegung (`docs/tools.md`).
+`inc/ics.php` rechnet Serien aus: `DAILY`, `WEEKLY`, `MONTHLY` (selber Tag oder n-ter Wochentag), `YEARLY`, mit `INTERVAL`, `COUNT`, `UNTIL`, `EXDATE` und `RECURRENCE-ID`. Andere Regeln zeigen nur den ersten Termin; abgesagte fehlen. Ort: `LOCATION` bis zum ersten Komma, nie als Link. Die Antwort enthält die nächsten 120 Tage, höchstens 40 Termine und drei je Serie; `events.js` zeigt jede Serie einmal und verwirft Vergangenes. Der Browser parst keinen Zeitstempel (Berliner Uhrzeit als Text, fertige Beschriftungen).
 
-Weil so fremde Bytes von der eigenen Domain kommen, prüft
-`stuv_mensa_safe_image_type()` den `Content-Type` von upstream beim Cachen und
-noch einmal bei jeder Auslieferung. Alles, was kein `image/*` ist, geht als
-`application/octet-stream` raus, dazu `X-Content-Type-Options: nosniff`.
-`image/svg+xml` ist trotz `image/*` ausgeschlossen, weil ein direkt aufgerufenes
-SVG eigenes Skript im Kontext dieser Domain ausführen würde. Die Id-Allowlist
-bleibt die erste Verteidigungslinie, soll aber nicht die einzige sein.
+Markup: `<div data-stuv-events data-stuv-events-limit="4">` mit sichtbarem `.stuv-events-fallback`, in `data/sections/02-was-wir-bieten.html` und `data/pages/events/02-upcoming.html`; Styles `.stuv-event*`.
 
-> **Wenn der Speiseplan spurlos verschwindet:** Das Plugin gibt die
-> Endpunkt-URL per `rest_url()` an das Skript weiter. Liefert `/wp-json/`
-> gerade 404, etwa weil die Rewrite-Regeln fehlen, zeigt auch diese URL ins
-> Leere, und `mensa.js` bricht absichtlich ohne Meldung ab: Die Seite wirkt
-> normal, nur der Speiseplan fehlt. Prüfe in diesem Fall zuerst mit dem `curl`
-> unten und behebe es wie in `docs/content-editing.md` unter
-> „Voraussetzungen“; danach erscheint der Speiseplan wieder.
+## `stuv-theme`
 
-### Der Cache
+Ein Inline-Skript im `<head>` setzt `.dark` auf `<html>` (aus `localStorage['stuv-theme']`, sonst `prefers-color-scheme`), bevor die Seite erscheint. Der Schalter ist ein `<details>`-Menü (Hell, Dunkel, System): Das Icon zeigt das sichtbare Thema, ein Haken den Modus; Escape und Klick außerhalb schließen es. `.stuv-theme-ready` macht den Schalter erst sichtbar.
 
-Die Regeln aus `inc/cache.php`:
+| Teil   | Ort                                          | Deploy          |
+| ------ | -------------------------------------------- | --------------- |
+| Logik  | `wp-plugin/stuv-theme/stuv-theme.php`        | ZIP             |
+| Styles | `:root.dark` in `data/styles/component.css`  | `global-styles` |
+| Markup | `wp:html`-Block in `data/header_blocks.html` | `header`        |
 
-- Kalter Cache: holen. Die ersten Besucher warten, bekommen aber Daten.
-- Warmer Cache, abgelaufen, und ein anderer Request holt gerade: den alten
-  Stand ausliefern. Niemand wartet, und die Upstream-API bekommt eine einzige
-  Anfrage statt hunderter. Das ist der „Stampede“-Schutz, eine Sperre, die nach
-  60 Sekunden von selbst verfällt.
+Außerdem:
 
-Ein Speiseplan, der ein paar Minuten alt ist, stört weniger als ein hängender
-Seitenaufbau. Die Laufzeiten stehen als Konstanten oben in `stuv-mensa.php`
-(`STUV_MENSA_TTL` und Verwandte).
+- **Apple-Touch-Icon:** iOS füllt das transparente Favicon schwarz, also verweist das Plugin auf `stuv-dhbw-apple-touch-icon.png`, sobald es hochgeladen ist. Erzeugt mit:
 
-Eine Obergrenze für das Alter gibt es nicht: Fällt `api.dhbw.app` länger aus,
-liefert das Plugin weiter den alten Stand. Damit daraus keine Falschauskunft
-wird, wirft `dropPastDays()` in `mensa.js` beim Rendern alle Tage weg, die
-schon vorbei sind; sonst stünde ein vergangener Montag als „Nächster
-Speiseplan“ da. Bleibt nichts übrig, zeigt die Seite den Endzustand „Zurzeit
-ist kein Speiseplan verfügbar.“
+  ```bash
+  rsvg-convert -w 132 -h 132 data/media/.stuv-dhbw-favicon.svg |
+    magick - -background white -gravity center -extent 180x180 -alpha off \
+      -strip PNG24:data/media/stuv-dhbw-apple-touch-icon.png
+  ```
 
-### Beim Ändern beachten
+- **Copyright-Jahr:** ersetzt das erste Jahr nach `©` in einem Absatz `.stuv-copyright` durch das aktuelle; ohne Plugin bleibt das gespeicherte. `tools/test_content.py` verlangt die Klasse. Der WP-Optimize-Cache zeigt das alte Jahr, bis er abläuft.
+- **Button-Stil `overlay`** („Auf Farbfläche“) im Editor; das Aussehen steht in `component.css`.
 
-Die Version steht an zwei Stellen, im Plugin-Header und in
-`STUV_MENSA_VERSION`, und beide müssen übereinstimmen: Die Konstante hängt als
-Cache-Buster an `assets/mensa.js`. Wer nur eine erhöht, liefert neues PHP mit
-altem JavaScript aus. Dasselbe gilt für die anderen Plugins;
-`tools/test_plugins.py` prüft es für alle.
+## `stuv-dsgvo`
 
-Zwei Eigenheiten der Upstream-API fängt die Normalisierung
-(`inc/normalize.php`) ab. Beide sind keine Bugs:
+Der Google-Kalender (Events, „Monatsansicht“) lädt erst nach Klick auf „Kalender laden“. Die `<iframe>`s haben nur `data-stuv-src`, kein `src`; ohne Plugin oder JS geht also nie eine Anfrage an Google. `component.css` versteckt `iframe[data-stuv-src]`, ein sichtbarer `.stuv-dsgvo-fallback`-Link bleibt, bis das Plugin übernimmt (`.stuv-dsgvo-ready`).
 
-- Die API stempelt Daten als lokale Mitternacht in UTC.
-- Das Allergen-Feld ist immer leer.
+Die Zustimmung bleibt in `localStorage['stuv-dsgvo-calendar']`. Deshalb steht unter jedem geladenen Kalender **immer** sichtbar „Nicht mehr automatisch laden“ (`.stuv-dsgvo-revoke`): Widerruf so einfach wie Zustimmung. Er ersetzt das `<iframe>` durch einen Klon ohne `src`. Blockiertes `localStorage` heißt nur: jedes Mal fragen.
 
-## `stuv-events`: die Terminliste
+Das Skript lädt nur, wenn der Seiteninhalt `data-stuv-src` enthält (`stuv_dsgvo_has_embed()`); ein Embed in Template-Part, Widget oder wiederverwendbarem Block würde nie laden, dann die Prüfung entfernen. Markup: `data/pages/events/02-upcoming.html`.
 
-Startseite („Anstehende Events“, vier Termine) und Events-Seite (acht Termine)
-zeigen die nächsten Termine aus dem öffentlichen StuV-Google-Kalender als
-Liste. Den Kalender holt der Server über dessen öffentliche iCal-Adresse
-(`STUV_EVENTS_FEED` in `stuv-events.php`), nicht der Browser. Besucher laden
-also nichts von Google, und die Liste braucht keine Einwilligung und keinen
-Klick. Der Google-Embed mit Klick-zum-Laden (`stuv-dsgvo`) bleibt auf der
-Events-Seite unter „Monatsansicht“.
+Offen: Die AStA-Datenschutzerklärung (`legal.dhbw-asta.de`, außerhalb dieses Repos) nennt Google Kalender nicht.
 
-```
-Browser  →  /wp-json/stuv/v1/events  →  WordPress  →  calendar.google.com (.ics)
-         ←        JSON               ←   (Cache)    ←
-```
-
-Der Cache folgt denselben Regeln wie bei `stuv-mensa` (30 Minuten frisch, danach
-alter Stand plus eine einzige Anfrage nach oben, Sperre 60 Sekunden). Die
-Antwort ist auf 2 MB begrenzt; kommt kein Kalender zurück, bleibt der alte Stand.
-
-`inc/ics.php` liest den Kalender und rechnet Serien aus. Unterstützt sind
-`DAILY`, `WEEKLY` (auch mit mehreren Tagen), `MONTHLY` am selben Tag oder an
-einem n-ten Wochentag (`BYDAY=1TU`, `-1FR`) und `YEARLY` am selben Datum, jeweils
-mit `INTERVAL`, `COUNT` und `UNTIL`, dazu `EXDATE` und verschobene oder abgesagte
-Einzeltermine (`RECURRENCE-ID`). Eine Regel mit anderen Teilen (`BYSETPOS`,
-`BYMONTH` …) erscheint nur mit ihrem ersten Termin: Ein fehlender Termin fällt
-auf, ein falsch berechneter nicht. Abgesagte Termine (`STATUS:CANCELLED`)
-fehlen. Als Ort steht nur der erste Teil von `LOCATION` vor dem ersten Komma; ein
-Link (Google Meet) wird nicht gezeigt.
-
-Die Antwort enthält alle Termine der nächsten 120 Tage, höchstens 40 und höchstens
-drei je Serie. `assets/events.js` wirft beim Anzeigen weg, was inzwischen vorbei
-ist, und zeigt jede Serie nur einmal, mit ihrem nächsten Termin. Sonst stünde das
-montägliche Hochschulsport-Training viermal in einer Liste mit vier Plätzen. Wie
-bei `stuv-mensa` parst der Browser keinen Zeitstempel: Die Route liefert
-Berliner Uhrzeit als Text (`2026-10-28T19:30`) und fertige deutsche Beschriftungen.
-
-Im Block-HTML steht ein `<div data-stuv-events data-stuv-events-limit="4">` mit
-einem sichtbaren Hinweistext (`.stuv-events-fallback`), der auf den Kalender
-verweist. Das Skript ersetzt ihn durch die Liste oder durch „Gerade stehen keine
-Termine im Kalender.“; schlägt der Abruf fehl oder ist das Plugin aus, bleibt der
-Hinweis stehen.
-
-| Teil   | Ort                                                                                                     |
-| ------ | ------------------------------------------------------------------------------------------------------- |
-| Logik  | `wp-plugin/stuv-events/` (`inc/ics.php` ohne WordPress, getestet in `wp-plugin/tests/test_ics.php`)     |
-| Styles | die `.stuv-event*`-Regeln in `data/styles/component.css`                                                |
-| Markup | die `wp:html`-Blöcke in `data/sections/02-was-wir-bieten.html` und `data/pages/events/02-upcoming.html` |
-
-```bash
-HOST="$(printf '%s' "$WP_SITE" | sed -E 's#^https?://##')"
-curl -sS -A "stuv-check/1.0" "https://$HOST/wp-json/stuv/v1/events" | head -c 300
-```
-
-## `stuv-theme`: der Dark Mode
-
-Das Plugin druckt ein Inline-`<script>` in den `<head>`, das `.dark` auf
-`<html>` setzt, und zwar nach `localStorage['stuv-theme']`, ersatzweise nach der
-Betriebssystem-Einstellung (`prefers-color-scheme`). Danach behandelt es Klicks
-auf `.stuv-theme-option` per Event-Delegation vom `document` aus.
-
-Der Schalter in der Kopfzeile ist ein `<details>`-Aufklappmenü mit drei Zeilen:
-Hell, Dunkel und System. Das Icon am Schalter zeigt das Thema, das gerade zu
-sehen ist, also Sonne oder Mond; im System-Modus hängt das von der
-Betriebssystem-Einstellung ab. Den eingestellten Modus markiert ein Haken neben
-der aktiven Zeile. Escape und ein Klick außerhalb schließen das Menü. Beides
-erledigt das Plugin, weil `<details>` es nicht von sich aus kann.
-
-Das Skript steht inline im `<head>`, weil die Klasse vor dem ersten Bildaufbau
-gesetzt sein muss. Sonst sieht ein Dark-Mode-Besucher kurz eine weiße Seite
-aufblitzen, und eine extern geladene Datei käme dafür zu spät. Technisch läuft
-das über ein `wp_register_script`-Handle ohne `src` plus
-`wp_add_inline_script`.
-
-Das Skript setzt außerdem `.stuv-theme-ready` auf `<html>`, und erst diese
-Klasse macht den Schalter sichtbar; `component.css` versteckt
-`.stuv-theme-switch` standardmäßig. Ist das Plugin deaktiviert oder JavaScript
-aus, erscheint gar kein Schalter, also auch kein toter.
-
-Die drei Teile liegen an drei Orten, und wer einen ändert, muss die anderen
-kennen:
-
-| Teil   | Ort                                                   |
-| ------ | ----------------------------------------------------- |
-| Logik  | `wp-plugin/stuv-theme/stuv-theme.php`                 |
-| Styles | der `:root.dark`-Block in `data/styles/component.css` |
-| Markup | der `wp:html`-Block in `data/header_blocks.html`      |
-
-Nur der erste Teil ist ein Plugin-Upload; die anderen beiden sind normale
-Deploys (`global-styles` bzw. `header`).
-
-### Das Apple-Touch-Icon
-
-Nebenbei tauscht das Plugin das Apple-Touch-Icon aus. Das Website-Icon in
-WordPress ist ein einziges Bild für alle Größen, also liefert WordPress das
-transparente `stuv-dhbw-favicon.png` auch an iOS aus, und iOS füllt
-Transparenz mit Schwarz. Der Filter auf `site_icon_meta_tags` verweist
-stattdessen auf `stuv-dhbw-apple-touch-icon.png` (180 × 180, weißer
-Hintergrund, kommt mit dem `media`-Deploy). Liegt die Datei noch nicht in den
-Uploads, bleibt der Tag von WordPress stehen, damit kein Link ins Leere zeigt.
-
-Erzeugt aus `.stuv-dhbw-favicon.svg`:
-
-```bash
-rsvg-convert -w 132 -h 132 data/media/.stuv-dhbw-favicon.svg |
-  magick - -background white -gravity center -extent 180x180 -alpha off \
-    -strip PNG24:data/media/stuv-dhbw-apple-touch-icon.png
-```
-
-### Die Jahreszahl im Copyright
-
-Im Footer steht „© 2026 StuV DHBW Heidenheim“. Damit die Zahl nicht jeden
-Januar veraltet, ersetzt `stuv-theme` beim Ausliefern die erste Jahreszahl nach
-dem `©` durch das aktuelle Jahr, und zwar nur in einem Absatz mit der Klasse
-`stuv-copyright`. Die Zahl im Template-Part ist der Rückfall bei deaktiviertem
-Plugin: Dann steht dort das Jahr des letzten Deploys. Ein Jahr nach einem `©`
-ohne diese Klasse lässt
-`tools/test_content.py` durchfallen. Der Page-Cache von WP-Optimize liefert die
-alte Zahl aus, bis er nach dem Jahreswechsel abläuft.
-
-### Der Button-Stil „Auf Farbfläche“
-
-WordPress bringt für den Button-Block die Stile „Füllen“ und „Kontur“ mit.
-`stuv-theme` meldet einen dritten an, `overlay` („Auf Farbfläche“), für Buttons
-auf dem Hero-Bild oder einem roten Streifen. Das Plugin stellt nur die Auswahl
-im Editor bereit; das Aussehen steht in `component.css` unter
-`.wp-block-button.is-style-overlay`. Ist das Plugin aus, behalten vorhandene
-Buttons ihren Stil, nur neue lassen sich im Editor nicht mehr so einstellen.
-
-## `stuv-dsgvo`: die Kalender-Embeds
-
-Der Google-Kalender auf der Events-Seite („Monatsansicht“) würde beim
-Seitenaufbau ungefragt Daten an Google übertragen, darunter die IP-Adresse
-jedes Besuchers. Das Plugin schiebt einen Hinweis davor, und erst ein Klick auf
-„Kalender laden“ setzt die URL ein.
-
-Den Schutz leistet das Markup. Die `<iframe>`-Elemente in den Seiteninhalten
-haben kein `src`, nur ein `data-stuv-src`, aus dem ein Browser nichts lädt. Das
-gilt auch, wenn das Plugin aus ist oder JavaScript nicht läuft: Fällt etwas aus,
-geht trotzdem keine Anfrage an Google.
-
-Damit dabei kein leerer 600-Pixel-Kasten stehen bleibt, versteckt
-`component.css` jedes `iframe[data-stuv-src]`, und im Block-HTML steht sichtbar
-ein `.stuv-dsgvo-fallback`-Absatz mit Link zum Kalender bei Google. Läuft das
-Plugin, blendet es diesen Absatz aus (`.stuv-dsgvo-ready` auf dem Wrapper) und
-baut stattdessen den Platzhalter.
-
-Die Zustimmung merkt sich das Plugin pro Gerät in
-`localStorage['stuv-dsgvo-calendar']`. Wer den Kalender einmal geladen hat,
-sieht ihn beim nächsten Besuch sofort. Damit geht ein
-späterer Seitenaufruf aber ohne neuen Klick an Google. Vertretbar ist das nur,
-weil es ein Gegenstück gibt: Unter einem geladenen Kalender steht **immer** eine
-Zeile „Nicht mehr automatisch laden“ (`.stuv-dsgvo-revoke`). Sie darf weder
-verschwinden noch hinter einem Menü liegen, denn der Widerruf muss so einfach
-sein wie die Zustimmung. Ein Klick darauf löscht den Eintrag und ersetzt das
-`<iframe>` durch einen frischen Klon ohne `src`. Würde das Skript nur `src`
-leeren, liefe Googles Dokument im Rahmen weiter.
-
-Browser, die `localStorage` blockieren (privater Modus, „alle Cookies
-blockieren“), werfen schon beim Lesen eine Exception. Deshalb steht jeder
-Zugriff in einem `try/catch`: Ein solches Gerät fragt dann jedes Mal neu, aber
-der Klick-Handler bricht nie ab.
-
-Auch hier drei Teile an drei Orten:
-
-| Teil   | Ort                                                         |
-| ------ | ----------------------------------------------------------- |
-| Logik  | `wp-plugin/stuv-dsgvo/stuv-dsgvo.php`                       |
-| Styles | die `.stuv-dsgvo-*`-Regeln in `data/styles/component.css`   |
-| Markup | der `wp:html`-Block in `data/pages/events/02-upcoming.html` |
-
-Beim Ändern beachten: Das Plugin bindet sein Skript nur ein, wenn der
-Seiteninhalt die Zeichenkette `data-stuv-src` enthält
-(`stuv_dsgvo_has_embed()`). Ein Embed in einem Template-Part, einem Widget oder
-einem wiederverwendbaren Block fiele durch diese Prüfung und würde nie laden.
-Entferne in dem Fall die Prüfung, statt ihr weitere Fundorte beizubringen.
-
-Der Datenschutzhinweis verlinkt auf die Datenschutzerklärung von Google. Die
-verlinkte AStA-Datenschutzerklärung (`legal.dhbw-asta.de`) nennt Google
-Analytics, Maps, Forms und Fonts, aber **keinen Google Kalender**. Wer sie
-pflegt, sollte einen Absatz dazu ergänzen; die Seite liegt außerhalb dieses
-Repos.
-
-## Plugins auf der Live-Site prüfen
-
-Ob die Site die Plugins in der Version aus `wp-plugin/` und aktiv betreibt,
-prüft `tools/check_plugins.py` (braucht die Zugangsdaten aus der `.env`, liest
-nur). Die Action **Monitor** führt es täglich aus (`docs/testing.md`). Eine
-Zeile `DIFFERS` heißt: Zip bauen und hochladen, wie oben beschrieben.
+## Live prüfen
 
 ```bash
 source .env
-python3 tools/check_plugins.py
-```
-
-```bash
+python3 tools/check_plugins.py    # Version und Status; DIFFERS: ZIP bauen und hochladen
 HOST="$(printf '%s' "$WP_SITE" | sed -E 's#^https?://##')"
 curl -sS -A "stuv-check/1.0" "https://$HOST/wp-json/stuv/v1/mensa" | head -c 200
+curl -sS -A "stuv-check/1.0" "https://$HOST/wp-json/stuv/v1/events" | head -c 300
 ```
 
-Kommt JSON mit Speiseplan zurück, ist alles in Ordnung. `rest_no_route` heißt,
-dass `stuv-mensa` nicht aktiv ist. Eine 404-HTML-Seite dagegen heißt, dass
-`/wp-json/` selbst nicht antwortet; dann liegt es an den Permalinks und nicht am
-Plugin (siehe oben).
-
-Welche Plugins aktiv sind, zeigt diese Abfrage:
-
-```bash
-curl -sS -u "$WP_USER:$WP_APP_PASS" "https://$HOST/wp-json/wp/v2/plugins" |
-  python3 -c "import sys,json;[print(p['status'], p['plugin']) for p in json.load(sys.stdin)]"
-```
-
-Für `stuv-dsgvo` reicht ein Blick in den Quelltext einer Seite mit Kalender: Ist
-das Plugin aktiv, steht dort ein Inline-Skript mit `stuv-dsgvo-placeholder`.
-Fehlt es, bleibt der Fallback-Link stehen, und so ist es auch gewollt.
-
-Die Tests selbst stehen in `docs/testing.md`.
+`rest_no_route`: Plugin inaktiv. Eine 404-HTML-Seite: `/wp-json/` selbst antwortet nicht (Permalinks). `stuv-dsgvo` aktiv heißt: im Quelltext steht ein Inline-Skript mit `stuv-dsgvo-placeholder`.
