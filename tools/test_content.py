@@ -131,8 +131,8 @@ class TestMarkup(unittest.TestCase):
                         self.assertRegex(img, r"\sheight=")
 
     def test_buttons_are_button_blocks(self):
-        # Content buttons are wp:button blocks with a block style (none,
-        # is-style-outline, is-style-overlay). stuv-button-outline is for plugin
+        # Content buttons are wp:button blocks with a block style (none or
+        # is-style-outline). stuv-button-outline is for plugin
         # markup: on a wp:button wrapper it styles nothing, and a button link in
         # a paragraph misses the wp:buttons layout.
         for f in FILES:

@@ -369,7 +369,7 @@ a {
   background: color-mix(in srgb, var(--stuv-primary) 10%, transparent);
   transition: background-color 0.15s ease;
 }
-/* Button variants: default (Fill), is-style-outline, is-style-overlay (stuv-theme plugin);
+/* Button variants: default (Fill), is-style-outline, .stuv-button-light (hero);
    .stuv-button-outline and .stuv-button-link for plugin markup. */
 .wp-block-button .wp-block-button__link,
 :is(a, button):is(.stuv-button-outline, .stuv-button-link) {
@@ -393,12 +393,12 @@ a {
     background-color 0.15s ease,
     border-color 0.15s ease;
 }
-.wp-block-button:not(.is-style-outline, .is-style-overlay)
+.wp-block-button:not(.is-style-outline, .stuv-button-light)
   .wp-block-button__link {
   background: var(--stuv-primary-surface);
   color: var(--stuv-primary-foreground);
 }
-.wp-block-button:not(.is-style-outline, .is-style-overlay)
+.wp-block-button:not(.is-style-outline, .stuv-button-light)
   .wp-block-button__link:hover {
   background: color-mix(in srgb, var(--stuv-primary-surface) 90%, #000);
 }
@@ -419,33 +419,35 @@ a {
   background: var(--stuv-accent);
 }
 
-.wp-block-button.is-style-overlay .wp-block-button__link {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
+/* Fixed colours: the hero button sits on a dark photo in both themes. */
+.wp-block-button.stuv-button-light .wp-block-button__link {
+  background: #fff;
+  color: #0a0a0a;
 }
-.wp-block-button.is-style-overlay .wp-block-button__link:hover {
-  background: rgba(255, 255, 255, 0.2);
+.wp-block-button.stuv-button-light .wp-block-button__link:hover {
+  background: color-mix(in srgb, #fff 88%, #000);
 }
 .stuv-section-primary
-  .wp-block-button:not(.is-style-outline, .is-style-overlay)
+  .wp-block-button:not(.is-style-outline)
   .wp-block-button__link {
   background: #fff;
   color: var(--stuv-primary-surface);
 }
 .stuv-section-primary
-  .wp-block-button:not(.is-style-outline, .is-style-overlay)
+  .wp-block-button:not(.is-style-outline)
   .wp-block-button__link:hover {
   background: color-mix(in srgb, #fff 90%, var(--stuv-primary-surface));
 }
-.stuv-section-primary .wp-block-button.is-style-overlay .wp-block-button__link {
+.stuv-section-primary .wp-block-button.is-style-outline .wp-block-button__link {
   background: transparent;
+  color: #fff;
   border-color: rgba(255, 255, 255, 0.7);
 }
 .stuv-section-primary
-  .wp-block-button.is-style-overlay
-  .wp-block-button__link:hover {
+  .wp-block-button.is-style-outline
+  .wp-block-button__link:is(:hover, :active) {
   background: rgba(0, 0, 0, 0.1);
+  color: #fff;
   border-color: #fff;
 }
 

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: StuV Theme Toggle
- * Description: Schaltet den Dark Mode der Website um (Button in der Kopfzeile) und merkt sich die Wahl im Browser. Außerdem bietet es im Editor den Button-Stil „Auf Farbfläche“ an, liefert das Apple-Touch-Icon mit weißem Hintergrund aus und hält die Jahreszahl im Copyright der Fußzeile aktuell. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Umschalt-Button, die Seite zeigt immer das helle Design und das Icon auf dem iOS-Home-Bildschirm bekommt einen schwarzen Hintergrund. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.5.1
+ * Description: Schaltet den Dark Mode der Website um (Button in der Kopfzeile) und merkt sich die Wahl im Browser. Außerdem liefert es das Apple-Touch-Icon mit weißem Hintergrund aus und hält die Jahreszahl im Copyright der Fußzeile aktuell. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet der Umschalt-Button, die Seite zeigt immer das helle Design und das Icon auf dem iOS-Home-Bildschirm bekommt einen schwarzen Hintergrund. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
+ * Version: 1.6.0
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUV_THEME_VERSION', '1.5.1');
+define('STUV_THEME_VERSION', '1.6.0');
 
 /**
  * Inline in <head> so .dark is set before first paint (no white flash). The click handler is
@@ -98,14 +98,6 @@ add_action('wp_enqueue_scripts', function (): void {
     wp_register_script('stuv-theme', false, [], STUV_THEME_VERSION, false);
     wp_enqueue_script('stuv-theme');
     wp_add_inline_script('stuv-theme', stuv_theme_script());
-});
-
-/** The overlay button style in the editor picker; its look lives in component.css. */
-add_action('init', function (): void {
-    register_block_style('core/button', [
-        'name' => 'overlay',
-        'label' => 'Auf Farbfläche',
-    ]);
 });
 
 /**

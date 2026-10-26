@@ -56,7 +56,6 @@ Außerdem:
   ```
 
 - **Copyright-Jahr:** ersetzt das erste Jahr nach `©` in einem Absatz `.stuv-copyright` durch das aktuelle; ohne Plugin bleibt das gespeicherte. `tools/test_content.py` verlangt die Klasse. Der WP-Optimize-Cache zeigt das alte Jahr, bis er abläuft.
-- **Button-Stil `overlay`** („Auf Farbfläche“) im Editor; das Aussehen steht in `component.css`.
 
 ## `stuv-dsgvo`
 
