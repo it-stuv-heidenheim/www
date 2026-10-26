@@ -333,7 +333,10 @@ Seite ausgeliefert würde. Was man beim Ändern wissen muss, steht deshalb hier.
     `-webkit-text-fill-color` und `caret-color` umgehen das. `:-webkit-autofill`
     reicht: Jeder Browser, der `:autofill` kennt, kennt auch diese Form.
   - Der Absenden-Button braucht `[type="submit"]`, um WPForms' Blau (0,4,2) zu
-    schlagen.
+    schlagen. Seinen Fokusring malt WPForms ebenfalls blau, als `::after`; der
+    wird ausgeblendet, und der Button bekommt den Ring der Seite.
+  - Felder der Größe „Mittel“ begrenzt WPForms auf 60 %. In der Karte stehen
+    alle Felder in voller Breite, wie Textfeld und Button darunter.
   - Eingabefelder sind mobil mindestens 16px groß, sonst zoomt iOS Safari beim
     Antippen hinein und nicht wieder heraus.
 

@@ -223,6 +223,7 @@ a {
 }
 .stuv-card {
   position: relative;
+  box-sizing: border-box;
   background: var(--stuv-card);
   border: 1px solid var(--stuv-card-border);
   border-radius: var(--stuv-radius-lg);
@@ -483,12 +484,15 @@ p.stuv-section-intro {
 p.stuv-section-intro.has-text-align-center {
   margin-inline: auto !important;
 }
-/* Directly in a section the intro starts where the content column (and the
-   heading above it) starts, not at the section's padding edge. */
-.stuv-section > p.stuv-section-intro:not(.has-text-align-center) {
-  margin-left: max(
-    0px,
-    (100% - var(--wp--style--global--content-size, 56rem)) / 2
+/* Directly in a section the intro (and the step list, also narrower than the
+   column) starts where the content column and the heading above it start, not
+   centred, as the constrained layout's `margin-inline: auto !important` would.
+   No 0px in the expression: WP-Optimize minifies it to a unitless 0, which
+   makes max() invalid and drops the whole declaration on cached pages. */
+.stuv-section > p.stuv-section-intro:not(.has-text-align-center),
+.stuv-section > .stuv-steps {
+  margin-left: calc(
+    (100% - min(100%, var(--wp--style--global--content-size, 56rem))) / 2
   ) !important;
 }
 /* Heading and intro sit directly in the section; what follows keeps a fixed
@@ -923,6 +927,11 @@ span.stuv-badge {
   margin-bottom: var(--space-4);
   padding: 0;
 }
+/* WPForms caps "medium" fields at 60 %; in the card every field is as wide as
+   the textarea and the button below it. */
+.stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-field-medium {
+  max-width: 100%;
+}
 .stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-field-label {
   display: block;
   font-size: var(--text-small);
@@ -1007,6 +1016,20 @@ span.stuv-badge {
   border: none;
   border-radius: var(--stuv-radius);
   cursor: pointer;
+}
+.stuv-wpforms
+  .wpforms-container-full
+  .wpforms-form
+  button.wpforms-submit[type="submit"]:focus-visible {
+  outline: 2px solid var(--stuv-ring);
+  outline-offset: 2px;
+}
+/* WPForms draws its own blue focus ring as ::after. */
+.stuv-wpforms
+  .wpforms-container-full
+  .wpforms-form
+  button.wpforms-submit[type="submit"]:focus::after {
+  display: none;
 }
 .stuv-wpforms
   .wpforms-container-full
@@ -1103,6 +1126,12 @@ span.stuv-badge {
   background: var(--stuv-primary-foreground);
 }
 
+/* Twenty Twenty-Five outlines every :focus, so a click or tap left a ring on
+   buttons and menu links. The ring is for keyboard focus only; transparent
+   rather than none, so High Contrast mode still shows it. */
+.wp-site-blocks :focus:not(:focus-visible) {
+  outline-color: transparent;
+}
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -1348,7 +1377,7 @@ summary:focus-visible,
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: var(--space-3) var(--space-6);
-  margin: 0;
+  margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
 }
@@ -1593,12 +1622,12 @@ summary:focus-visible,
   line-height: 1;
 }
 .stuv-event-month {
+  margin-top: var(--space-1);
   color: var(--stuv-muted-foreground);
   font-size: var(--text-small);
   font-weight: 600;
 }
 .stuv-event-day {
-  margin-top: var(--space-1);
   color: var(--stuv-primary);
   font-family: var(--wp--preset--font-family--fraunces, Georgia, serif);
   font-size: var(--text-heading);
@@ -1848,6 +1877,11 @@ summary:focus-visible,
   .stuv-map-legend > li:nth-child(2) {
     border-top: 0;
   }
+}
+/* The legend has no bottom margin (it often ends a section); a sub-heading
+   after it keeps the distance it has after an intro. */
+.stuv-section > .stuv-map-legend + .stuv-h3 {
+  margin-block-start: var(--space-12);
 }
 .stuv-map-legend > li {
   display: grid;

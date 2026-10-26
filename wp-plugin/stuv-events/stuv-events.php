@@ -2,7 +2,7 @@
 /**
  * Plugin Name: StuV Events
  * Description: Zeigt die nächsten Termine aus dem öffentlichen StuV-Google-Kalender als Liste auf der Website. Der Server holt den Kalender, Besucher laden nichts von Google. ACHTUNG: Wird dieses Plugin deaktiviert, verschwindet die Terminliste auf Startseite und Events-Seite. Quellcode: im Repository dieser Website (Verzeichnis wp-plugin/)
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires PHP: 8.0
  * Author: StuV DHBW Heidenheim
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 require_once __DIR__ . '/inc/ics.php';
 
-define('STUV_EVENTS_VERSION', '1.0.0'); // keep in sync with the header Version above; it cache-busts assets/events.js
+define('STUV_EVENTS_VERSION', '1.0.1'); // keep in sync with the header Version above; it cache-busts assets/events.js
 define('STUV_EVENTS_FEED', 'https://calendar.google.com/calendar/ical/c_05fa202a6d427f41057993d22dba02b7a229645cdd29f50deb7297c30d2c40a0%40group.calendar.google.com/public/basic.ics');
 define('STUV_EVENTS_TTL', 30 * MINUTE_IN_SECONDS);
 define('STUV_EVENTS_LOCK_TTL', 60);

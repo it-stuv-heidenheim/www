@@ -65,8 +65,8 @@
 
     var badge = el("div", "stuv-event-date");
     badge.setAttribute("aria-hidden", "true");
-    badge.appendChild(el("span", "stuv-event-month", event.month));
     badge.appendChild(el("span", "stuv-event-day", event.day));
+    badge.appendChild(el("span", "stuv-event-month", event.month));
     item.appendChild(badge);
 
     var body = el("div", "stuv-event-body");

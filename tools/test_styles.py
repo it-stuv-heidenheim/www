@@ -165,6 +165,16 @@ class TestCssInvariants(unittest.TestCase):
                 with self.subTest(file=str(f.relative_to(sc.REPO)), size=size):
                     self.assertIn(size.strip(), {"0.875rem", "1rem", "1.25rem"})
 
+    def test_no_zero_length_in_math_functions(self):
+        # WP-Optimize minifies cached pages and writes 0px as 0; a unitless 0
+        # next to a length makes min(), max() or clamp() invalid, and the
+        # browser drops the whole declaration.
+        for rule in self.rules:
+            for prop, value in rule.decls.items():
+                if re.search(r"\b(min|max|clamp)\(", value):
+                    with self.subTest(selector=rule.selector_text, property=prop):
+                        self.assertNotRegex(value, r"(?<![\w.])0[a-z%]+\b")
+
     def test_every_custom_property_is_defined(self):
         defined = set(sc.root_custom_properties(dark=True))
         defined |= {p for r in self.rules for p in r.decls if p.startswith("--")}

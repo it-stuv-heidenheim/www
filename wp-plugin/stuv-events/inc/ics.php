@@ -236,7 +236,7 @@ function stuv_events_expand(DateTimeImmutable $start, array $rule, int $until_ts
 
 /**
  * German labels for one occurrence, in Berlin time: the date badge shows
- * `month` over `day`, the line under the title `weekday` and `time`, and
+ * `day` over `month` (German order: 26 Okt), the line under the title `weekday` and `time`, and
  * `day_month` is the badge's text for screen readers.
  */
 function stuv_events_labels(DateTimeImmutable $start, DateTimeImmutable $end, bool $all_day): array {
