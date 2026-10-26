@@ -6,13 +6,11 @@ require __DIR__ . '/harness.php';
 require __DIR__ . '/../stuv-mensa/inc/normalize.php';
 
 // --- stuv_mensa_berlin_date -------------------------------------------------
-// The regression test for the whole feature: upstream stamps local midnight as
-// UTC, so a naive parse reads this as Sunday.
+// Upstream stamps Berlin midnight as UTC; a naive parse reads this as Sunday.
 check('summer: 22:00Z is next day in Berlin (CEST)',
     stuv_mensa_berlin_date('2026-07-12T22:00:00.000Z'), '2026-07-13');
 
-// In winter Berlin is UTC+1, so the upstream offset changes to 23:00Z.
-// Hardcoding a +2 shift would break every winter.
+// In winter Berlin is UTC+1, so upstream says 23:00Z.
 check('winter: 23:00Z is next day in Berlin (CET)',
     stuv_mensa_berlin_date('2026-01-12T23:00:00.000Z'), '2026-01-13');
 
@@ -40,23 +38,20 @@ check('tuesday: meals have a student price',
 check('tuesday: image points at our proxy, not api.dhbw.app',
     str_starts_with($mon['days'][0]['meals'][0]['image'], $base), true);
 
-// Saturday: no menu today. The next open day is Monday of the NEXT week,
-// which a calendar-week payload would not contain. This is the weekend bug.
+// Saturday: the next open day is Monday of the following week (the weekend bug).
 $sat = stuv_mensa_normalize($fixture, '2026-07-18', $base);
 check('saturday: skips to the next open day', $sat['days'][0]['date'], '2026-07-20');
 check('saturday: next open day is a Monday', $sat['days'][0]['weekday'], 'Montag');
 check('saturday: no past days leak in',
     array_filter($sat['days'], fn($d) => $d['date'] < '2026-07-18'), []);
 
-// Semester break: nothing left in the window. `days: []` is a valid response,
-// not an error; the widget renders its closed state from it.
+// Semester break: `days: []` is a valid response.
 $break = stuv_mensa_normalize($fixture, '2030-01-01', $base);
 check('semester break: empty days, not an error', $break['days'], []);
 check('semester break: opening hours still present',
     $break['openingHours'], '11:30 – 13:45 Uhr');
 
-// A 200 that is not the menu (an error object, an empty list) must not
-// replace the cached menu with an empty one: null, and the caller keeps stale.
+// A 200 that is not the menu returns null, so the caller keeps its copy.
 check('malformed: an error object is not a menu',
     stuv_mensa_normalize(['error' => 'maintenance'], '2026-07-14', $base), null);
 check('malformed: an empty list is not a menu',

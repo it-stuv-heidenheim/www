@@ -1,23 +1,10 @@
 #!/usr/bin/env python3
-"""Fetch every external link the deployed pages carry and report the dead ones.
+"""Fetch every external link of the deployed pages and report the dead ones.
 
-test_content.py checks internal links and anchors against the repo; an outside
-page that moves or closes is out of its reach. Help lines on Kummer Karsten,
-partner sites and the WG listings change without telling us, so this asks
-each URL once.
+BROKEN (exit 1): 404/410, DNS, refused connection or bad certificate, twice. WARN: 403, 429,
+5xx, timeouts. MOVED: ends up on another domain. Skipped: Instagram, WhatsApp, the calendar
+subscribe link and Google Maps queries.
 
-BROKEN (exit 1) is what a visitor would hit as well: 404 or 410, a domain that
-no longer resolves, a refused connection or a bad certificate, each still
-there on a second try. Anything else that fails (403 and 429 from bot
-blockers, 5xx, timeouts) is a WARN: worth a look, no reason to fail the run.
-
-Some links cannot be checked this way and are skipped: Instagram and WhatsApp
-answer 200 or a login wall whether or not the account exists, the calendar
-subscribe link always sends a logged-out visitor to Google's sign-in, and the
-Google Maps links are search queries built from an address. MOVED, a working
-link that ends up on another domain, is a hint to update the link.
-
-Run from the repo root (no credentials, nothing is written):
     python3 tools/check_links.py
 """
 

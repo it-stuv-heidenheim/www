@@ -14,21 +14,15 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/inc/normalize.php';
 require_once __DIR__ . '/inc/cache.php';
 
-define('STUV_MENSA_VERSION', '1.2.2'); // keep in sync with the header Version above; it cache-busts assets/mensa.js
+define('STUV_MENSA_VERSION', '1.2.2'); // = header Version; cache-busts assets/mensa.js
 define('STUV_MENSA_TTL', 30 * MINUTE_IN_SECONDS);
 define('STUV_MENSA_LOCK_TTL', 60);
 define('STUV_MENSA_IMAGE_TTL', 30 * DAY_IN_SECONDS);
 
 /**
- * The normalized payload, served-stale-first with a stampede lock.
- *
- * Soft-TTL design: the _stale option is the single payload store; a separate
- * value-less marker transient records freshness. When the marker expires, the
- * first request fetches upstream while others are served the stale copy. A
- * 60-second lock bounds concurrent fetches during the refresh window.
- *
- * On upstream failure, the stale copy is served. Returns null only when
- * upstream is down AND nothing was ever cached.
+ * The normalized payload, stale-first: the _stale option is the only store, a value-less
+ * transient marks it fresh, and a 60 s lock lets one request refresh while others get the
+ * stale copy, also when upstream fails. Null only if nothing was ever cached.
  */
 function stuv_mensa_payload(): ?array {
     $store = get_option('stuv_mensa_payload_stale');
@@ -71,7 +65,7 @@ function stuv_mensa_payload(): ?array {
 add_action('rest_api_init', function (): void {
     register_rest_route('stuv/v1', '/mensa', [
         'methods'             => 'GET',
-        'permission_callback' => '__return_true', // public, read-only
+        'permission_callback' => '__return_true',
         'callback'            => fn() => stuv_mensa_payload()
             ?? new WP_Error('stuv_mensa_unavailable', 'Speiseplan nicht verfügbar', ['status' => 503]),
     ]);
@@ -87,14 +81,8 @@ add_action('rest_api_init', function (): void {
 });
 
 /**
- * Stream a meal image from upstream so visitor IPs never reach api.dhbw.app.
- *
- * Images are cached in per-id transients for 30 days (base64-encoded, because
- * wp_options.option_value is utf8mb4 text and raw binary does not survive the
- * charset round-trip).
- *
- * SECURITY: only ids present in the current cached payload are served. Dropping
- * this check turns the route into an open proxy.
+ * Proxy a meal image so visitor IPs never reach api.dhbw.app; cached 30 days as base64
+ * (option_value is utf8mb4 text). SECURITY: only ids in the cached payload, or this is an open proxy.
  */
 function stuv_mensa_image_route(WP_REST_Request $request) {
     $id      = (int) $request['id'];
@@ -129,14 +117,7 @@ function stuv_mensa_image_route(WP_REST_Request $request) {
     stuv_mensa_send_image($type, $body);
 }
 
-/**
- * Emit an image response and stop.
- *
- * Both arms of the route (transient hit and upstream fetch) end here, so the
- * headers cannot drift apart between a cached and an uncached visitor. The
- * type is re-checked here rather than by the caller: a transient written by an
- * older build predates the guard.
- */
+/** Emit an image response and stop; both arms of the route end here, so headers can't drift. */
 function stuv_mensa_send_image(string $type, string $body): void {
     header('Content-Type: ' . stuv_mensa_safe_image_type($type));
     header('X-Content-Type-Options: nosniff');
@@ -146,12 +127,7 @@ function stuv_mensa_send_image(string $type, string $body): void {
     exit;
 }
 
-/**
- * Enqueue the widget script only where the widget actually is.
- *
- * Keyed on the marker attribute in the block markup rather than a page id, so
- * moving the widget to another page needs no change here.
- */
+/** Enqueue the script only where the block markup carries the marker attribute. */
 add_action('wp_enqueue_scripts', function (): void {
     $post = get_post();
     if (!is_singular() || !$post || !str_contains($post->post_content, 'data-stuv-mensa')) {
@@ -166,8 +142,7 @@ add_action('wp_enqueue_scripts', function (): void {
         true
     );
 
-    // The script must never build this URL itself: rest_url() tracks /wp-json/,
-    // index.php/wp-json and the ?rest_route= fallback alike.
+    // rest_url() covers /wp-json/, index.php/wp-json and ?rest_route= alike.
     wp_localize_script('stuv-mensa', 'stuvMensaConfig', [
         'endpoint' => rest_url('stuv/v1/mensa'),
     ]);

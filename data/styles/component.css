@@ -30,8 +30,7 @@
   --space-12: calc(var(--spacing) * 12);
   --space-16: calc(var(--spacing) * 16);
   --space-20: calc(var(--spacing) * 20);
-  /* Five type sizes; heading and display grow at 640px and 768px. Every
-     font-size below uses one of these. */
+  /* Five type sizes, used by every font-size below; heading and display grow at 640px and 768px. */
   --text-small: var(--wp--preset--font-size--small, 0.875rem);
   --text-body: var(--wp--preset--font-size--medium, 1rem);
   --text-title: var(--wp--preset--font-size--large, 1.25rem);
@@ -202,8 +201,7 @@ a {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
-/* The full-width bands of a page abut: core's block gap would show as a
-   stripe of page background between two of them. */
+/* Full-width bands abut; core's block gap would show a stripe between them. */
 .wp-block-post-content > .alignfull {
   margin-block-start: 0;
 }
@@ -371,10 +369,8 @@ a {
   background: color-mix(in srgb, var(--stuv-primary) 10%, transparent);
   transition: background-color 0.15s ease;
 }
-/* Core button blocks pick their variant with a block style: none (or Fill) is
-   primary, is-style-outline and is-style-overlay (registered by the stuv-theme
-   plugin) the others. Outside a button block, .stuv-button-outline styles a
-   <button> in plugin markup and .stuv-button-link a text link. */
+/* Button variants: default (Fill), is-style-outline, is-style-overlay (stuv-theme plugin);
+   .stuv-button-outline and .stuv-button-link for plugin markup. */
 .wp-block-button .wp-block-button__link,
 :is(a, button):is(.stuv-button-outline, .stuv-button-link) {
   display: inline-flex;
@@ -484,19 +480,15 @@ p.stuv-section-intro {
 p.stuv-section-intro.has-text-align-center {
   margin-inline: auto !important;
 }
-/* Directly in a section the intro (and the step list, also narrower than the
-   column) starts where the content column and the heading above it start, not
-   centred, as the constrained layout's `margin-inline: auto !important` would.
-   No 0px in the expression: WP-Optimize minifies it to a unitless 0, which
-   makes max() invalid and drops the whole declaration on cached pages. */
+/* Intro and step list align with the heading, not centred. No 0px in the expression:
+   WP-Optimize minifies it to a unitless 0, which invalidates max() on cached pages. */
 .stuv-section > p.stuv-section-intro:not(.has-text-align-center),
 .stuv-section > .stuv-steps {
   margin-left: calc(
     (100% - min(100%, var(--wp--style--global--content-size, 56rem))) / 2
   ) !important;
 }
-/* Heading and intro sit directly in the section; what follows keeps a fixed
-   distance, smaller under an h3. A block margin set inline still wins. */
+/* Fixed distance after heading and intro, smaller under an h3; an inline block margin wins. */
 .stuv-section > p.stuv-section-intro + *,
 .stuv-section > p.stuv-section-intro + [hidden] + * {
   margin-block-start: var(--space-12);
@@ -927,8 +919,7 @@ span.stuv-badge {
   margin-bottom: var(--space-4);
   padding: 0;
 }
-/* WPForms caps "medium" fields at 60 %; in the card every field is as wide as
-   the textarea and the button below it. */
+/* WPForms caps "medium" fields at 60 %. */
 .stuv-wpforms .wpforms-container-full .wpforms-form .wpforms-field-medium {
   max-width: 100%;
 }
@@ -1126,9 +1117,8 @@ span.stuv-badge {
   background: var(--stuv-primary-foreground);
 }
 
-/* Twenty Twenty-Five outlines every :focus, so a click or tap left a ring on
-   buttons and menu links. The ring is for keyboard focus only; transparent
-   rather than none, so High Contrast mode still shows it. */
+/* The theme rings every :focus; keep it for keyboard focus only (transparent, not none, for
+   High Contrast mode). */
 .wp-site-blocks :focus:not(:focus-visible) {
   outline-color: transparent;
 }
@@ -1245,10 +1235,8 @@ summary:focus-visible,
   content: close-quote;
 }
 
-/* Photos. An image block with .stuv-media is a rounded photo; its aspect
-   ratio comes from the block (aspectRatio + scale cover). .stuv-split puts
-   text and a photo side by side from 1024px on, the photo below the text
-   before that. */
+/* Photos: .stuv-media rounds an image block (ratio from the block); .stuv-split puts text
+   and photo side by side from 1024px. */
 .stuv-media {
   margin: 0;
 }
@@ -1878,8 +1866,7 @@ summary:focus-visible,
     border-top: 0;
   }
 }
-/* The legend has no bottom margin (it often ends a section); a sub-heading
-   after it keeps the distance it has after an intro. */
+/* A sub-heading after the legend keeps the distance it has after an intro. */
 .stuv-section > .stuv-map-legend + .stuv-h3 {
   margin-block-start: var(--space-12);
 }

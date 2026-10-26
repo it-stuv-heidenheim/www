@@ -1,25 +1,13 @@
 #!/usr/bin/env python3
-"""Compare every manifest target against what the site is actually serving.
+"""Compare every manifest target against what the site serves.
 
-`deploy.py --dry-run` validates sources locally and prints byte counts; it never
-talks to the server, so it cannot tell you that a target was skipped, half
-written, or silently reverted. This closes that gap: it fetches each target's
-stored content and diffs it against the source the manifest points at.
+--history looks a differing target up in git: BEHIND (an older commit had it, or the page is
+empty) or EDITED (no commit had it: a wp-admin edit a deploy would destroy).
 
-With --history a differing target is looked up in git: BEHIND means the site
-serves what an older commit had, so a deploy loses nothing; EDITED means no
-commit ever had it, which is an edit made in wp-admin that a deploy would
-destroy. deploy.py refuses to write over an EDITED target without --overwrite.
-An empty page (new in wp-admin, title only) has nothing to lose: BEHIND.
-
-Exit codes: 0 all targets match, 1 at least one differs (with --history: all of
-them BEHIND), 2 a target could not be fetched, 3 at least one EDITED.
+Exit codes: 0 all match, 1 some differ (with --history: all BEHIND), 2 fetch failed, 3 some EDITED.
 
 Usage:
-  python3 verify_deploy.py --manifest <path>            # check every target
-  python3 verify_deploy.py --manifest <path> <target>   # check one
-  python3 verify_deploy.py --manifest <path> --diff     # show what differs
-  python3 verify_deploy.py --manifest <path> --history  # BEHIND or EDITED
+  python3 verify_deploy.py --manifest <path> [<target>] [--diff] [--history]
 """
 import argparse
 import difflib

@@ -1,12 +1,7 @@
 <?php
 /**
- * Pure helpers for the StuV event list: parse the public iCalendar feed,
- * expand recurring events, and label each occurrence in German.
- *
- * NO WordPress dependencies may be added to this file: it is unit-tested with
- * the plain `php` CLI (wp-plugin/tests/test_ics.php). All date handling lives
- * here so the browser never parses a timestamp; it only compares the plain
- * Berlin wall-clock strings in `start` and `end`.
+ * Parse the iCalendar feed, expand recurrences, label occurrences in German.
+ * No WordPress dependencies: tested with the plain `php` CLI (wp-plugin/tests/test_ics.php).
  */
 
 const STUV_EVENTS_WEEKDAYS = [
@@ -31,9 +26,7 @@ const STUV_EVENTS_MONTHS_SHORT = [
 
 const STUV_EVENTS_ICAL_DAYS = ['MO' => 1, 'TU' => 2, 'WE' => 3, 'TH' => 4, 'FR' => 5, 'SA' => 6, 'SU' => 7];
 
-// RRULE parts the expander understands. A rule with any other part (BYSETPOS,
-// BYMONTH, ...) is shown as its first occurrence only: a missing repeat is
-// visible and harmless, a wrongly computed date is neither.
+// Rules with any other part show only their first occurrence: a wrong date does more harm than a missing repeat.
 const STUV_EVENTS_RRULE_PARTS = ['FREQ', 'INTERVAL', 'COUNT', 'UNTIL', 'BYDAY', 'WKST'];
 
 const STUV_EVENTS_MAX_STEPS = 5000; // bounds the expansion of a runaway rule
@@ -43,12 +36,7 @@ function stuv_events_tz(): DateTimeZone {
     return new DateTimeZone('Europe/Berlin');
 }
 
-/**
- * Split an iCalendar document into VEVENT property maps.
- *
- * Each event is ['NAME' => [['params' => [...], 'value' => '...'], ...]];
- * a property may repeat (EXDATE does). Folded lines are joined first.
- */
+/** VEVENT property maps: ['NAME' => [['params' => [...], 'value' => '...'], ...]]. */
 function stuv_events_parse_ics(string $ics): array {
     $text   = preg_replace("/\r?\n[ \t]/", '', str_replace("\r\n", "\n", $ics));
     $events = [];
@@ -85,11 +73,8 @@ function stuv_events_unescape(string $value): string {
 }
 
 /**
- * A DATE or DATE-TIME property as [DateTimeImmutable, all_day].
- *
- * UTC values (trailing Z) stay in UTC, TZID values in their zone, floating
- * values are read as Berlin time. Recurrences expand in that zone, as RFC 5545
- * requires; only the output is converted to Berlin.
+ * [DateTimeImmutable, all_day]. UTC and TZID values keep their zone (RFC 5545 expands
+ * there), floating values are Berlin time.
  */
 function stuv_events_parse_date(array $prop): ?array {
     $value = trim($prop['value']);
@@ -141,10 +126,7 @@ function stuv_events_parse_rrule(string $value): ?array {
     return $rule;
 }
 
-/**
- * The nth weekday of $month ($n < 0 counts from the end), or null when the
- * month has no such day (a fifth Monday).
- */
+/** The nth weekday of $month ($n < 0 counts from the end), or null (a fifth Monday). */
 function stuv_events_nth_weekday(DateTimeImmutable $month, int $n, int $weekday): ?DateTimeImmutable {
     $first = $month->modify('first day of this month');
     if ($n > 0) {
@@ -159,12 +141,8 @@ function stuv_events_nth_weekday(DateTimeImmutable $month, int $n, int $weekday)
 }
 
 /**
- * Start times a rule generates, in order, from $start up to $until_ts.
- *
- * Supports DAILY, WEEKLY with or without BYDAY, MONTHLY on the same day or on
- * a single nth weekday (BYDAY=1TU, -1FR), and YEARLY on the same date, each
- * with INTERVAL, COUNT and UNTIL. COUNT counts generated starts before EXDATE
- * removes any, as RFC 5545 defines it.
+ * Start times from $start up to $until_ts. DAILY, WEEKLY (BYDAY), MONTHLY (same day or one nth
+ * weekday), YEARLY; INTERVAL, COUNT, UNTIL. COUNT counts before EXDATE, as RFC 5545 defines.
  */
 function stuv_events_expand(DateTimeImmutable $start, array $rule, int $until_ts): array {
     $interval = max(1, (int) ($rule['INTERVAL'] ?? 1));
@@ -234,16 +212,11 @@ function stuv_events_expand(DateTimeImmutable $start, array $rule, int $until_ts
     return $out;
 }
 
-/**
- * German labels for one occurrence, in Berlin time: the date badge shows
- * `day` over `month` (German order: 26 Okt), the line under the title `weekday` and `time`, and
- * `day_month` is the badge's text for screen readers.
- */
+/** German labels in Berlin time: badge `day` over `month`, `weekday` and `time`, `day_month` for screen readers. */
 function stuv_events_labels(DateTimeImmutable $start, DateTimeImmutable $end, bool $all_day): array {
     $start = $start->setTimezone(stuv_events_tz());
     $end   = $end->setTimezone(stuv_events_tz());
-    // An end is exclusive: an all-day event's last day is the day before its
-    // DTEND, and a party until 00:00 does not run into the next day.
+    // DTEND is exclusive.
     $last = $all_day ? $end->modify('-1 day') : $end->modify('-1 second');
 
     $time = $all_day ? 'Ganztägig' : $start->format('G:i') . ' Uhr';
@@ -269,16 +242,9 @@ function stuv_events_place(string $location): string {
 }
 
 /**
- * Every occurrence that has not ended by $now and starts within $days days,
- * sorted by start, at most $max of them and at most STUV_EVENTS_PER_SERIES of
- * one series.
- *
- * `series` is the event's UID, shared by every occurrence of a recurring
- * event and by its moved or edited instances (RECURRENCE-ID), so the browser
- * can show each series once. It keeps a few occurrences per series rather
- * than one so that a cached payload still has the next one after the first
- * has passed; the cap stops a weekly training from crowding one-off events
- * out of $max. Cancelled events and cancelled instances are left out.
+ * Occurrences not ended by $now that start within $days, sorted, at most $max and at most
+ * STUV_EVENTS_PER_SERIES per series (UID), so the cache still holds the next one after the first
+ * passes. Cancelled ones are left out.
  */
 function stuv_events_build(string $ics, DateTimeImmutable $now, int $days, int $max): array {
     $horizon = $now->modify("+$days days")->getTimestamp();
@@ -319,8 +285,7 @@ function stuv_events_build(string $ics, DateTimeImmutable $now, int $days, int $
             if (isset($skip[$ts]) || ($rule && isset($overridden["$uid@$ts"]))) {
                 continue;
             }
-            // All-day spans are whole calendar days, so they move by days, not
-            // seconds: a 1-day event over a DST change is still one day.
+            // All-day spans move by days, so DST doesn't shift them.
             $occ_end = $all_day
                 ? $occ->modify('+' . max(1, (int) round($duration / 86400)) . ' days')
                 : $occ->modify("+$duration seconds");

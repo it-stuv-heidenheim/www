@@ -1,10 +1,7 @@
 <?php
 /**
- * Unit tests for the copyright-year filter in stuv-theme.php.
- * Run: php wp-plugin/tests/test_theme.php
- *
- * The plugin file registers its hooks at load time, so the WordPress functions
- * it calls are stubbed here and the registered filter is captured to be run.
+ * Tests for the copyright-year filter. Run: php wp-plugin/tests/test_theme.php
+ * The WordPress functions are stubbed and the registered filter is captured.
  */
 require __DIR__ . '/harness.php';
 

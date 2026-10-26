@@ -1,7 +1,4 @@
-# Runs the local checks from docs/testing.md on every push and pull request.
-# Checks only: nothing here deploys, and no secret is needed. deploy.yml calls
-# this workflow first and deploys only when it passes, and only after a
-# reviewer's approval (docs/ai-workflow.md, "Deploy per GitHub Action").
+# The local checks (docs/testing.md) on every push and PR; deploy.yml runs them first. No secrets.
 name: Checks
 
 on:
@@ -23,8 +20,7 @@ jobs:
         with:
           node-version: 22
 
-      # Pinned so a Prettier release cannot turn a clean tree red overnight.
-      # Raise it deliberately, run `npx prettier@<new> --write .`, commit both.
+      # Pinned; to raise it, run `npx prettier@<new> --write .` and commit both.
       - name: Formatting
         run: npx --yes prettier@3.9.10 --check .
 
@@ -50,15 +46,13 @@ jobs:
         run: |
           BLOCKCHECK=.agents/skills/wordpress-default-editor/scripts/blockcheck
           npm install --prefix "$BLOCKCHECK" --silent --no-audit --no-fund
-          # One process for all files: loading the block library is the slow part.
           node "$BLOCKCHECK/validate_blocks.cjs" $(git ls-files 'data/*.html') \
             | tee "$RUNNER_TEMP/blockcheck.log"
-          # One summary line per file, or the validator crashed on one.
+          # One summary line per file, or the validator crashed.
           test "$(grep -c '^===' "$RUNNER_TEMP/blockcheck.log")" \
             -eq "$(git ls-files 'data/*.html' | wc -l)"
           ! grep -E ': [1-9][0-9]* invalid' "$RUNNER_TEMP/blockcheck.log"
 
-      # Sources readable, block markup balanced; no server, no secrets.
       - name: Deploy dry run
         run: python3 .agents/skills/wordpress-default-editor/scripts/deploy.py --manifest data/manifest.json all --dry-run
 

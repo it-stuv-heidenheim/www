@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
 """
-Rollback a page/post/template-part, or a replaced image, from /tmp/wp_backup/.
-Restores both content AND status; an image goes back under its old URL.
-Usage: python3 rollback.py <id> [--endpoint pages|posts|template-parts|...]
+Restore a page/post/template part (content and status), or a replaced image, from the backup.
+Usage: python3 rollback.py <id> [--endpoint pages|posts|template-parts|...]   # id: 12 or 'theme//slug'
        python3 rollback.py --media <filename>
-
-<id> may be an integer (pages/posts) or a string like 'theme//slug' (template parts).
---media restores the file replace_media() backed up before it deleted the
-attachment. The file it removes again is not backed up: it is the one just
-uploaded, so the caller has it.
 """
 import argparse
 import json

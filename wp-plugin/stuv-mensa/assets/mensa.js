@@ -1,11 +1,6 @@
 /**
- * StuV Mensa widget.
- *
- * Loaded as a classic script by wp_enqueue_script; also exports under
- * CommonJS so the pure helpers can be tested with `node --test`.
- *
- * Never parses an upstream timestamp: the REST route hands us plain
- * 'YYYY-MM-DD' dates and ready-made German labels.
+ * StuV Mensa widget. Classic script, exports under CommonJS for `node --test`. Never parses
+ * an upstream timestamp: the route sends 'YYYY-MM-DD' dates and German labels.
  */
 (function (factory) {
   var api = factory();
@@ -15,7 +10,6 @@
 })(function () {
   "use strict";
 
-  // format is a bound getter, so these work unattached.
   var formatPrice = new Intl.NumberFormat("de-DE", {
     style: "currency",
     currency: "EUR",
@@ -27,20 +21,8 @@
   }).format;
 
   /**
-   * Drop days that are already over.
-   *
-   * The payload is normalised against the date it was fetched on, and the REST
-   * route serves the stale store indefinitely whenever api.dhbw.app is down,
-   * with no upper bound on its age. During a prolonged outage the widget
-   * would therefore keep offering days that are now in the past, and select()
-   * would label one of them "Nächster Speiseplan · Montag, 13. Juli", presenting a
-   * stale menu as an upcoming one. Serving stale data is the right default;
-   * mislabelling it is not. Filtering on read rather than only at fetch time
-   * lets an expired payload fall through to the existing "Zurzeit ist kein
-   * Speiseplan verfügbar." terminal state instead.
-   *
-   * ISO 'YYYY-MM-DD' strings compare correctly with >=, so no Date parsing,
-   * for the same reason the rest of this file never touches a timestamp.
+   * Drop past days: the stale store is served during an outage, and a past day would be
+   * labelled as the next menu. 'YYYY-MM-DD' strings compare correctly.
    */
   function dropPastDays(days, todayIso) {
     if (!days) {
@@ -54,7 +36,7 @@
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
-    if (text !== undefined) node.textContent = text; // never innerHTML: upstream text
+    if (text !== undefined) node.textContent = text;
     return node;
   }
 
@@ -88,9 +70,7 @@
     panel.appendChild(frame);
   }
 
-  // Build the tab strip once. Switching days only moves aria-selected and the
-  // roving tabindex (see selectTab); rebuilding every button on each click would
-  // destroy the button the click landed on and force a focus-restore dance.
+  // Built once: rebuilding on click would destroy the focused button.
   function buildTabs(tabs, days, onSelect) {
     days.forEach(function (day) {
       var tab = el("button", "stuv-mensa-tab", day.weekday.slice(0, 2));
@@ -134,7 +114,7 @@
     Array.prototype.forEach.call(tabs.children, function (tab, index) {
       var isActive = index === activeIndex;
       tab.setAttribute("aria-selected", String(isActive));
-      tab.tabIndex = isActive ? 0 : -1; // roving tabindex
+      tab.tabIndex = isActive ? 0 : -1;
     });
   }
 
@@ -150,9 +130,9 @@
     hours.textContent = data.openingHours
       ? "Öffnungszeiten: " + data.openingHours
       : "";
-    root.hidden = false; // revealed only once we have data
+    root.hidden = false;
 
-    // Semester break, or a stale payload whose days have all expired. Terminal state.
+    // Semester break, or every cached day has passed.
     if (days.length === 0) {
       lead.textContent = "Zurzeit ist kein Speiseplan verfügbar.";
       tabs.hidden = true;
@@ -162,8 +142,7 @@
     function select(index) {
       var day = days[index];
 
-      // A day that is not today must say so plainly: a highlighted tab alone
-      // would be read as "today's food".
+      // Otherwise a highlighted tab reads as "today's food".
       lead.textContent =
         day.date === today ? day.label : "Nächster Speiseplan · " + day.label;
 
@@ -171,14 +150,12 @@
       renderMeals(panel, day);
     }
 
-    // Days come sorted and from today on (dropPastDays), so the first one is
-    // today if the Mensa is open today, otherwise the next open day.
+    // Days are sorted from today, so the first is today or the next open day.
     buildTabs(tabs, days, select);
     select(0);
   }
 
   function init() {
-    // Enqueued in the footer only on a page with the widget, after its config.
     var root = document.querySelector("[data-stuv-mensa]");
     fetch(stuvMensaConfig.endpoint, { headers: { Accept: "application/json" } })
       .then(function (response) {
@@ -189,8 +166,7 @@
         render(root, data);
       })
       .catch(function () {
-        // Quiet failure: leave the widget hidden. The section still shows its
-        // cards and the outbound Speiseplan button, which is the fallback.
+        // Stay hidden; the section's cards and Speiseplan button are the fallback.
         root.remove();
       });
   }

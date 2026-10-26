@@ -22,13 +22,8 @@ define('STUV_EVENTS_MAX', 40);     // occurrences in the payload
 define('STUV_EVENTS_MAX_BYTES', 2 * 1024 * 1024);
 
 /**
- * The upcoming occurrences, served stale-first with a stampede lock.
- *
- * Same soft-TTL design as stuv-mensa: the _stale option is the only payload
- * store, a value-less transient marks it fresh, and while one request
- * refreshes an expired store the others get the old copy. On a failed fetch
- * the old copy is served; events.js drops what has ended in the meantime.
- * Returns null only when Google is unreachable AND nothing was ever cached.
+ * Upcoming occurrences, stale-first with a stampede lock (same design as stuv-mensa).
+ * Null only when Google is unreachable and nothing was ever cached.
  */
 function stuv_events_payload(): ?array {
     $store = get_option('stuv_events_payload_stale');
@@ -77,10 +72,7 @@ add_action('rest_api_init', function (): void {
     ]);
 });
 
-/**
- * Enqueue the list script only where a list is, keyed on the marker attribute
- * in the block markup rather than a page id.
- */
+/** Enqueue the script only where the block markup carries the marker attribute. */
 add_action('wp_enqueue_scripts', function (): void {
     $post = get_post();
     if (!is_singular() || !$post || !str_contains($post->post_content, 'data-stuv-events')) {

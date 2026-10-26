@@ -1,12 +1,6 @@
 /**
- * StuV event list.
- *
- * Loaded as a classic script by wp_enqueue_script; also exports under
- * CommonJS so the pure helpers can be tested with `node --test`.
- *
- * Never parses a timestamp: the REST route hands us Berlin wall-clock strings
- * ('2026-10-28T19:30') and ready-made German labels, and those strings
- * compare correctly as text.
+ * StuV event list. Classic script, exports under CommonJS for `node --test`. Never parses a
+ * timestamp: Berlin wall-clock strings ('2026-10-28T19:30') compare correctly as text.
  */
 (function (factory) {
   var api = factory();
@@ -35,13 +29,7 @@
     return p.year + "-" + p.month + "-" + p.day + "T" + p.hour + ":" + p.minute;
   }
 
-  /**
-   * The next `limit` events that have not ended, each series once.
-   *
-   * The payload may be hours old (the plugin serves its cache while Google is
-   * unreachable), so what has ended since is dropped here, not only at fetch
-   * time. A weekly series then shows its next date instead of every Monday.
-   */
+  /** The next `limit` events not yet ended, each series once (the payload may be hours old). */
   function upcoming(events, now, limit) {
     var seen = {};
     return (events || [])
@@ -56,7 +44,7 @@
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
-    if (text !== undefined) node.textContent = text; // never innerHTML: calendar text
+    if (text !== undefined) node.textContent = text;
     return node;
   }
 
@@ -106,7 +94,6 @@
   }
 
   function init() {
-    // Enqueued in the footer only on a page with a list, after its config.
     var roots = document.querySelectorAll("[data-stuv-events]");
     fetch(stuvEventsConfig.endpoint, {
       headers: { Accept: "application/json" },
@@ -121,8 +108,7 @@
         });
       })
       .catch(function () {
-        // Quiet failure: the fallback text in the markup stays, and it points
-        // to the calendar.
+        // The markup's fallback text stays and points to the calendar.
       });
   }
 

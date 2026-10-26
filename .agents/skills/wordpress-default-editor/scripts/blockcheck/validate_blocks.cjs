@@ -1,19 +1,12 @@
 #!/usr/bin/env node
 /*
- * Block validation with Gutenberg's own parser and save().
+ * Validate raw block markup (`content.raw`) with Gutenberg's own parser and save(); prints each
+ * mismatching block with the "Expected …, saw …" reason.
  *
- * Usage:
- *   node validate_blocks.cjs <file-with-raw-block-markup>... [--limit N] [--json]
+ *   node validate_blocks.cjs <file>... [--limit N] [--json]
  *
- * The input file must contain the raw block markup (the `content.raw` you get from
- * GET /wp-json/wp/v2/{type}/{id}?context=edit). For each block whose stored HTML does
- * not match what its save() regenerates, this prints the block type, the exact
- * "Expected …, saw …" reason, the parsed style attributes, and the original markup.
- *
- * The first run installs the latest @wordpress/blocks, @wordpress/block-library and
- * jsdom into this directory. If the live site runs an older WordPress, a handful of
- * save() details can differ; match versions when in doubt (the WordPress version is
- * in the front-end <meta name="generator"> tag).
+ * The first run installs the latest @wordpress/blocks, block-library and jsdom here. Match the
+ * site's WordPress version (front-end <meta name="generator">) if details differ.
  */
 const { execSync } = require("child_process");
 const fs = require("fs");
@@ -83,8 +76,7 @@ function silent(fn) {
 silent(() => registerCoreBlocks());
 
 // --- args ---
-// Several files run in one process: loading the block library is most of the
-// time a file takes, so a sweep over the tree pays for it once.
+// Many files in one process load the block library once.
 const args = process.argv.slice(2);
 const asJson = args.includes("--json");
 let limit = 20;
@@ -116,7 +108,6 @@ function check(file) {
         total++;
         if (b.isValid === false) {
           const issue = (b.validationIssues || [])[0];
-          // args = [printf-style format, ...values]; substitute %s/%o for a clean message
           let reason = "";
           if (issue && issue.args && issue.args.length) {
             const vals = issue.args.slice(1);

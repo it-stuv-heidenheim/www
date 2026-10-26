@@ -1,11 +1,5 @@
-"""Rules for the deployed block HTML that the Gutenberg validator does not check.
+"""Rules for the deployed block HTML that blockcheck doesn't cover; each one caught a real bug.
 
-blockcheck proves that each block matches its save() output. It does not
-notice a link to an anchor that no longer exists, a block whose JSON says one
-font weight while its markup says another, or a crisis notice that drifted
-below the form. Each test here exists because one of those reached the site.
-
-Run from the repo root:
     python3 -m unittest discover -s tools -p "test_*.py" -v
 """
 
@@ -15,9 +9,7 @@ import urllib.parse
 
 import sitecheck as sc
 
-# Every contact address the site may link. A new one is added here on purpose;
-# a misspelt one (an Instagram handle with an extra underscore, a digit missing
-# from a crisis line) fails instead of shipping. Normalized by contact_key().
+# Every contact the site may link. Add a new one here on purpose; a misspelt one fails.
 CONTACTS = {
     "tel:112",
     "tel:+498001110111",  # Telefonseelsorge
@@ -35,8 +27,7 @@ CONTACTS = {
 }
 CONTACT_HOSTS = {"instagram.com", "wa.me", "chat.whatsapp.com", "forms.gle"}
 
-# Link texts that say nothing once read out of context, which is how a screen
-# reader's link list presents them.
+# Link texts that say nothing out of context (a screen reader's link list).
 GENERIC_LINK_TEXT = {
     "besuchen", "hier", "hier klicken", "klick hier", "link", "mehr",
     "mehr erfahren", "mehr lesen", "weiter", "zur seite",

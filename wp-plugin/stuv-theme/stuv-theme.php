@@ -14,16 +14,8 @@ if (!defined('ABSPATH')) {
 define('STUV_THEME_VERSION', '1.5.1');
 
 /**
- * The theme script, inline in <head>.
- *
- * Inline and head-level on purpose: the .dark class must be on <html> before the
- * browser paints the first pixel, otherwise every visitor with a dark preference
- * gets a white flash. An external file would still block the parser, but costs a
- * round trip for ~700 bytes; a footer script would be far too late.
- *
- * The click handler is delegated from `document` because this runs before the
- * header markup exists. That avoids a DOMContentLoaded dance, and the button keeps working
- * wherever it is moved to.
+ * Inline in <head> so .dark is set before first paint (no white flash). The click handler is
+ * delegated from `document` because the header doesn't exist yet.
  */
 function stuv_theme_script(): string {
     return <<<'JS'
@@ -33,19 +25,16 @@ function stuv_theme_script(): string {
   var MODES = ['light', 'dark', 'system'];
   var LABELS = { light: 'Thema: Hell', dark: 'Thema: Dunkel', system: 'Thema: System' };
 
-  // localStorage throws in Safari's private mode rather than returning null.
+  // localStorage throws in Safari's private mode.
   function stored() {
     try { return localStorage.getItem('stuv-theme'); } catch (e) { return null; }
   }
 
-  // Resolve the stored string to one of the three real modes; anything absent
-  // or unrecognised means "follow the OS", so it maps to 'system'.
   function mode() {
     var m = stored();
     return MODES.indexOf(m) !== -1 ? m : 'system';
   }
 
-  // 'system' looks at the OS right now; 'light'/'dark' resolve to themselves.
   function resolve(m) {
     return m === 'system' ? (mq.matches ? 'dark' : 'light') : m;
   }
@@ -55,15 +44,13 @@ function stuv_theme_script(): string {
     document.querySelectorAll('.stuv-theme-toggle').forEach(function (b) {
       b.setAttribute('aria-label', LABELS[m]);
     });
-    // The check mark in the menu is what tells System apart from a fixed
-    // choice; the trigger icon only ever shows the resolved theme.
+    // Only the menu's check mark tells System apart from a fixed choice.
     document.querySelectorAll('.stuv-theme-option').forEach(function (o) {
       o.setAttribute('aria-checked', String(o.dataset.themeSet === m));
     });
   }
 
-  // Closing hides the option that has focus (Escape, or a pick by keyboard);
-  // hand focus back to the toggle instead of dropping it on <body>.
+  // Closing hides the focused option; return focus to the toggle.
   function closeMenus() {
     document.querySelectorAll('.stuv-theme-switch[open]').forEach(function (d) {
       if (d.contains(document.activeElement)) { d.querySelector('summary').focus(); }
@@ -73,23 +60,19 @@ function stuv_theme_script(): string {
 
   apply(mode());
 
-  // Reveals .stuv-theme-switch, which component.css hides by default: no plugin
-  // (or no JS) means no click handler, so the control must not be there at all.
+  // component.css hides the switch until this script runs.
   root.classList.add('stuv-theme-ready');
 
-  // The OS listener only moves the page while the visitor is in System mode.
   mq.addEventListener('change', function () {
     if (mode() === 'system') { apply('system'); }
   });
 
-  // The head script ran before the button existed, so apply() couldn't label it
-  // yet; re-apply once the DOM is ready to name the current mode on the button.
+  // Re-apply once the button exists, to label it.
   document.addEventListener('DOMContentLoaded', function () {
     apply(mode());
   });
 
-  // One listener covers both jobs: picking a mode from the menu, and the
-  // outside-click dismissal that <details> does not do on its own.
+  // Picks a mode and closes the menu on an outside click, which <details> doesn't do itself.
   document.addEventListener('click', function (e) {
     var option = e.target.closest('.stuv-theme-option');
     if (option) {
@@ -110,23 +93,14 @@ function stuv_theme_script(): string {
 JS;
 }
 
-/**
- * A src-less handle exists only to carry the inline script; WordPress prints it
- * in <head> because nothing marks it as a footer script.
- */
+/** A src-less handle only carries the inline script, printed in <head>. */
 add_action('wp_enqueue_scripts', function (): void {
     wp_register_script('stuv-theme', false, [], STUV_THEME_VERSION, false);
     wp_enqueue_script('stuv-theme');
     wp_add_inline_script('stuv-theme', stuv_theme_script());
 });
 
-/**
- * The overlay button style (translucent white, for buttons on the hero image
- * or a red band), offered in the editor next to core's Fill and Outline. Only
- * the picker depends on this: the look is in component.css under
- * .wp-block-button.is-style-overlay, so existing buttons keep it with the
- * plugin off.
- */
+/** The overlay button style in the editor picker; its look lives in component.css. */
 add_action('init', function (): void {
     register_block_style('core/button', [
         'name' => 'overlay',
@@ -135,11 +109,8 @@ add_action('init', function (): void {
 });
 
 /**
- * The site icon is one image for every size, so WordPress also serves the
- * transparent favicon as the apple-touch-icon, and iOS fills transparency with
- * black. Point that tag at an opaque copy instead (data/media/
- * stuv-dhbw-apple-touch-icon.png). Only once it is uploaded: a missing file
- * keeps core's tag rather than linking a 404.
+ * iOS fills the transparent site icon with black, so point apple-touch-icon at the opaque
+ * stuv-dhbw-apple-touch-icon.png, but only once it is uploaded.
  */
 add_filter('site_icon_meta_tags', function (array $tags): array {
     $uploads = wp_get_upload_dir();
@@ -156,12 +127,8 @@ add_filter('site_icon_meta_tags', function (array $tags): array {
 });
 
 /**
- * Keeps the footer's copyright year current.
- *
- * The template part stores a real year, so the footer still reads correctly
- * with the plugin off; it only goes stale. On render the first four-digit
- * number after the © is replaced, and only inside a paragraph carrying the
- * stuv-copyright class (tools/test_content.py fails on a © year outside one).
+ * Keeps the footer's © year current; the stored year is the fallback without the plugin. Only
+ * inside .stuv-copyright (tools/test_content.py enforces that).
  */
 function stuv_theme_copyright_year(string $html, string $year): string {
     return preg_replace('/©\s*\K\d{4}/u', $year, $html, 1) ?? $html;

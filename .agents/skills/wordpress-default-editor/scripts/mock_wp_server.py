@@ -36,7 +36,6 @@ TEMPLATE_PARTS = {
 BLOCKS = {}
 _next_block_id = [100]
 
-# Editable user global-styles record for the active theme (wp_global_styles post).
 GLOBAL_STYLES = {1: {"id": 1, "settings": {}, "styles": {}}}
 
 

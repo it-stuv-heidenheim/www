@@ -1,23 +1,12 @@
-"""Validates the committed data/maps/*.json against the geometry.
-
-A map file can be syntactically fine and still produce an unusable image: a pin
-outside the frame, or a render so large that WordPress rescales it on upload and
-the source_url stops pointing at what we made. Both are caught here.
-
-Run from the repo root:
-    python3 -m unittest discover -s tools -p "test_*.py" -v
-"""
+"""Validates data/maps/*.json: pins inside the frame, renders under WordPress's rescale limit."""
 
 import unittest
 
 import gen_map
 
-# WordPress rescales uploads larger than this on either axis ("big image" threshold),
-# and the attachment's source_url then points at the -scaled derivative, not at ours.
+# WordPress rescales uploads larger than this ("big image" threshold) and source_url changes.
 WP_BIG_IMAGE_PX = 2560
 
-# Derived from the directory, not typed out: a new data/maps/<id>.json is
-# covered by these tests the moment it lands, instead of silently untested.
 MAPS = tuple(sorted(p.stem for p in (gen_map.REPO / "data" / "maps").glob("*.json")))
 
 

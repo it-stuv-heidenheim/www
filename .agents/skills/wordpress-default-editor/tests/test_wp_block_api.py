@@ -47,9 +47,7 @@ def mock_server():
 
 @pytest.fixture(autouse=True)
 def restore_pages(request):
-    """Snapshot mock page state and restore it after each server-backed test, so
-    a test that mutates a page can't change the outcome of any other, in any order.
-    No-ops for unit tests that don't start the server."""
+    """Snapshot mock page state and restore it after each server-backed test."""
     if "mock_server" not in request.fixturenames:
         yield
         return
@@ -96,8 +94,7 @@ def test_rest_base_honors_override(monkeypatch):
 
 
 def test_backup_dir_distinguishes_same_host_installs(monkeypatch):
-    """Two installs sharing one host (subdir multisite, or http vs https) must
-    not share a backup directory, or the same page id collides across sites."""
+    """Two installs on one host must not share a backup directory."""
     monkeypatch.setenv("WP_SITE", "https://example.com/blog")
     blog = api.backup_dir()
     monkeypatch.setenv("WP_SITE", "https://example.com/shop")
@@ -295,12 +292,7 @@ def test_apply_global_styles_deep_merges_existing(mock_server):
     assert layout["wideSize"] == "90rem"      # added alongside
 
 
-# --- connect-time address-family fallback ---------------------------------
-#
-# A host whose AAAA record is unroutable (staging behind a provider that
-# publishes IPv6 it does not actually route) made every REST call stall for the
-# full read timeout before urllib fell back to IPv4, which turned a normal
-# `deploy.py all` into a multi-minute run that never finished.
+# --- connect-time address-family fallback (unroutable AAAA) ---------------
 
 BLACKHOLE = ("192.0.2.1", 443)  # TEST-NET-1: routed nowhere, so connects hang
 
@@ -371,10 +363,6 @@ def test_connect_any_raises_when_every_address_fails(monkeypatch):
 
 
 # --- pinning the address family ------------------------------------------
-#
-# Capping the per-address budget still pays that cap once per process, and every
-# script is its own process. A host with a permanently unroutable AAAA can skip
-# IPv6 outright.
 
 
 def test_address_family_skips_ipv6_when_pinned_to_v4(monkeypatch, listening_socket):
@@ -420,11 +408,6 @@ def test_requests_go_through_the_fallback_opener(mock_server):
 
 
 # --- media lookup with duplicate filenames ---------------------------------
-#
-# Toggling "organize uploads into month- and year-based folders" mid-migration
-# left two attachments per filename (2026/07/x.jpg and x.jpg). Whichever one
-# find_media_by_filename returns decides what the replace-an-image procedure
-# deletes, so "first row the API happened to return" is not good enough.
 
 
 def _media_rows():
@@ -466,10 +449,6 @@ def test_find_media_by_filename_ignores_partial_name_matches(monkeypatch):
 
 
 # --- replacing an image at the same URL ------------------------------------
-#
-# The delete in a replace is the one step nothing else can undo: the old file
-# is gone from the server. replace_media() keeps a copy first, and
-# rollback.py --media puts it back.
 
 OLD_URL = "https://example.test/wp-content/uploads/jan.jpg"
 

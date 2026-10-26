@@ -1,18 +1,10 @@
 #!/usr/bin/env python3
-"""Verify custom CSS survived a global-styles write intact.
+"""Check that the live global-styles CSS still has the given markers and icon data: URIs.
 
-Reads the live user global-styles record and checks styles.css for the given
-marker strings and, optionally, an icon custom property carrying a data: URI
-(REST sanitization strips data: URIs on some hosts). Run after deploying a
-global-styles target.
-
-Exit codes: 0 all intact; 1 marker rules missing (restore); 2 icon data: URIs
-stripped (keep the icon :root block in a header core/html block instead).
+Exit codes: 0 intact; 1 marker rules missing (restore); 2 icon data: URIs stripped.
 
 Usage:
-  python3 verify_global_css.py --marker .my-card --marker .my-box \
-      --icon-marker=--ico-calendar
-(argparse needs the `=` form for values that start with `--`.)
+  python3 verify_global_css.py --marker .my-card --marker .my-box --icon-marker=--ico-calendar
 """
 import argparse
 import sys

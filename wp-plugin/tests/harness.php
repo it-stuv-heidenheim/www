@@ -1,12 +1,5 @@
 <?php
-/**
- * Zero-dependency test harness shared by the test_*.php scripts.
- *
- * Each test file requires this, then its unit under test, then calls check().
- * summarize() prints the tally and exits with the right status; it is
- * registered as a shutdown function so a test file just ends with its last
- * check() instead of repeating the same two lines.
- */
+/** Zero-dependency harness: require it, then the unit, then call check(); the tally prints at shutdown. */
 
 $failed = 0;
 

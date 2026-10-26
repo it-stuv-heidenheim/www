@@ -1,45 +1,15 @@
 #!/usr/bin/env python3
-"""Emit the CSS custom properties holding Phosphor icons as data-URI masks/images.
+"""Write the Phosphor icons as data-URI custom properties (--ico-*) between the gen_icon_css
+markers in data/styles/component.css. The fill is baked to the brand primary, so one URI works
+as mask and as background-image. Only %, #, " and <> are escaped: the CSS is inlined on every page.
 
-Reads SVGs from $PHOSPHOR_ICON_DIR (default
-node_modules/@phosphor-icons/core/assets/regular/) and writes a
-:root { --ico-*: url("data:...") } block into data/styles/component.css, between
-the gen_icon_css markers. The fill colour is baked to the brand primary
-so the same data-URI works both as a CSS mask (alpha-only; recoloured via
-`background: var(--stuv-primary)`) and as a background-image (shows the baked
-primary). Stdlib only.
-
-component.css is deployed into the global-styles custom-CSS field, which WordPress
-prints inline in <style id="global-styles-inline-css"> on every page view and never
-HTTP-caches. This icon set is the largest single thing in it, so the encoding is
-kept as tight as it can be while staying safe:
-
-  * comments and class attributes are dropped (Phosphor's regular set ships
-    neither today; the strip is a guard against a release that adds them):
-    neither can match anything inside a mask.
-  * whitespace is collapsed, so a pretty-printed SVG doesn't turn every
-    newline+indent into a run of %20.
-  * only %, #, " and the angle brackets are percent-escaped. Spaces, apostrophes,
-    '=' and ':' are legal inside a quoted CSS url() and cost 3 bytes each escaped.
-    The angle brackets stay escaped on purpose: this CSS is stored in a WordPress
-    post, and a raw <svg ...> in the payload is exactly what a KSES pass would
-    mangle. That risk is not worth the 2 bytes.
-
-Usage (from repo root; this repo has no node_modules, so fetch the package ad hoc):
     npm install --prefix /tmp/phosphor @phosphor-icons/core@2.1.1
     export PHOSPHOR_ICON_DIR=/tmp/phosphor/node_modules/@phosphor-icons/core/assets/regular
     python3 tools/gen_icon_css.py            # print the block to stdout
     python3 tools/gen_icon_css.py --write    # splice it into component.css
     python3 tools/gen_icon_css.py --check    # diff against component.css; writes nothing
 
-Pin the Phosphor version: a bump redraws paths, and every icon on the site changes
-shape with no diff anywhere but here.
-
-The token names (--ico-calendar, --ico-utensils, ...) predate Phosphor: they are
-the lucide names the site was built with, and block HTML, data/maps/*.json and
-component.css reference them. ICONS maps each token to the Phosphor icon that
-draws it, so swapping a glyph is a one-line change here instead of a rename
-across the content.
+Keep the version pinned: a bump redraws every icon. Token names are the older lucide names.
 """
 
 import argparse
@@ -62,9 +32,8 @@ ICON_DIR = pathlib.Path(
 START = "/* gen_icon_css:start — erzeugt von tools/gen_icon_css.py; nicht von Hand bearbeiten */"
 END = "/* gen_icon_css:end */"
 
-# token -> Phosphor icon. Every token here must be reachable from a rule in component.css or from a
-# var(--ico-*) in the block HTML; an unreachable one is ~150 bytes on every page
-# view for nothing.
+# token -> Phosphor icon. Every token must be used by component.css or the block HTML
+# (each one costs ~150 bytes on every page view).
 ICONS = {
     # Referate
     "dumbbell": "barbell",
@@ -118,11 +87,7 @@ ICONS = {
     "wine": "wine",
 }
 
-# Characters that must not survive raw inside url("data:image/svg+xml,…"):
-#   %  is the escape character itself
-#   #  would start a URL fragment and truncate the icon at the stroke colour
-#   <> would put raw markup into a CSS payload that WordPress stores in a post
-# Everything else in an SVG is safe inside a double-quoted CSS url().
+# Escaped inside url("data:image/svg+xml,…"): % (escape char), # (fragment), <> (KSES).
 UNSAFE = "%#<>"
 SAFE = "".join(chr(c) for c in range(0x21, 0x7F) if chr(c) not in UNSAFE + '"')
 

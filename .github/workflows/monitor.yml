@@ -1,11 +1,6 @@
-# Watches the live site between deploys; reads only, never writes. Daily: a
-# target edited in wp-admin (verify_deploy.py --history), plugins whose live
-# version differs from wp-plugin/ (tools/check_plugins.py) and wp-admin state
-# that differs from data/site-state.json (tools/site_state.py). Mondays: external
-# links that died (tools/check_links.py). A failed run emails whoever last
-# changed the schedule below; docs/testing.md, "Überwachung".
-# Needs the environment `monitor` (main only, no reviewers) with the secrets
-# WP_USER and WP_APP_PASS of its own administrator and the variable WP_SITE.
+# Watches the live site, read-only: daily verify_deploy.py --history, check_plugins.py and
+# site_state.py, Mondays check_links.py. Environment `monitor` (main only, no reviewers) with
+# WP_USER, WP_APP_PASS of its own administrator and WP_SITE.
 name: Monitor
 
 on:
@@ -32,7 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          # --history looks the live content up in every commit.
           fetch-depth: 0
 
       - name: Configuration present
@@ -41,9 +35,7 @@ jobs:
             [ -n "${!v}" ] || { echo "::error::$v is not set in the monitor environment"; exit 1; }
           done
 
-      # EDITED fails the run: the edit is lost on the next deploy of that
-      # target unless someone ports it into data/ (docs/ai-workflow.md).
-      # BEHIND only warns: main has pushes nobody has deployed yet.
+      # EDITED fails (port the edit into data/); BEHIND only warns (undeployed pushes).
       - name: Edits in wp-admin
         run: |
           set +e
@@ -62,7 +54,6 @@ jobs:
         if: success() || failure()
         run: python3 tools/check_plugins.py
 
-      # Settings, pages, plugins, media, SEO and form fields set in wp-admin.
       - name: Site state
         if: success() || failure()
         run: python3 tools/site_state.py

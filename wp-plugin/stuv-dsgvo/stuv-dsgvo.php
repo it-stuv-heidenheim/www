@@ -14,13 +14,8 @@ if (!defined('ABSPATH')) {
 define('STUV_DSGVO_VERSION', '1.1.2');
 
 /**
- * Whether the current request renders an embed at all.
- *
- * Both calendars live in page content, so a substring check on the post is
- * enough and keeps ~1.5 KB of inline script off the other eight pages. The
- * trade-off: an embed placed in a template part, a widget or a reusable block
- * would not be found here and would never load. If one ever is, drop this
- * check rather than trying to teach it about every content source.
+ * Whether the post contains an embed. Embeds in template parts, widgets or reusable blocks
+ * would never load; if one appears, drop this check.
  */
 function stuv_dsgvo_has_embed(): bool {
     $post = get_post();
@@ -30,21 +25,10 @@ function stuv_dsgvo_has_embed(): bool {
 }
 
 /**
- * The click-to-load script.
- *
- * The embeds in the page content carry `data-stuv-src` and no `src` at all, so
- * nothing reaches Google until a visitor asks for it. That also decides the
- * failure mode: with this plugin off (or JavaScript off) the iframe stays empty
- * forever, so the markup ships a visible `.stuv-dsgvo-fallback` link that this
- * script hides again once it has taken over. It fails closed both ways:
- * no silent empty box, and no request to Google that nobody asked for.
- *
- * The consent is remembered per device in localStorage, so moving between the
- * homepage and the Events page does not ask again. That is only defensible with
- * a way back out, so a loaded embed always carries a visible revoke link: the
- * DSGVO wants withdrawing to be as easy as giving. Revoking replaces the iframe
- * with a fresh, src-less clone rather than clearing `src`, because clearing it
- * leaves the already-loaded Google document running in the frame.
+ * Click-to-load. Embeds carry `data-stuv-src` and no `src`, so nothing reaches Google before a
+ * click; without this script the visible `.stuv-dsgvo-fallback` link remains. Consent is kept
+ * in localStorage, so a loaded embed always shows a revoke link (DSGVO: withdrawing as easy as
+ * giving).
  */
 add_action('wp_enqueue_scripts', function (): void {
     if (!stuv_dsgvo_has_embed()) {
@@ -60,10 +44,7 @@ add_action('wp_enqueue_scripts', function (): void {
   var ICON =
     '<svg class="stuv-dsgvo-icon" width="32" height="32" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/></svg>';
 
-  // Safari in private mode and "block all cookies" settings make localStorage
-  // throw on access, not just on write. A device that cannot remember the
-  // consent simply falls back to asking every time, never to an exception that
-  // takes the whole click handler down with it.
+  // localStorage throws on access in Safari private mode; then the script asks every time.
   function consentGiven() {
     try {
       return window.localStorage.getItem(STORAGE_KEY) === '1';
@@ -93,8 +74,7 @@ add_action('wp_enqueue_scripts', function (): void {
       var fresh = buildPlaceholder(reset);
       reset.parentNode.insertBefore(fresh, reset);
 
-      // The button that was clicked is gone. Without this, focus falls back to
-      // <body> and a keyboard visitor is thrown to the top of the page.
+      // The clicked button is gone; keep focus off <body>.
       fresh.querySelector('.stuv-dsgvo-load-btn').focus();
     });
     return p;
@@ -105,8 +85,7 @@ add_action('wp_enqueue_scripts', function (): void {
 
     var placeholder = document.createElement('div');
     placeholder.className = 'stuv-dsgvo-placeholder';
-    // role="group" is what makes the label count: a bare <div> has no role, so
-    // assistive tech drops aria-label on the floor.
+    // Without role="group" assistive tech ignores aria-label.
     placeholder.setAttribute('role', 'group');
     placeholder.setAttribute('aria-label', title);
     placeholder.innerHTML =
@@ -117,15 +96,14 @@ add_action('wp_enqueue_scripts', function (): void {
       '" target="_blank" rel="noopener noreferrer">Datenschutzerklärung von Google</a>.</p>' +
       '<button type="button" class="stuv-button-outline stuv-dsgvo-load-btn">Kalender laden</button>';
 
-    // textContent, not innerHTML: `title` comes out of block markup, which is
-    // editable in wp-admin by anyone who can edit pages.
+    // textContent: `title` comes from page markup anyone with edit rights can change.
     placeholder.querySelector('.stuv-dsgvo-notice').textContent = title;
 
     placeholder.querySelector('.stuv-dsgvo-load-btn').addEventListener('click', function () {
       rememberConsent(true);
       loadEmbed(iframe);
       placeholder.remove();
-      iframe.focus(); // the button had focus, see above
+      iframe.focus();
     });
     return placeholder;
   }
@@ -136,10 +114,7 @@ add_action('wp_enqueue_scripts', function (): void {
     iframe.parentNode.insertBefore(buildRevoke(iframe), iframe.nextSibling);
   }
 
-  /**
-   * Undo a load. `src = ''` would leave Google's document alive in the frame,
-   * so the iframe is swapped for a clone taken *after* the attribute is gone.
-   */
+  /** Revoke: `src = ''` would keep Google's document alive, so swap in a clone taken after removing it. */
   function unloadEmbed(iframe) {
     iframe.removeAttribute('src');
     iframe.classList.remove('stuv-dsgvo-loaded');
@@ -158,14 +133,12 @@ add_action('wp_enqueue_scripts', function (): void {
         iframe.parentNode.insertBefore(buildPlaceholder(iframe), iframe);
       }
 
-      // Hides the no-JS fallback link. Set here and not in the markup so that
-      // it only disappears once this script has actually run.
+      // Hide the no-JS fallback only once this script has run.
       var wrapper = iframe.closest('.stuv-dsgvo-embed');
       if (wrapper) wrapper.classList.add('stuv-dsgvo-ready');
     }
   }
 
-  // Printed in <head>, so the document is still loading.
   document.addEventListener('DOMContentLoaded', setupEmbeds);
 })();
 JS);

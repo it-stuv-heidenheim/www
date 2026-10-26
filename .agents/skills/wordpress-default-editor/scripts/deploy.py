@@ -1,34 +1,16 @@
 #!/usr/bin/env python3
-"""Manifest-driven deployer for WordPress block-theme sites.
-
-One entry point for every target (pages, template parts, global styles, media)
-instead of a hand-written script per resource. Targets are declared in a
-manifest JSON file; source paths are relative to the MANIFEST'S DIRECTORY.
-See SKILL.md "Manifest targets" for the manifest format.
+"""Manifest-driven deployer; source paths are relative to the manifest's directory (SKILL.md).
 
 Usage:
   python3 deploy.py --manifest <path> --list          # show targets
   python3 deploy.py --manifest <path> all --dry-run   # validate sources, no writes
-  python3 deploy.py --manifest <path> changed         # what differs from the site, plus media
+  python3 deploy.py --manifest <path> changed         # BEHIND or EDITED targets, plus media
   python3 deploy.py --manifest <path> <target> ...    # these targets
-  python3 deploy.py --manifest <path> all             # every target, in order
   python3 deploy.py --manifest <path> changed --overwrite homepage  # even over its wp-admin edit
 
-Before any write, every target to be written is checked against the site and
-git history (verify_deploy.py --history): one whose live content matches no
-commit (EDITED) was edited in wp-admin, and the deploy stops without writing
-anything unless that target is named in --overwrite (bare --overwrite: all).
-`changed` picks the targets that are BEHIND or EDITED, plus media; it reads
-the site even with --dry-run, which otherwise never contacts the server.
-
-After each write the target is read back and must match its sources
-(verify_deploy.py), and a global-styles target with `markers` must still carry
-them in its custom CSS (verify_global_css.py); the run stops at the first
-target that fails. Structural targets are backed up and gated by
-save_structural (confirm + balanced markup). Global-styles targets are
-JSON-backed-up by apply_global_styles. Media targets upload a directory of
-files, reusing existing attachments by filename; a failed file is reported and
-the batch continues, but the run raises.
+Stops before any write if a target is EDITED (see verify_deploy.py) and not named in
+--overwrite (bare: all). Every write is read back, global-styles `markers` checked; the run
+stops at the first mismatch.
 """
 import argparse
 import json
