@@ -1,27 +1,12 @@
 #!/usr/bin/env python3
 """Snapshot the site state that lives only in WordPress, and check it for drift.
 
-deploy.py writes block content, template parts and global styles; everything
-else is set in wp-admin and stored only in the database: site settings, the
-active theme and plugins, page titles, slugs and templates, The SEO
-Framework's titles, descriptions and preview image, and the WPForms fields.
-Library files are listed only when data/media/ lacks them: uploaded in
-wp-admin, or left over after their file was removed from the repo. data/site-state.json records it, so a change shows up as a diff and a
-lost database can be set up again from the file.
+Records settings, theme, plugins, pages, SEO tags, WPForms fields and library files missing
+from data/media/ in data/site-state.json; restores nothing. Leaves out the admin e-mail
+(public repo) and WPForms notifications (keep a WPForms export elsewhere).
 
-Nothing is written to the site, and this does not restore anything: the file
-is the record to re-enter by hand. Sources are the REST API (admin
-credentials, like deploy.py) and the served pages, read with a query string
-so WP-Optimize's page cache is bypassed.
+Exit codes: 0 match, 1 differs (diff printed), 2 site unreadable.
 
-Left out on purpose: the admin e-mail address, because the repo is public, and
-everything neither source shows, above all the WPForms notifications (who
-receives a message). Keep those in a WPForms export outside this repo.
-
-Exit codes: 0 the site matches the file, 1 it differs (diff printed),
-2 the site could not be read.
-
-Usage, from the repo root after `source .env`:
     python3 tools/site_state.py           # compare live with data/site-state.json
     python3 tools/site_state.py --write   # record the live state in the file
 """

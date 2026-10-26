@@ -1,13 +1,5 @@
-"""Tests for the served-page parser of site_state.py and for the committed snapshot.
-
-The markup below is cut down from what WPForms 2.0 and The SEO Framework 5.2
-serve on this site. The honeypot matters most: WPForms draws its field id and
-label at random on every page view, so a parser that keeps it reports drift
-on every run.
-
-Run from the repo root:
-    python3 -m unittest discover -s tools -p "test_*.py" -v
-"""
+"""Tests for site_state.py's page parser and the committed snapshot. The markup is cut down
+from WPForms 2.0 and The SEO Framework 5.2; the honeypot field is random on every view."""
 
 import json
 import re

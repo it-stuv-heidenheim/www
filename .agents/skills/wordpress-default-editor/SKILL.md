@@ -43,7 +43,8 @@ after `source .env`. Each script's docstring and `--help` hold its full usage.
   rules stripped, 2 = data-URI icons stripped.
 - `rollback.py <id> [--endpoint E]` restores content and status from
   `/tmp/wp_backup/<site>/`; the id may be `theme//slug`. `rollback.py --media
-<filename>` puts back the image `replace_media()` replaced.
+<filename>` puts back the image `replace_media()` replaced, `--global-styles`
+  the global styles the last deploy overwrote.
 - `upload_media.py <file> [--alt T] [--replace]` returns the existing
   attachment when the filename is already in the library; `--replace` puts
   the new file under its URL instead (`replace_media()`).
@@ -68,13 +69,19 @@ import sys; sys.path.insert(0, ".agents/skills/wordpress-default-editor/scripts"
 import wp_block_api as wp
 ```
 
+Reads retry rate limits and server errors. Writes retry only 429 and 503:
+after a 500, 502 or 504 the write may have landed, so read the target back
+before repeating it. A failed call raises `HTTPError` with WordPress's
+`code: message` and the URL in its message.
+
 - `fetch_raw(endpoint, id)` reads with `context=edit`: raw block comments plus
   `status`. Echo that `status` back on every write; a write without it can
   publish a draft.
 - `backup(endpoint, id)`, then `save_structural(endpoint, id, content, status, confirm=True)`,
   which refuses without a backup, `confirm` and balanced block markup.
 - `get_global_styles()`; `apply_global_styles(settings, styles, confirm=True)`
-  deep-merges into the user record after a JSON backup. User palette and font
+  deep-merges into the user record after a JSON backup (undo:
+  `rollback.py --global-styles`). User palette and font
   values read back nested under a `custom` key.
 - `find_by_slug(endpoint, slug)` before `create_resource(endpoint, fields)`;
   `delete_resource` undoes it. A synced pattern goes on `blocks` with

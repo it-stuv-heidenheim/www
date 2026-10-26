@@ -2,64 +2,13 @@ import json
 import os
 import shutil
 import socket
-import subprocess
-import sys
 import time
 import urllib.error
-import urllib.request
 
 import pytest
 
 import rollback as rb
 import wp_block_api as api
-
-
-@pytest.fixture(scope="module")
-def mock_server():
-    """Start the Flask mock server for the duration of the test module."""
-    env = os.environ.copy()
-    proc = subprocess.Popen(
-        [sys.executable, "scripts/mock_wp_server.py"],
-        cwd=os.path.dirname(os.path.dirname(__file__)),
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    for _ in range(50):
-        try:
-            urllib.request.urlopen(
-                "http://127.0.0.1:5001/wp-json/wp/v2/pages",
-                timeout=1,
-            )
-            break
-        except urllib.error.HTTPError:
-            # Server responded (e.g. 401 unauthenticated) -> it is up.
-            break
-        except Exception:
-            time.sleep(0.1)
-    else:
-        proc.terminate()
-        raise RuntimeError("Mock server did not start")
-    yield
-    proc.terminate()
-    proc.wait()
-
-
-@pytest.fixture(autouse=True)
-def restore_pages(request):
-    """Snapshot mock page state and restore it after each server-backed test, so
-    a test that mutates a page can't change the outcome of any other, in any order.
-    No-ops for unit tests that don't start the server."""
-    if "mock_server" not in request.fixturenames:
-        yield
-        return
-    snapshot = {
-        p["id"]: (p["content"]["raw"], p["status"])
-        for p in api._request("GET", "pages?per_page=100&context=edit")
-    }
-    yield
-    for pid, (raw, status) in snapshot.items():
-        api.save_content("pages", pid, raw, status)
 
 
 def test_fetch_raw_returns_blocks_and_status(mock_server):
@@ -96,8 +45,7 @@ def test_rest_base_honors_override(monkeypatch):
 
 
 def test_backup_dir_distinguishes_same_host_installs(monkeypatch):
-    """Two installs sharing one host (subdir multisite, or http vs https) must
-    not share a backup directory, or the same page id collides across sites."""
+    """Two installs on one host must not share a backup directory."""
     monkeypatch.setenv("WP_SITE", "https://example.com/blog")
     blog = api.backup_dir()
     monkeypatch.setenv("WP_SITE", "https://example.com/shop")
@@ -295,12 +243,7 @@ def test_apply_global_styles_deep_merges_existing(mock_server):
     assert layout["wideSize"] == "90rem"      # added alongside
 
 
-# --- connect-time address-family fallback ---------------------------------
-#
-# A host whose AAAA record is unroutable (staging behind a provider that
-# publishes IPv6 it does not actually route) made every REST call stall for the
-# full read timeout before urllib fell back to IPv4, which turned a normal
-# `deploy.py all` into a multi-minute run that never finished.
+# --- connect-time address-family fallback (unroutable AAAA) ---------------
 
 BLACKHOLE = ("192.0.2.1", 443)  # TEST-NET-1: routed nowhere, so connects hang
 
@@ -371,10 +314,6 @@ def test_connect_any_raises_when_every_address_fails(monkeypatch):
 
 
 # --- pinning the address family ------------------------------------------
-#
-# Capping the per-address budget still pays that cap once per process, and every
-# script is its own process. A host with a permanently unroutable AAAA can skip
-# IPv6 outright.
 
 
 def test_address_family_skips_ipv6_when_pinned_to_v4(monkeypatch, listening_socket):
@@ -420,11 +359,6 @@ def test_requests_go_through_the_fallback_opener(mock_server):
 
 
 # --- media lookup with duplicate filenames ---------------------------------
-#
-# Toggling "organize uploads into month- and year-based folders" mid-migration
-# left two attachments per filename (2026/07/x.jpg and x.jpg). Whichever one
-# find_media_by_filename returns decides what the replace-an-image procedure
-# deletes, so "first row the API happened to return" is not good enough.
 
 
 def _media_rows():
@@ -466,10 +400,6 @@ def test_find_media_by_filename_ignores_partial_name_matches(monkeypatch):
 
 
 # --- replacing an image at the same URL ------------------------------------
-#
-# The delete in a replace is the one step nothing else can undo: the old file
-# is gone from the server. replace_media() keeps a copy first, and
-# rollback.py --media puts it back.
 
 OLD_URL = "https://example.test/wp-content/uploads/jan.jpg"
 
@@ -495,7 +425,7 @@ class FakeLibrary:
         self.calls.append("download")
         return b"old bytes"
 
-    def delete(self, endpoint, pid, force=True):
+    def delete(self, endpoint, pid):
         self.calls.append(f"delete {endpoint}/{pid}")
 
     def upload(self, path, *, filename=None, alt_text=None, reuse_existing=True):
@@ -568,6 +498,67 @@ def test_rollback_media_restores_the_backup(monkeypatch, tmp_path):
 
 
 def test_rollback_media_without_a_backup_exits(monkeypatch, tmp_path):
-    monkeypatch.setattr(rb, "media_backup_paths", lambda n: (str(tmp_path / n), str(tmp_path / n) + ".json"))
+    monkeypatch.setattr(api, "backup_dir", lambda: str(tmp_path))
     with pytest.raises(SystemExit):
         rb.rollback_media("nope.jpg")
+
+
+# --- retries and error messages ---------------------------------------------
+
+
+@pytest.fixture
+def no_backoff(monkeypatch):
+    monkeypatch.setattr(api.time, "sleep", lambda s: None)
+
+
+def test_a_read_retries_a_server_error(mock_server, no_backoff):
+    mock_server.fail = [("GET", 502)]
+    assert api.fetch_raw("pages", 1)["id"] == 1
+    assert [m for m, _ in mock_server.requests] == ["GET", "GET"]
+
+
+def test_a_write_is_not_retried_after_it_may_have_landed(mock_server, no_backoff, tmp_path):
+    """A 502 can come after WordPress stored the upload; a retry would add jan-1.jpg."""
+    (tmp_path / "jan.jpg").write_bytes(b"jpg")
+    for code in (500, 502, 504):
+        mock_server.fail = [("POST", code)]
+        with pytest.raises(urllib.error.HTTPError):
+            api.upload_media(str(tmp_path / "jan.jpg"), reuse_existing=False)
+    assert [m for m, _ in mock_server.requests] == ["POST"] * 3
+
+
+def test_a_write_retries_when_it_was_turned_away(mock_server, no_backoff):
+    mock_server.fail = [("POST", 503), ("POST", 429)]
+    api.save_content("pages", 1, "<p>x</p>", "publish")
+    assert api.fetch_raw("pages", 1)["content"]["raw"] == "<p>x</p>"
+
+
+def test_an_http_error_carries_the_wordpress_error(mock_server):
+    with pytest.raises(urllib.error.HTTPError) as err:
+        api.fetch_raw("pages", 999)
+    assert "rest_post_invalid_id: Invalid post ID." in str(err.value)
+    assert "GET http://127.0.0.1" in str(err.value) and "/pages/999" in str(err.value)
+
+
+# --- media through the mock and global-styles rollback ----------------------
+
+
+def test_upload_media_reuses_a_filename_unless_told_not_to(mock_server, tmp_path):
+    (tmp_path / "jan.jpg").write_bytes(b"jpg")
+    first = api.upload_media(str(tmp_path / "jan.jpg"), alt_text="Jan")
+    assert first["source_url"].endswith("/jan.jpg") and first["alt_text"] == "Jan"
+    assert api.upload_media(str(tmp_path / "jan.jpg"))["id"] == first["id"]
+    second = api.upload_media(str(tmp_path / "jan.jpg"), reuse_existing=False)
+    assert second["source_url"].endswith("/jan-1.jpg")
+
+
+def test_rollback_global_styles_restores_the_backup(mock_server):
+    api.apply_global_styles({"layout": {"contentSize": "80rem"}}, {"css": ".a{}"}, confirm=True)
+    rb.rollback_global_styles()
+    assert api.get_global_styles() == {"id": 1, "settings": {}, "styles": {}}
+
+
+def test_rollback_global_styles_without_a_backup_exits(mock_server):
+    shutil.rmtree(api.backup_dir(), ignore_errors=True)
+    with pytest.raises(SystemExit, match="No global-styles backup"):
+        rb.rollback_global_styles()

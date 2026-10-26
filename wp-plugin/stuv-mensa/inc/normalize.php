@@ -1,10 +1,7 @@
 <?php
 /**
- * Pure helpers for the StuV Mensa widget.
- *
- * NO WordPress dependencies may be added to this file: it is unit-tested with
- * the plain `php` CLI (wp-plugin/tests/test_normalize.php). All date handling
- * lives here so the browser never parses an upstream timestamp.
+ * Pure helpers for the Mensa widget; all date handling lives here. No WordPress
+ * dependencies: tested with the plain `php` CLI (wp-plugin/tests/test_normalize.php).
  */
 
 const STUV_MENSA_HOST = 'https://api.dhbw.app';
@@ -22,14 +19,9 @@ const STUV_MENSA_MONTHS = [
     9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember',
 ];
 
-/**
- * Upstream stamps local midnight as UTC ("2026-07-12T22:00:00.000Z" is Monday
- * the 13th in Berlin). Convert to a plain Berlin calendar date. The offset is
- * +2 in summer and +1 in winter, so this must go through a real timezone;
- * a fixed shift breaks twice a year.
- */
+/** Upstream stamps Berlin midnight as UTC; convert through the real timezone (DST). */
 function stuv_mensa_berlin_date(string $upstream_ts): string {
-    $dt = new DateTimeImmutable($upstream_ts); // trailing Z is parsed as UTC
+    $dt = new DateTimeImmutable($upstream_ts);
     return $dt->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
 }
 
@@ -48,16 +40,9 @@ function stuv_mensa_label(string $date): array {
 }
 
 /**
- * Trim the upstream payload to what the widget needs.
- *
- * Returns a rolling window of the next STUV_MENSA_WINDOW OPEN days from $today.
- * Weekends and holidays are simply absent from the upstream data (they are NOT
- * flagged `closed`), so "no menu today" is expressed by absence. That is why
- * this filters by date rather than trusting the `closed` flag alone.
- *
- * An empty `days` array is a normal response (semester break), not an error.
- * Null means the upstream is not a menu at all (an error object, an empty
- * list); the caller then keeps the copy it has.
+ * The next STUV_MENSA_WINDOW open days from $today. Upstream leaves closed days out instead of
+ * flagging them, hence the date filter. Empty `days` is normal (semester break); null means
+ * upstream sent no menu and the caller keeps its copy.
  */
 function stuv_mensa_normalize(
     array $upstream,
@@ -76,7 +61,7 @@ function stuv_mensa_normalize(
         }
 
         $date = stuv_mensa_berlin_date((string) $menu['date']);
-        if ($date < $today) { // 'Y-m-d' compares correctly as a string
+        if ($date < $today) {
             continue;
         }
 
@@ -93,12 +78,12 @@ function stuv_mensa_normalize(
                 'name'    => (string) $course['name'],
                 'price'   => (float) $course['priceStudent'],
                 'image'   => $id === null ? null : $image_base . $id,
-                'imageId' => $id, // the proxy allowlist reads this, not the url
+                'imageId' => $id, // the proxy allowlist reads this
             ];
         }
 
         if (!$meals) {
-            continue; // a day with no meals is not an open day
+            continue;
         }
 
         $days[$date] = ['date' => $date]
@@ -119,21 +104,12 @@ function stuv_mensa_image_id(string $url): ?int {
     return preg_match('#/file/(\d+)/#', $url, $m) ? (int) $m[1] : null;
 }
 
-/**
- * Rebuild the upstream image url from an id. The upstream path is always
- * /file/<id>/<id>.webp, so the id is the only thing we need to store.
- */
+/** The upstream image url for an id (always /file/<id>/<id>.webp). */
 function stuv_mensa_upstream_image_url(int $id): string {
     return sprintf('%s/file/%d/%d.webp', STUV_MENSA_HOST, $id, $id);
 }
 
-/**
- * Every image id present in a normalized payload.
- *
- * SECURITY: this is the allowlist the image proxy checks against. An id that is
- * not in the current menu must 404. Skip this and the route becomes an open
- * proxy that will fetch any /file/<n>/ upstream on a stranger's behalf.
- */
+/** Every image id in a normalized payload. SECURITY: the image proxy's allowlist. */
 function stuv_mensa_image_ids(array $payload): array {
     $ids = [];
     foreach (($payload['days'] ?? []) as $day) {

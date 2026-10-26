@@ -1,28 +1,17 @@
-"""Design-token contrast and component.css invariants.
-
-The contrast pairs below are the ones a visitor actually sees: text on the
-three surfaces (page, section band, card), the focus ring, input borders and
-button labels, each in light and dark mode. The values are resolved from
-component.css and global-styles.json exactly as the browser would, so a palette
-change that drops a pair below its minimum fails here instead of on the site.
-
-Run from the repo root:
-    python3 -m unittest discover -s tools -p "test_*.py" -v
-"""
+"""Contrast of the visible token pairs in light and dark, resolved as the browser would, and
+component.css invariants."""
 
 import re
 import unittest
 
 import sitecheck as sc
 
-# WCAG 2.2: 4.5:1 for body text (1.4.3), 3:1 for UI component boundaries and
-# focus indicators (1.4.11). CARD_EDGE is a house rule, not WCAG: dark mode has
-# no visible shadow, so the card border alone has to separate card from page.
+# WCAG 2.2: 4.5:1 text (1.4.3), 3:1 UI and focus (1.4.11). CARD_EDGE is a house rule: dark mode
+# has no visible shadow, so the border alone separates card from page.
 TEXT = 4.5
 UI = 3.0
 CARD_EDGE = 1.5
 
-# (foreground token, surface, minimum). Surfaces are resolved in surfaces().
 PAIRS = [
     ("--stuv-foreground", "page", TEXT),
     ("--stuv-foreground", "card", TEXT),
@@ -164,6 +153,16 @@ class TestCssInvariants(unittest.TestCase):
             for size in re.findall(r"font-size:\s*([^;\"]+)", f.read_text()):
                 with self.subTest(file=str(f.relative_to(sc.REPO)), size=size):
                     self.assertIn(size.strip(), {"0.875rem", "1rem", "1.25rem"})
+
+    def test_no_zero_length_in_math_functions(self):
+        # WP-Optimize minifies cached pages and writes 0px as 0; a unitless 0
+        # next to a length makes min(), max() or clamp() invalid, and the
+        # browser drops the whole declaration.
+        for rule in self.rules:
+            for prop, value in rule.decls.items():
+                if re.search(r"\b(min|max|clamp)\(", value):
+                    with self.subTest(selector=rule.selector_text, property=prop):
+                        self.assertNotRegex(value, r"(?<![\w.])0[a-z%]+\b")
 
     def test_every_custom_property_is_defined(self):
         defined = set(sc.root_custom_properties(dark=True))

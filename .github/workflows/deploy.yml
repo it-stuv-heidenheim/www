@@ -1,11 +1,5 @@
-# Deploys data/ to the live site. Started by hand only (Actions → Deploy → Run
-# workflow, or `gh workflow run deploy.yml`): a push runs checks.yml and nothing
-# else, so pushes collect on main until someone deploys them, and one run with
-# `changed` takes them all. The deploy job still waits for a required reviewer
-# of the `production` environment before it writes: docs/ai-workflow.md,
-# "Deploy per GitHub Action".
-# Needs that environment with the secrets WP_USER and WP_APP_PASS and the
-# variable WP_SITE (with https://).
+# Deploys data/ by hand only (`gh workflow run deploy.yml`), after the `production` reviewer
+# approves. Needs the secrets WP_USER, WP_APP_PASS and the variable WP_SITE (with https://).
 name: Deploy
 
 on:
@@ -20,9 +14,7 @@ on:
         default: ""
         required: false
 
-# One deploy at a time; a second run waits instead of interleaving writes. A
-# run waiting for approval holds the group too: reject a run you will not
-# approve, or the next one queues behind it.
+# One deploy at a time. A run waiting for approval holds the group: reject it or the next queues.
 concurrency:
   group: deploy
   cancel-in-progress: false
@@ -48,7 +40,7 @@ jobs:
       WP_REST_ROOT: wp-json
       # The host publishes an AAAA record it does not route (SKILL.md).
       WP_ADDRESS_FAMILY: ipv4
-      # Through env, never `${{ }}` inside a script: no shell injection.
+      # Inputs go through env: `${{ }}` inside a script allows shell injection.
       TARGET: ${{ inputs.target || 'changed' }}
       OVERWRITE: ${{ inputs.overwrite }}
       MANIFEST: data/manifest.json
@@ -56,8 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          # Full history: a live target that matches an older commit is behind
-          # and safe to overwrite; one that matches none was edited in wp-admin.
+          # Full history, to tell BEHIND from EDITED.
           fetch-depth: 0
 
       - name: Configuration present
@@ -66,17 +57,11 @@ jobs:
             [ -n "${!v}" ] || { echo "::error::$v is not set in the production environment"; exit 1; }
           done
 
-      # deploy.py does the rest (its docstring): sorts every target into BEHIND
-      # (the site serves an older commit, nothing is lost) or EDITED (content
-      # no commit has: an edit in wp-admin, which a deploy would destroy), picks
-      # them for `changed` together with media, stops before the first write if
-      # an EDITED target is not listed under `overwrite`, then writes each
-      # target and reads it back. The log shows the diff of every target that
-      # differs. `--` keeps the inputs from being read as options.
+      # deploy.py stops on an EDITED target not listed under `overwrite`. `--` ends the options.
       - name: Deploy
         shell: bash
         run: |
-          set -f  # no glob expansion of the inputs
+          set -f
           python3 -u "$SKILL_SCRIPTS/deploy.py" --manifest "$MANIFEST" \
             ${OVERWRITE:+--overwrite "$OVERWRITE"} -- $TARGET 2>&1 \
             | tee "$RUNNER_TEMP/deploy.log"
@@ -88,8 +73,7 @@ jobs:
           { echo '```text'; grep -iE '^Deploying:|error: ' "$RUNNER_TEMP/deploy.log"; echo '```'; } \
             >> "$GITHUB_STEP_SUMMARY"
 
-      # The runner's /tmp is gone after the run; keep the pre-write backups
-      # so rollback.py can still restore from them (docs/testing.md).
+      # Keep the pre-write backups for rollback.py; the runner's /tmp is gone afterwards.
       - name: Keep backups
         if: always()
         uses: actions/upload-artifact@v4

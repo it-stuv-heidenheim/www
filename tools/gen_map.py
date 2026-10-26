@@ -1,26 +1,13 @@
 #!/usr/bin/env python3
-"""Render the static, pin-annotated maps for the StuV site.
+"""Render the pin maps from data/maps/<id>.json: CARTO tiles -> data/media/karte-<id>-{light,dark}.webp,
+plus the core/html block with pins and legend. Pillow is needed for --render/--preview/--check.
 
-Reads a map definition from data/maps/<id>.json, fetches CARTO basemap tiles
-once at build time, composites them into data/media/karte-<id>-{light,dark}.webp,
-and emits the Gutenberg core/html block that shows the image with its pin overlay
-and legend. Nothing here talks to the WordPress REST API: the images go up with
-the skill's upload_media.py --replace, the blocks with deploy.py.
-
-The geometry is stdlib-only so it stays unit-testable. Pillow is imported lazily
-and is needed only for --render, --preview and --check; --write and --check also
-shell out to `npx prettier`, which owns the formatting of the block HTML.
-
-    pip install Pillow
     python3 tools/gen_map.py campus --render      # fetch tiles, write the webp pair
     python3 tools/gen_map.py campus --write       # splice the block into its targets
     python3 tools/gen_map.py campus --check       # re-render and diff; writes nothing
     python3 tools/gen_map.py campus               # print the block to stdout
 
---check compares WebP bytes. A Pillow or libwebp upgrade can change the encoder's
-output for identical input; when that happens, re-render and commit the images.
-
-Tiles are cached under ~/.cache/stuv-map-tiles/, so re-runs hit CARTO once.
+--check compares WebP bytes; after a Pillow/libwebp upgrade, re-render and commit the images.
 """
 
 import argparse
@@ -47,46 +34,16 @@ SCALE = 2  # @2x retina tiles -> 512 px files
 STYLES = ("light_all", "dark_all")
 EARTH_M_PER_DEG = 111_320.0
 
-# The frame is never wider than the content column (~1200 px), so 2400 px covers
-# a 2x display exactly and anything past it is bytes nobody can see. Zoom is an
-# integer, so the raw mosaic overshoots (the campus comes off the tiles 2804 px
-# wide) and image_size() trims it back. That also keeps the render under the
-# 2560 px WordPress big-image threshold, above which WordPress rescales the
-# upload and source_url stops pointing at the file we made. Never upscales --
-# the city map is under the cap already.
+# Covers a 2x display of the ~1200px column and stays under WordPress's 2560px big-image
+# threshold, above which it rescales the upload and source_url no longer points at our file.
 MAX_WIDTH = 2400
 
-# Both sets of pins run north-south, so their bare extent is portrait: the city
-# map would come out 800x1244 and stand ~1200 px tall at page width. The frame
-# has to use the image's true aspect ratio: pin positions are percentages of
-# the whole image, so cropping to a nicer shape would slide every pin off its
-# building. Widening the box instead keeps the pins exactly where they are and
-# just shows more basemap around them.
-#
-# 16:9 is also the *widest* shape the frame is ever asked to show. Under 600 px
-# the frame is 3:2 again (a 16:9 map is a letterbox slit on a phone), and
-# component.css gets that by letting the sides of this image overflow the frame.
-# Rendering wide and cropping narrow only ever eats the padding that fit_aspect
-# added; rendering 3:2 and cropping to 16:9 on desktop would eat the top and
-# bottom, which is where the outermost pins actually are.
+# Pins are percentages of the whole image, so the box is widened (never cropped) to 16:9.
+# Under 600px component.css crops the sides to 3:2, which only eats fit_aspect's padding.
 ASPECT = 16 / 9
 
-# CARTO's Positron and Dark Matter are deliberately washed out. They are made
-# to sit *under* a data layer, and on Positron the land (247), the buildings
-# (237) and the roads (250) all live in the top 20 levels of white. Scaling every
-# pixel away from the basemap's own background level pulls those apart: the
-# background stays where the designers put it and everything drawn on top of it
-# gains contrast, in place, without a hue shift. The channels scale with it, so
-# the greens and blues deepen too and no separate saturation pass is needed.
-#
-#   base:   what the land ends up at
-#   anchor: what the land is now (Positron pivots on white instead, so its own
-#           247 moves down with everything else and the paper stays paper)
-#   gain:   how much further from that everything else is pushed
-#
-# Dark Matter needs the lift: its land is 8 and its buildings are 0, so a pass
-# anchored at the land alone would clip the buildings into the land and dissolve
-# the block edges. Ending the land at 18 keeps them 14 levels apart.
+# Contrast stretch away from `anchor` (the land's level), ending the land at `base`. Dark
+# Matter is lifted to 18 so its buildings (0) stay apart from the land (8).
 ENHANCE = {
     "light_all": {"base": 255, "anchor": 255, "gain": 2.2},
     "dark_all": {"base": 18, "anchor": 8, "gain": 1.7},
@@ -96,45 +53,19 @@ TILE_URL = "https://a.basemaps.cartocdn.com/{style}/{z}/{x}/{y}@2x.png"
 # CARTO's tile servers ban the stdlib default User-Agent.
 USER_AGENT = "stuv-map-render/1.0 (+https://stuv-heidenheim.de)"
 
-# A pin this far down (in % of the frame) has room for a tooltip above it; one
-# higher up gets the tooltip below instead, or the frame clips it away.
+# Pins at least this far down (% of the frame) open their tooltip upwards, higher ones downwards.
 TIP_BELOW = 25.0
 
-# Edge pins are placed by hand (edge_x/edge_y in data/maps/*.json) rather than
-# projected and clamped like other pins; their real lat/lon only drives the
-# distance/direction text in the tooltip now. These are the bounds those
-# hand-picked values must stay inside.
-#
-# The two axes are not symmetric, and treating them as one number is what used
-# to strand the north/south pins 15% inside the frame, where they read as real
-# locations at the wrong spot instead of "off the map, this way".
-#
-# X is the tight one: under 640px the frame goes 3:2 while the canvas keeps its
-# 16:9, so (16/9 - 3/2) / (16/9) = 15.6% of the image hides, ~7.8% per side (see
-# .stuv-map-frame in component.css). Add the pin's own half-width and the CSS
-# arrow's overshoot past the circle and 15% is about the first safe column.
-#
-# Y is never cropped: the canvas is exactly as tall as the frame. Only the pin
-# itself has to stay inside, and on the shortest frame the site renders (a phone,
-# ~218px tall) the 28px circle is 12.8% of that, so 6% puts the pin flush against
-# the edge with its rim just inside. The arrow beyond it is clipped at that size;
-# on desktop, where the frame is ~576px tall, both clear comfortably.
+# Bounds for hand-placed edge_x/edge_y. X is tighter: under 640px the 3:2 frame hides
+# ~7.8% of the 16:9 canvas per side. Y is never cropped.
 SAFE_ZONE_X = (15.0, 85.0)
 SAFE_ZONE_Y = (6.0, 94.0)
 
-# Root-relative: the same markup has to render on the staging host and on
-# production, and an absolute URL would pin every map to whichever host it was
-# generated against.
+# Root-relative, so the markup works on staging and production.
 MEDIA_BASE = "/wp-content/uploads"
 ATTRIBUTION = "© OpenStreetMap-Mitwirkende, © CARTO"
 
-# The legend's outbound link searches Google Maps for the place itself, name and
-# full address together, so a visitor lands on its place card (opening hours,
-# reviews, directions) instead of a dropped pin at bare coordinates. The address
-# keeps Google from guessing at a German place name and picking one in another
-# town. A pin whose legend name is not what Google calls the place carries a
-# maps_query of its own. Nothing is requested until a visitor clicks, and the
-# basemap itself stays self-hosted.
+# Searches name and address so Google Maps opens the place card instead of a bare pin.
 MAPS_URL = "https://www.google.com/maps/search/?api=1&query={query}"
 MARKER = (
     "<!-- gen_map:{id} — erzeugt von tools/gen_map.py aus data/maps/{id}.json; "
@@ -163,11 +94,7 @@ def load_map(map_id: str) -> dict:
 
 
 def validate_edge_pins(data: dict) -> None:
-    """Every edge pin needs a hand-placed edge_x/edge_y inside its axis' bounds.
-
-    Catching a missing or unsafe value here turns a pin silently clipped in a
-    visitor's browser into a build-time error instead.
-    """
+    """Every edge pin needs a hand-placed edge_x/edge_y inside its axis' bounds."""
     for pin in data["pins"]:
         if not pin.get("edge"):
             continue
@@ -199,11 +126,7 @@ def unproject(x: float, y: float, zoom: int) -> tuple[float, float]:
 
 
 def fit_aspect(bbox: BBox, aspect: float = ASPECT) -> BBox:
-    """Grow the short axis about the centre until the box is `aspect` wide:tall.
-
-    Measured in projected pixels, not degrees: Mercator stretches latitude, so a
-    box that looks 3:2 in degrees is not 3:2 on screen.
-    """
+    """Grow the short axis about the centre until the box is `aspect` wide:tall, in projected pixels."""
     x0, y0 = project(bbox.north, bbox.west, 0)
     x1, y1 = project(bbox.south, bbox.east, 0)
     width, height = x1 - x0, y1 - y0
@@ -251,12 +174,7 @@ def tile_range(bbox: BBox, zoom: int) -> tuple[int, int, int, int]:
 
 
 def image_size(bbox: BBox, zoom: int) -> tuple[int, int]:
-    """Pixel size of the image render_image() actually writes, MAX_WIDTH included.
-
-    The clamp lives here rather than next to the resize so that everything that
-    reasons about the render reads one number: the block's --stuv-map-ratio, the
-    WordPress big-image check in the tests, and the resize itself.
-    """
+    """Pixel size of the image render_image() writes, MAX_WIDTH included (the one place the clamp lives)."""
     left, top, right, bottom = pixel_box(bbox, zoom)
     width, height = right - left, bottom - top
     if width > MAX_WIDTH:
@@ -266,12 +184,7 @@ def image_size(bbox: BBox, zoom: int) -> tuple[int, int]:
 
 
 def pin_percent(lat: float, lon: float, bbox: BBox) -> tuple[float, float]:
-    """Pin position as a percentage of the cropped image, top-left origin.
-
-    Zoom-independent: the Mercator scale factor cancels in the ratio. The integer
-    rounding in pixel_box shifts this by at most one pixel (~0.4 m), an order of
-    magnitude below the pin's own diameter.
-    """
+    """Pin position as a percentage of the cropped image, top-left origin."""
     x, y = project(lat, lon, 0)
     x0, y0 = project(bbox.north, bbox.west, 0)
     x1, y1 = project(bbox.south, bbox.east, 0)
@@ -307,21 +220,13 @@ def format_distance_km(m: float) -> str:
 
 
 def edge_pin_info(pin: dict, bbox: BBox) -> tuple[str, float, str]:
-    """Direction, distance (m), and label for an off-map pin's tooltip text.
-
-    The pin's percentage position relative to the rendered bbox decides only
-    which side(s) it lies beyond: any value outside [0, 100] means the pin is
-    off that edge of the frame. Where the pin is actually drawn is a separate,
-    hand-placed edge_x/edge_y (see render_html and SAFE_ZONE_X/Y); this
-    function never returns a screen position.
-    """
+    """Direction, distance (m), and label for an off-map pin's tooltip; edge_x/edge_y place the pin."""
     x, y = pin_percent(pin["lat"], pin["lon"], bbox)
     ns = "n" if y < 0 else "s" if y > 100 else ""
     we = "w" if x < 0 else "e" if x > 100 else ""
     direction = ns + we or "center"
 
-    # Closest point on the bbox perimeter. Each axis clamps independently, which
-    # covers the diagonals for free.
+    # Closest point on the bbox perimeter; clamping each axis covers the diagonals.
     lat, lon = pin["lat"], pin["lon"]
     closest_lat = {"n": bbox.north, "s": bbox.south}.get(ns, lat)
     closest_lon = {"w": bbox.west, "e": bbox.east}.get(we, lon)
@@ -389,20 +294,14 @@ def render_image(data: dict, style: str):
 
 
 def webp_bytes(image) -> bytes:
-    # The stretch roughly doubles the WebP payload: flat washed-out basemaps are
-    # exactly what the encoder is good at, and contrast is entropy. 84 buys most of
-    # that back and leaves no ringing on the labels at the size they are shown.
+    # The stretch roughly doubles the payload; quality 84 brings it back down without ringing.
     buffer = io.BytesIO()
     image.save(buffer, format="WEBP", quality=84, method=6)
     return buffer.getvalue()
 
 
 def write_preview(data: dict, style: str, path: pathlib.Path) -> None:
-    """Dot every pin onto the rendered image so the projection can be checked by eye.
-
-    A projection bug produces a plausible-looking map with the Mensa in a car park;
-    no unit test catches that. This is the check that does.
-    """
+    """Dot every pin onto the rendered image to check the projection by eye."""
     from PIL import ImageDraw
 
     image = render_image(data, style)
@@ -424,15 +323,7 @@ def write_preview(data: dict, style: str, path: pathlib.Path) -> None:
 
 @functools.lru_cache(maxsize=None)
 def _image_hash(map_id: str, style: str) -> str:
-    """First 8 chars of SHA-256 of the image file on disk.
-
-    Returns empty string if the file doesn't exist (run --render first).
-
-    Cached because a single run hashes the same pair repeatedly (once per
-    render_html call, and --check renders more than once). The cache is
-    process-local, and --render writes the images before any URL is built, so
-    it never serves a hash from before a re-render.
-    """
+    """First 8 chars of SHA-256 of the image file; empty if it doesn't exist."""
     path = MEDIA_DIR / media_name(map_id, style)
     if not path.exists():
         return ""
@@ -458,32 +349,12 @@ def esc(text: str) -> str:
 
 
 def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
-    """The core/html block: the basemap frame, the pin overlay, the caption, the legend.
+    """The core/html block: basemap frame, pin overlay, caption, legend.
 
-    The light/dark swap is class-driven, not OS-driven: the stuv-theme plugin puts
-    .dark on <html> before first paint, so a <picture> with a prefers-color-scheme
-    <source> would ignore the site's own toggle. The frame carries both basemaps as
-    custom properties instead and component.css picks one in background-image. An
-    unreferenced var() is never fetched, so this still costs exactly one request.
-
-    That means no <img>, hence no intrinsic size, hence the explicit ratio: without
-    it the frame is 0 px tall until the background arrives and the whole page below
-    it jumps. It rides in as --stuv-map-ratio rather than as aspect-ratio, because
-    component.css needs the number twice: the frame is 3:2 on a phone and the
-    image's own 16:9 on a desktop, and the inner .stuv-map-canvas is what always
-    keeps the image's ratio, overflowing the frame's sides when the two disagree.
-    The basemap and the pins share that canvas, so a crop moves them together and
-    no pin ever slides off its building.
-
-    Pins are positioned in percent, so they scale with the frame and need no JS.
-    Each pin links to its legend entry; the legend is always rendered and is the
-    accessible, touch and print path to the same content.
-
-    A tooltip opens upwards, and the frame has to clip (that is what crops the
-    canvas), so a pin in the top TIP_BELOW of the frame gets one that opens
-    downwards instead. The threshold is generous: the box is only as tall as the
-    padding around the outermost pins, so on both maps a pin does sit that close
-    to the top edge.
+    Light/dark follows the .dark class (the theme's toggle), not prefers-color-scheme, so both
+    basemaps ride in as custom properties and CSS picks one. --stuv-map-ratio gives the frame
+    its height before the background loads; the canvas keeps that ratio and overflows the 3:2
+    phone frame, so pins and basemap crop together.
     """
     map_id = data["id"]
     bbox = bbox_from_pins(visible_pins(data["pins"]), data["padding_m"])
@@ -518,7 +389,6 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
             f'<br />{esc(pin["detail"])}{edge_tip}</span>'
         )
 
-        # Every pin links to its own legend entry below the map.
         href = f' href="#karte-{map_id}-{pin["n"]}"'
         aria = f' aria-label="{esc(pin["name"])} – zum Eintrag in der Legende">'
         if pin.get("icon"):
@@ -560,8 +430,7 @@ def render_html(data: dict, media_base: str = MEDIA_BASE) -> str:
         if pin.get("note"):
             out.append(f'    <p class="stuv-map-legend-note">{esc(pin["note"])}</p>')
         out += [
-            # Every pin has this link, so the visible text alone is ambiguous
-            # in a screen reader's link list; the label names the place.
+            # The label names the place; the visible text repeats on every pin.
             f'    <p><a class="stuv-button-link" href="{esc(maps_url(pin))}"'
             f' aria-label="{esc(pin["name"])} in Karten öffnen"'
             ' target="_blank" rel="noopener noreferrer">In Karten öffnen</a></p>',
@@ -601,15 +470,7 @@ def splice(text: str, block: str, map_id: str) -> str:
 
 
 def prettify(text: str, path: pathlib.Path) -> str:
-    """Format `text` with the repo's prettier, as if it were `path`.
-
-    What render_html() emits is not what ends up in the file. Prettier owns block
-    HTML in this repo (AGENTS.md): it rewrites url('x') to url("x"), adds the
-    trailing semicolon to an inline style, breaks long tags one attribute per line
-    and wraps text nodes. Formatting the spliced file here is what lets --check
-    compare bytes instead of guessing at an equivalence rule, and it leaves
-    `npx prettier --check .` green straight after a --write.
-    """
+    """Format `text` with the repo's prettier as if it were `path`, so --check can compare bytes."""
     try:
         done = subprocess.run(
             ["npx", "prettier", "--stdin-filepath", str(path)],

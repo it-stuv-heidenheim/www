@@ -2,8 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert");
 const { berlinNow, upcoming } = require("../stuv-events/assets/events.js");
 
-// The suite runs with TZ=America/Los_Angeles, so these prove the visitor's
-// clock zone does not leak into the comparison.
+// The suite runs with TZ=America/Los_Angeles: the visitor's zone must not leak in.
 test("berlinNow reads Berlin wall-clock time in winter", () => {
   assert.equal(berlinNow(new Date("2026-11-03T18:15:00Z")), "2026-11-03T19:15");
 });

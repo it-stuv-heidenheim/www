@@ -1,18 +1,8 @@
 #!/usr/bin/env python3
-"""Compare the plugins installed on the live site with wp-plugin/.
+"""Compare the plugins installed on the live site (presence, status, version) with wp-plugin/.
 
-Plugins go up as zips in wp-admin, never through deploy.py, so nothing else
-notices a forgotten upload: the site keeps running the old version, or the
-plugin is missing or inactive. This lists the site's plugins over REST and
-checks each plugin in wp-plugin/ for presence, status and version.
+Needs admin credentials. Exit codes: 0 all match, 1 some differ, 2 list not fetched.
 
-Needs WP_SITE, WP_USER and WP_APP_PASS of an administrator (the plugin list
-is admin-only), like the deploy scripts. Reads only.
-
-Exit codes: 0 all match, 1 at least one differs, 2 the plugin list could not
-be fetched.
-
-Usage, from the repo root after `source .env`:
     python3 tools/check_plugins.py
 """
 
@@ -29,11 +19,7 @@ CONSTANT_VERSION_RE = re.compile(r"define\('STUV_[A-Z]+_VERSION',\s*'([^']+)'\)"
 
 
 def local_plugins():
-    """{name: (header version, constant version)} for every plugin in wp-plugin/.
-
-    A plugin is a directory holding its own <name>.php, the same rule as
-    build.sh. The constant is None when the plugin defines none.
-    """
+    """{name: (header version, constant version or None)} for every plugin in wp-plugin/."""
     found = {}
     for main in sorted(PLUGINS.glob("*/*.php")):
         if main.stem != main.parent.name:
@@ -49,11 +35,7 @@ def local_plugins():
 
 
 def compare(local, live):
-    """[(name, problem)] for each plugin in `local`; problem is None when it matches.
-
-    `local` is {name: version}, `live` the /wp/v2/plugins records, whose
-    `plugin` field reads "<dir>/<file>" without the .php.
-    """
+    """[(name, problem)] for each plugin in `local`; problem is None when it matches."""
     by_dir = {p["plugin"].split("/")[0]: p for p in live}
     result = []
     for name, version in sorted(local.items()):

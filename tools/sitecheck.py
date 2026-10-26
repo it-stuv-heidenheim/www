@@ -1,12 +1,5 @@
-"""Read-only model of the site sources, shared by test_content.py and test_styles.py.
-
-Nothing here talks to WordPress. It rebuilds every page the way deploy.py does
-(one file, or the *.html of a directory joined in filename order), inlines the
-synced patterns a page references, and provides the small parsers the tests
-need: block comments, an HTML tree walk, CSS rules and CSS colours.
-
-Stdlib only, like the rest of tools/.
-"""
+"""Read-only model of the site sources for test_content.py and test_styles.py: pages built as
+deploy.py builds them, plus parsers for block comments, HTML, CSS rules and colours."""
 
 import json
 import pathlib
@@ -19,9 +12,7 @@ DATA = REPO / "data"
 CSS_PATH = DATA / "styles" / "component.css"
 TOKENS_PATH = DATA / "global-styles.json"
 
-# Links that are the whole clickable surface of a card. component.css gives the
-# card a hover and focus ring for each of them (test_styles checks that), and a
-# link that fills a .stuv-clip card without one of these classes gets neither.
+# Links that are a card's whole clickable surface; each needs a hover and focus rule in component.css.
 CARD_LINK_CLASSES = ("stuv-card-cover", "stuv-quicklink", "stuv-linktree-card")
 
 VOID_TAGS = {
@@ -165,12 +156,7 @@ _TYPOGRAPHY_PROPS = {
 
 
 def expected_inline_style(style_attr):
-    """The inline declarations core's save() derives from a block's `style` attribute.
-
-    Only the properties core writes onto the block's root element as plain
-    declarations; everything that becomes a class (textAlign, presets) or a
-    layout rule (blockGap) is left out.
-    """
+    """The inline declarations core's save() writes on the root element for a `style` attribute."""
     out = {}
     typo = style_attr.get("typography") or {}
     for key, prop in _TYPOGRAPHY_PROPS.items():
@@ -220,12 +206,7 @@ class Element:
 
 
 def expand_navigation(markup):
-    """Stand in an <a> for each self-closing navigation-link block.
-
-    core/navigation-link is dynamic: the saved markup is only the comment, and
-    WordPress renders the link on the server. Without this the header's links
-    would be invisible to every link check.
-    """
+    """Stand in an <a> for each navigation-link block (rendered server-side, saved as a comment)."""
 
     def link(mo):
         attrs = json.loads(mo.group(1))

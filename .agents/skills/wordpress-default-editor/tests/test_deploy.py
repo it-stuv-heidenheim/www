@@ -25,7 +25,7 @@ def test_global_styles_css_injection(tmp_path, monkeypatch):
          "styles": {"typography": {"fontFamily": "x"}}}))
     (tmp_path / "c.css").write_text(".stuv-card{color:red}")
     t = {"type": "global-styles", "tokens": "tokens.json", "css": "c.css"}
-    deploy._deploy_global_styles("global-styles", t, tmp_path, dry_run=False)
+    deploy._deploy_global_styles(t, tmp_path, dry_run=False)
     assert captured["styles"]["css"] == ".stuv-card{color:red}"
     assert captured["styles"]["typography"]["fontFamily"] == "x"
     assert captured["confirm"] is True
@@ -55,7 +55,7 @@ def test_media_failure_does_not_pass_silently(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(wp, "upload_media", fake_upload)
     t = {"type": "media", "source": "img"}
     with pytest.raises(RuntimeError, match="bad.png"):
-        deploy._deploy_media("img", t, tmp_path, dry_run=False)
+        deploy._deploy_media(t, tmp_path, dry_run=False)
     assert uploaded == ["good.png"], "a later file must still upload after an earlier failure"
 
 
@@ -68,7 +68,7 @@ def test_media_dry_run_uploads_nothing(tmp_path, monkeypatch, capsys):
         raise AssertionError("dry run must not upload")
 
     monkeypatch.setattr(wp, "upload_media", refuse)
-    deploy._deploy_media("img", {"type": "media", "source": "img"}, tmp_path, dry_run=True)
+    deploy._deploy_media({"type": "media", "source": "img"}, tmp_path, dry_run=True)
     assert "[dry-run] upload logo.png (3 bytes)" in capsys.readouterr().out
 
 
@@ -85,15 +85,14 @@ def test_media_uploads_in_name_order_skipping_dotfiles(tmp_path, monkeypatch, ca
         return {"id": len(seen), "source_url": f"https://x/{os.path.basename(path)}"}
 
     monkeypatch.setattr(wp, "upload_media", fake_upload)
-    deploy._deploy_media("img", {"type": "media", "source": "img"}, tmp_path, dry_run=False)
+    deploy._deploy_media({"type": "media", "source": "img"}, tmp_path, dry_run=False)
     assert seen == [("01-a.png", True), ("02-b.png", True)]
 
 
 def test_media_source_must_be_a_directory(tmp_path):
     (tmp_path / "logo.png").write_bytes(b"a")
     with pytest.raises(FileNotFoundError, match="not a directory"):
-        deploy._deploy_media("img", {"type": "media", "source": "logo.png"},
-                             tmp_path, dry_run=False)
+        deploy._deploy_media({"type": "media", "source": "logo.png"}, tmp_path, dry_run=False)
 
 
 def test_main_resolves_sources_relative_to_manifest(tmp_path, capsys):

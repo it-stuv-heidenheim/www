@@ -5,9 +5,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-# No argument: every plugin directory here, so adding one needs no edit. A
-# plugin is a directory holding its own <name>.php entry point, which is what
-# keeps tests/ and any other helper directory out of the list.
+# A plugin is a directory holding its own <name>.php (keeps tests/ out).
 if [ "$#" -eq 0 ]; then
   for dir in */; do
     name="${dir%/}"

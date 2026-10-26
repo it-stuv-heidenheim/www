@@ -8,7 +8,7 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
 
 - All WP tooling (REST client, `deploy.py`, `verify_deploy.py`, `rollback.py`, `blockcheck`) is in the
   `wordpress-default-editor` skill in this repo (`SKILL=.agents/skills/wordpress-default-editor`, paths relative to
-  the repo root); read its SKILL.md first. Its tests: `pytest` in that directory (needs `flask`, `pytest`).
+  the repo root); read its SKILL.md first. Its tests: `pytest` in that directory.
 - No build step, no root `package.json` (Prettier runs via `npx`; PHP is formatted by hand).
   `source .env` before talking to the host; `WP_SITE` includes `https://`, so strip it for ad-hoc `curl`.
 - Before every commit: `npx prettier --check .` and `python3 -m unittest discover -s tools -p "test_*.py"`.
@@ -21,7 +21,7 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
   `deploy.py --manifest data/manifest.json changed` (or target names); it reads every written target back, and
   checks the `markers` of `global-styles`. A target whose live content matches no commit (`EDITED`) was edited in
   wp-admin, and the deploy stops before writing. Port the edit into `data/`, then deploy with
-  `--overwrite <target>` (Action: `overwrite` input). Undo: `rollback.py <id>`.
+  `--overwrite <target>` (Action: `overwrite` input). Undo: `rollback.py <id>` or `--global-styles`.
 - Manifest source paths are relative to `data/`; a page is its directory's `*.html` joined in filename order.
   `data/parked/` is never deployed. The Vorsitz grid is synced pattern 212 (`pattern-vorsitz`).
 - Generated regions, edit only their sources: maps between `gen_map:` markers (`data/maps/*.json`, then

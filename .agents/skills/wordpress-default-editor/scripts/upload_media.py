@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 """
-Upload local files to the WP media library and print their source_url.
+Upload files to the media library and print their source_url. An existing filename is reused;
+--replace puts the file under the existing URL (undo: rollback.py --media).
 
 Usage:
-  python3 -m scripts.upload_media <file> [<file> ...] [--alt "text"]
-
-Re-running with the same filename is a no-op (returns the existing attachment).
---replace puts the file under the existing URL instead (replace_media: backup,
-delete, upload; undo with rollback.py --media). With multiple files, --alt
-applies to all of them; for per-file alt text, run the script once per file.
+  python3 -m scripts.upload_media <file> [<file> ...] [--alt "text"] [--replace]
 """
 import argparse
 import sys
@@ -34,9 +30,7 @@ def main(argv):
             else:
                 result = wp.upload_media(path, alt_text=args.alt)
         except urllib.error.HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            print(f"HTTP {exc.code} uploading {path}: {body}", file=sys.stderr)
-            sys.exit(1)
+            sys.exit(f"{path}: {exc}")
         print(f"{path} -> {result['source_url']} (id {result['id']})")
 
 

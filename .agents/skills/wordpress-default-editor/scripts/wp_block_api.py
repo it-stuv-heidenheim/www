@@ -17,28 +17,13 @@ import urllib.parse
 import urllib.request
 
 
-# --- Connection: fast fallback between address families ---
-#
-# socket.create_connection() gives *every* candidate address the full timeout,
-# so a host that publishes an unroutable AAAA record stalls each request for
-# the whole read timeout before urllib falls back to IPv4. That turns a normal
-# `deploy.py all` into a run of many minutes that gets killed before it
-# finishes. It looks like a slow server rather than a broken route, because
-# curl and browsers hide the same misconfiguration behind Happy Eyeballs. urllib has no equivalent, so cap each connect attempt instead.
-
-# Seconds to spend on any single address before moving to the next.
+# A host with an unroutable AAAA record stalls every request for the full timeout
+# (urllib has no Happy Eyeballs), so cap each connect attempt and remember the address
+# that answered. WP_ADDRESS_FAMILY=ipv4 skips IPv6 entirely.
 _CONNECT_TIMEOUT = float(os.environ.get("WP_CONNECT_TIMEOUT", "5"))
 
-# (host, port) -> sockaddr that last answered, so the dead address costs one
-# attempt per run rather than one per request.
 _preferred_addr = {}
 
-# Capping the per-address budget still pays that cap once per process, and each
-# script (deploy, verify, upload) is its own process, so a host whose AAAA is
-# permanently unroutable costs a stall on every command. Set
-# WP_ADDRESS_FAMILY=ipv4 to drop IPv6 candidates before connecting at all.
-# Unset (the default) tries every address, which is what a healthy dual-stack
-# host wants.
 _ADDRESS_FAMILIES = {
     "": None,
     "auto": None,
@@ -67,12 +52,7 @@ def _address_family():
 
 
 def _connect_any(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
-    """Drop-in for socket.create_connection with a per-address connect budget.
-
-    Signature matches HTTPConnection._create_connection so it can replace it
-    wholesale; the returned socket carries the caller's timeout, not the short
-    connect budget, so reads are unaffected.
-    """
+    """socket.create_connection with a per-address connect budget; reads keep the caller's timeout."""
     host, port = address[0], address[1]
     read_timeout = (
         socket.getdefaulttimeout()
@@ -142,8 +122,6 @@ class _FallbackHTTPSHandler(urllib.request.HTTPSHandler):
         return self.do_open(_FallbackHTTPSConnection, req, context=self._context)
 
 
-# build_opener drops the default handlers these subclass, so every request made
-# through _opener gets the capped connect.
 _opener = urllib.request.build_opener(_FallbackHTTPHandler, _FallbackHTTPSHandler)
 
 
@@ -162,22 +140,30 @@ def _headers(for_write=False):
 
 
 def _rest_base():
-    """REST namespace prefix. Default assumes pretty permalinks; set WP_REST_ROOT
-    to "index.php/wp-json" (or similar) for plain-permalink or route-restricted sites.
-    When wp-json rewriting is broken (e.g. caching plugin), use "?rest_route="."""
+    """REST prefix: WP_REST_ROOT, default "wp-json" (or "?rest_route=" when rewriting is broken)."""
     return os.environ.get("WP_REST_ROOT", "wp-json").strip("/")
 
 
 def _send(req, timeout, retries):
-    """Open req and decode its JSON, retrying rate limits and server errors with backoff."""
+    """Open req and decode its JSON, retrying with backoff. A write retries only on 429 and 503,
+    which turn the request away; after a 500, 502 or 504 it may have landed (an upload twice
+    becomes name-1.jpg). The HTTPError raised carries WordPress's error code and message."""
+    retry_on = (429, 500, 502, 503, 504) if req.get_method() == "GET" else (429, 503)
     for attempt in range(retries):
         try:
             with _opener.open(req, timeout=timeout) as response:
                 return json.loads(response.read())
         except urllib.error.HTTPError as exc:
-            if exc.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
+            if exc.code in retry_on and attempt < retries - 1:
                 time.sleep(2 ** attempt)
                 continue
+            body = exc.read().decode("utf-8", "replace")
+            try:
+                error = json.loads(body)
+                body = f"{error['code']}: {error.get('message', '')}".rstrip(": ")
+            except (ValueError, TypeError, KeyError):  # a proxy's HTML page, say
+                body = " ".join(re.sub(r"<[^>]+>", " ", body).split())[:200]
+            exc.msg = f"{exc.msg} on {req.get_method()} {req.full_url}: {body}"
             raise
 
 
@@ -191,10 +177,7 @@ def _request(method, path, data=None, retries=3):
 
 def fetch_raw(endpoint, pid):
     """Fetch raw block markup and status for a page/post."""
-    return _request(
-        "GET",
-        f"{endpoint}/{pid}?context=edit&_fields=id,title,content,status",
-    )
+    return _request("GET", f"{endpoint}/{pid}?context=edit&_fields=id,title,content,status")
 
 
 def save_content(endpoint, pid, new_content, status):
@@ -204,19 +187,13 @@ def save_content(endpoint, pid, new_content, status):
 
 
 def backup_dir():
-    """Per-site backup directory so equal page ids on different sites don't collide.
-
-    Keys on the full site URL (scheme, host, and path), so subdirectory multisite
-    installs on one host and http/https variants each get a distinct directory.
-    """
+    """Per-site backup directory, keyed on the full site URL."""
     slug = re.sub(r"[^A-Za-z0-9._-]", "_", _site()) or "default"
     return os.path.join("/tmp/wp_backup", slug)
 
 
 def _backup_key(endpoint, pid):
-    """Filename-safe backup key. Prefixing the endpoint disambiguates equal ids
-    across resource types (pages/10 vs posts/10) and sanitizes the slashes in
-    template-part ids like 'theme//slug'."""
+    """Filename-safe backup key, unique across endpoints."""
     return re.sub(r"[^A-Za-z0-9._-]", "_", f"{endpoint}__{pid}")
 
 
@@ -236,11 +213,7 @@ def backup(endpoint, pid):
 # --- Creating resources (reusable blocks / synced patterns) ---
 
 def create_resource(endpoint, fields):
-    """Create a new resource (e.g. a reusable block / synced pattern on 'blocks').
-
-    Creation has no prior state to back up; make it reversible by checking
-    find_by_slug() before creating and delete_resource() to undo.
-    """
+    """Create a resource (e.g. a synced pattern on 'blocks'); undo with delete_resource()."""
     return _request("POST", endpoint, data=json.dumps(fields).encode())
 
 
@@ -250,28 +223,16 @@ def find_by_slug(endpoint, slug):
     return items[0] if items else None
 
 
-def delete_resource(endpoint, pid, force=True):
-    """Delete a resource. Used to undo a create_resource()."""
-    suffix = "?force=true" if force else ""
-    return _request("DELETE", f"{endpoint}/{pid}{suffix}")
+def delete_resource(endpoint, pid):
+    """Delete a resource for good, skipping the trash. Used to undo a create_resource()."""
+    return _request("DELETE", f"{endpoint}/{pid}?force=true")
 
 
 # --- Media library uploads ---
 
 
 def find_media_by_filename(filename):
-    """Return the newest media item whose source_url ends in filename, or None.
-
-    Used to make upload_media() idempotent across re-runs: WordPress dedupes
-    nothing on its own, it just appends '-1', '-2', ... to the filename.
-
-    One filename can match several attachments: uploading the same name while
-    "organize uploads into month/year folders" is toggled leaves both
-    uploads/2026/07/x.jpg and uploads/x.jpg. The caller usually goes on to
-    delete what it finds, so the choice must not depend on whatever order the
-    endpoint felt like returning. Pin the order, take the newest, and say so
-    when the library is ambiguous.
-    """
+    """The newest media item whose source_url ends in filename, or None; warns if several match."""
     stem = os.path.splitext(filename)[0]
     items = _request(
         "GET",
@@ -296,17 +257,8 @@ def find_media_by_filename(filename):
 
 
 def upload_media(file_path, *, filename=None, alt_text=None, reuse_existing=True, retries=3):
-    """Upload a local file to the WP media library. Returns the attachment record.
-
-    Unlike _request(), POST /media takes the raw file body (not JSON): the file
-    bytes go straight in the request body with Content-Type set to the file's
-    mime type and the filename passed via Content-Disposition, per the REST
-    media-endpoint contract.
-
-    When reuse_existing (default), an existing attachment with the same
-    filename is returned as-is instead of re-uploading, so re-running a deploy
-    step is a no-op rather than accumulating duplicate uploads.
-    """
+    """Upload a raw file body to the media library; with reuse_existing, return an existing
+    attachment of the same filename instead."""
     filename = filename or os.path.basename(file_path)
     if reuse_existing:
         existing = find_media_by_filename(filename)
@@ -344,12 +296,7 @@ def media_backup_paths(filename):
 
 
 def backup_media(item):
-    """Save an attachment's file and text fields under backup_dir()/media/.
-
-    Replacing an image at the same URL deletes the attachment first, and after
-    that this is the only copy of the old file. One backup per filename,
-    overwritten by the next replace, like the page backups.
-    """
+    """Save an attachment's file and text fields under backup_dir()/media/ (one per filename)."""
     filename = item["source_url"].rsplit("/", 1)[-1]
     path, meta_path = media_backup_paths(filename)
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -368,14 +315,10 @@ def backup_media(item):
 
 
 def replace_media(file_path, *, filename=None, alt_text=None, backup=True):
-    """Put file_path in the library under the URL its filename already has.
+    """Put file_path under the URL its filename already has: back up, delete, upload.
 
-    WordPress never overwrites an upload; a second file of the same name
-    becomes name-1.ext. So: back up the old attachment (backup_media), delete
-    it, upload the new file into the freed name. Raises if the new URL differs
-    from the old one (a '-1', or "organize uploads into month- and year-based
-    folders" sending it to a dated folder); the backup is then still on disk.
-    The new attachment gets a new id, the alt text carries over unless given.
+    WordPress never overwrites (a second upload becomes name-1.ext), so this raises if the
+    URL changed; the backup stays on disk. The alt text carries over unless given.
     """
     filename = filename or os.path.basename(file_path)
     old = find_media_by_filename(filename)
@@ -384,7 +327,7 @@ def replace_media(file_path, *, filename=None, alt_text=None, backup=True):
             backup_media(old)
         if alt_text is None:
             alt_text = old.get("alt_text") or None
-        delete_resource("media", old["id"], force=True)
+        delete_resource("media", old["id"])
     new = upload_media(file_path, filename=filename, alt_text=alt_text, reuse_existing=False)
     if old and new["source_url"] != old["source_url"]:
         raise RuntimeError(
@@ -404,11 +347,7 @@ _BLOCK_DELIM = re.compile(
 
 
 def assert_balanced_blocks(content):
-    """Raise ValueError if block-comment delimiters are unbalanced or mis-nested.
-
-    Structural writes replace a whole tree, so 'only block N changed' can't be the
-    check; instead confirm the new markup is well-formed before it is saved.
-    """
+    """Raise ValueError if block-comment delimiters are unbalanced or mis-nested."""
     stack = []
     for m in _BLOCK_DELIM.finditer(content):
         btype = m.group("type")
@@ -427,11 +366,7 @@ def assert_balanced_blocks(content):
 
 
 def save_structural(endpoint, pid, new_content, status, *, confirm):
-    """Replace a resource's entire block tree (template part, full page rebuild).
-
-    Gated: requires an existing backup, explicit confirm=True (human review), and a
-    balanced-markup check. Roll back with rollback.py if the result is wrong.
-    """
+    """Replace a whole block tree. Needs an existing backup, confirm=True and balanced markup."""
     if not confirm:
         raise ValueError("structural writes require confirm=True after human review")
     backup_path = os.path.join(backup_dir(), f"{_backup_key(endpoint, pid)}_original.txt")
@@ -444,9 +379,6 @@ def save_structural(endpoint, pid, new_content, status, *, confirm):
 
 
 # --- Global styles (theme.json design tokens via REST) ---
-#
-# Writes go to the active theme's *user* global-styles record, found through
-# its wp:user-global-styles link; the id is install-specific.
 
 
 def _deep_merge(base, patch):
@@ -462,11 +394,7 @@ def _deep_merge(base, patch):
 
 
 def discover_global_styles_id():
-    """Return the editable user global-styles post id for the active theme.
-
-    Read from the active theme's `wp:user-global-styles` REST link, never guessed
-    (the id is install-specific). Requires context=edit auth.
-    """
+    """The user global-styles post id, from the active theme's `wp:user-global-styles` link."""
     themes = _request("GET", "themes?status=active&context=edit")
     theme = themes[0] if isinstance(themes, list) else themes
     link = (theme.get("_links") or {}).get("wp:user-global-styles")
@@ -476,35 +404,26 @@ def discover_global_styles_id():
 
 
 def get_global_styles(gid=None):
-    """Fetch the user global-styles record (settings + styles). Discovers the id
-    when not given. Note: WordPress nests *user* palette/font values under a
-    `custom` origin key on read (e.g. settings.color.palette.custom)."""
+    """The user global-styles record; user palette/font values read back under a `custom` key."""
     gid = gid or discover_global_styles_id()
     return _request("GET", f"global-styles/{gid}?context=edit")
+
+
+def global_styles_backup_path(gid):
+    return os.path.join(backup_dir(), f"global-styles__{gid}_original.json")
 
 
 def apply_global_styles(settings_patch=None, styles_patch=None, *, gid=None, confirm):
     """Deep-merge a theme.json-shaped patch into the user global-styles record.
 
-    Site-wide write, so it is gated like save_structural: requires confirm=True
-    and writes a full JSON backup of the current record first. Roll back by
-    POSTing that backup file's {settings, styles} back to the same id.
-
-    settings_patch / styles_patch mirror theme.json, e.g.
-        settings={"layout": {"contentSize": "80rem", "wideSize": "90rem"},
-                  "color": {"palette": [{"slug": "primary", "color": "#E2001A",
-                                          "name": "Primary"}]}}
-        styles={"typography": {"fontFamily": "var:preset|font-family|inter"}}
+    Needs confirm=True; writes a JSON backup first (undo: rollback.py --global-styles).
     """
     if not confirm:
         raise ValueError("global-styles writes require confirm=True after human review")
     gid = gid or discover_global_styles_id()
-    current = _request("GET", f"global-styles/{gid}?context=edit")
-
-    out_dir = backup_dir()
-    os.makedirs(out_dir, exist_ok=True)
-    backup_path = os.path.join(out_dir, f"global-styles__{gid}_original.json")
-    with open(backup_path, "w", encoding="utf-8") as fh:
+    current = get_global_styles(gid)
+    os.makedirs(backup_dir(), exist_ok=True)
+    with open(global_styles_backup_path(gid), "w", encoding="utf-8") as fh:
         json.dump(current, fh, indent=2)
 
     payload = json.dumps(

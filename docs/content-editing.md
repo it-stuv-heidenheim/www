@@ -1,274 +1,75 @@
 # Inhalte bearbeiten
 
-So änderst du Texte, Namen, Fotos und Links auf der StuV-Website. Du brauchst
-dafür kein WordPress-, Gutenberg- oder CSS-Wissen, aber Grundkenntnisse in Git
-und auf der Kommandozeile.
+Texte, Namen, Fotos und Links ändern, ohne WordPress-Wissen; Git und Kommandozeile genügen. Nötig sind Node.js (Prettier, Block-Validierung) und Python 3. Nur zum lokalen Deployen: eine git-ignorierte `.env` mit `WP_USER`, `WP_APP_PASS` (Application Password), `WP_SITE` und `WP_REST_ROOT="wp-json"`.
 
-## Voraussetzungen
+Bricht jeder Deploy mit `HTTP Error 404` ab, obwohl die Seite läuft: in wp-admin **Einstellungen → Permalinks → Speichern** klicken.
 
-- Git-Zugriff auf dieses Repo
-- Node.js (für `npx prettier` und die Block-Validierung)
-- Python 3. Das Tooling (`wordpress-default-editor`) liegt im Repo unter
-  `.agents/skills/wordpress-default-editor/`; der Block-Validator installiert
-  seine npm-Pakete beim ersten Lauf selbst.
+## Wo was liegt
 
-- Zum lokalen Deployen (für die Deploy-Action nicht nötig): git-ignorierte `.env`-Datei mit `WP_USER`, `WP_APP_PASS`
-  (WordPress Application Password), `WP_SITE`, `WP_REST_ROOT="wp-json"`
+| Inhalt                            | Datei                                                |
+| --------------------------------- | ---------------------------------------------------- |
+| Startseite                        | `data/sections/` (nummeriert, in Reihenfolge)        |
+| Unterseiten                       | `data/pages/<slug>/`                                 |
+| Vorsitz (Startseite und Über uns) | `data/patterns/vorsitz.html`                         |
+| Header, Footer                    | `data/header_blocks.html`, `data/footer_blocks.html` |
+| Farben und Schrift                | `data/global-styles.json`                            |
+| Komponenten-Styles                | `data/styles/component.css`                          |
+| Bilder                            | `data/media/`                                        |
 
-  Bricht einmal jeder Deploy-Befehl mit `HTTP Error 404` ab, obwohl die Website
-  normal läuft, fehlen die Rewrite-Regeln für `/wp-json/`. Dann in wp-admin
-  einmal **Einstellungen → Permalinks → Speichern** klicken, ohne etwas zu
-  ändern.
+## Text
 
-## Die richtige Datei finden
-
-Die Seite ist aus HTML-Dateien in `data/` aufgebaut:
-
-| Was du ändern willst                 | Wo es liegt                                                           |
-| ------------------------------------ | --------------------------------------------------------------------- |
-| Startseite                           | `data/sections/` (nummerierte Dateien, in Reihenfolge zusammengefügt) |
-| Über uns                             | `data/pages/ueber-uns/`                                               |
-| Vorsitz (Startseite und Über uns)    | `data/patterns/vorsitz.html`                                          |
-| Events                               | `data/pages/events/`                                                  |
-| Studentenleben                       | `data/pages/studentenleben/`                                          |
-| Kontakt                              | `data/pages/kontakt/`                                                 |
-| Kummer Karsten                       | `data/pages/kummer-karsten/`                                          |
-| Linktree                             | `data/pages/linktree/`                                                |
-| Header (Logo, Nav, Dark-Mode-Button) | `data/header_blocks.html`                                             |
-| Footer                               | `data/footer_blocks.html`                                             |
-| Farben und Schrift                   | `data/global-styles.json`                                             |
-| Komponenten-Styles (Cards, Buttons)  | `data/styles/component.css`                                           |
-| Bilder                               | `data/media/`                                                         |
-
-## Text bearbeiten
-
-1. Öffne die Datei in einem Plain-Text-Editor wie VS Code oder Sublime (Word
-   und Pages gehen nicht).
-
-2. Suche den Text, den du ändern willst. Block-HTML sieht so aus:
-
-   ```html
-   <!-- wp:paragraph -->
-   <p>Hier steht der Text, den du ändern möchtest.</p>
-   <!-- /wp:paragraph -->
-   ```
-
-3. Ändere **nur den Text zwischen den HTML-Tags**. Die `<!-- wp:... -->`-
-   Kommentare sind Gutenberg-Block-Markierungen und bleiben, wie sie sind.
-
-4. Umlaute: ä, ö, ü, ß schreiben statt ae, oe, ue, ss. Ausnahme sind URL-Slugs
-   wie `?pagename=ueber-uns`.
-
-5. Bindestriche in Block-Kommentaren: In den JSON-Strings der
-   `<!-- wp:... -->`-Kommentare ist ein doppelter Bindestrich als `\u002d\u002d`
-   escaped (z. B. `var(\u002d\u002dstuv-muted)`), weil `--` in HTML-Kommentaren
-   verboten ist. Übernimm das Muster aus der bestehenden Datei unverändert und
-   „korrigiere“ es nie zu `--`.
-
-## Warum manche Absätze im Editor „ohne Wert“ dastehen
-
-Bei vielen Absätzen stehen Schriftgröße und Farbe nicht am Block, sondern an
-einer Klasse in `data/styles/component.css`: `.stuv-body-muted` für den grauen
-Fließtext in Karten und Listen, `.stuv-section-intro` für Größe und Breite des
-Einleitungssatzes unter einer Sektionsüberschrift. Der Block trägt nur noch die Klasse.
-
-Beim Ändern von Text merkst du davon nichts. Siehst du aber im Editor in der
-rechten Seitenleiste unter **Farbe** oder **Typografie** nach, steht dort „kein
-Wert festgelegt“, obwohl der Absatz auf der Seite grau und in seiner Größe
-erscheint. Der Wert kommt aus dem Stylesheet, und die Seitenleiste zeigt nur,
-was am Block selbst hängt.
-
-Das hat zwei Folgen:
-
-- Über die Seitenleiste lässt sich die Farbe eines solchen Absatzes nicht mehr
-  umstellen. Wer sie ändern will, ändert die Klasse in `component.css` und
-  damit die Farbe überall auf einmal. Genau dafür gibt es die Klasse.
-- Setzt jemand über die Seitenleiste doch eine Farbe, gewinnt sie gegen die
-  Klasse, und dieser eine Absatz weicht vom Rest ab. Im Zweifel die Farbe dort
-  wieder entfernen („zurücksetzen“), statt eine passende anzuklicken.
-
-## Namen und Kontaktdaten ändern
-
-Namen und E-Mails stehen in Paragraph- und Heading-Blöcken. Beispiel aus
-Über uns:
+In einem Texteditor (nicht Word) nur den Text zwischen den Tags ändern; die `<!-- wp:… -->`-Kommentare bleiben, wie sie sind:
 
 ```html
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">Max Mustermann</h3>
-<!-- /wp:heading -->
-
 <!-- wp:paragraph -->
-<p><a href="mailto:max@example.com">max@example.com</a></p>
+<p>Hier steht der Text.</p>
 <!-- /wp:paragraph -->
 ```
 
-Der Vorsitz steht nur einmal, in `data/patterns/vorsitz.html`: ein
-synchronisiertes Muster, das Startseite und Über uns per
-`<!-- wp:block {"ref":212} /-->` einbinden. Nach einer Änderung dort das Ziel
-`pattern-vorsitz` deployen, die beiden Seiten nicht.
+- Umlaute ausschreiben (ä, ö, ü, ß), außer in URL-Slugs wie `ueber-uns`.
+- In den JSON-Strings der Block-Kommentare ist `--` als `\u002d\u002d` geschrieben (z. B. `var(\u002d\u002dstuv-muted)`), weil `--` in HTML-Kommentaren verboten ist. Nie zu `--` „korrigieren“.
+- Viele Absätze haben Farbe und Größe aus einer Klasse (`.stuv-body-muted`, `.stuv-section-intro`), deshalb zeigt die Editor-Seitenleiste „kein Wert“. Geändert wird die Klasse in `component.css`. Eine in der Seitenleiste gesetzte Farbe gewinnt und weicht dann ab, also lieber zurücksetzen.
+- Der Vorsitz steht nur in `data/patterns/vorsitz.html` (synchronisiertes Muster 212, `<!-- wp:block {"ref":212} /-->`); deployt wird `pattern-vorsitz`, nicht die Seiten.
 
-Neuen Namen und E-Mail-Adresse eintragen. Das umgebende Markup unverändert
-lassen.
+## Bild ersetzen
 
-## Ein Bild ersetzen
-
-1. Neues Bild unter einem **neuen Dateinamen** nach `data/media/` legen
-   (bevorzugt `.webp`). Den alten Dateinamen nicht wiederverwenden: Der
-   Media-Deploy überspringt bereits hochgeladene Dateinamen ohne Meldung
-   (Details in `AGENTS.md` unter „Media“).
-
-2. `media` deployen. Die Ausgabe zeigt die endgültige URL des Uploads:
+1. Das neue Bild unter einem **neuen Dateinamen** nach `data/media/` legen, möglichst WebP. Ein alter Name wird beim Media-Deploy übersprungen (`AGENTS.md`, „Media“).
+2. `media` deployen; die Ausgabe nennt die URL (`neues-bild.webp -> https://…/wp-content/uploads/neues-bild.webp (id 123)`):
 
    ```bash
    source .env
-   python3 .agents/skills/wordpress-default-editor/scripts/deploy.py \
-     --manifest data/manifest.json media
+   python3 .agents/skills/wordpress-default-editor/scripts/deploy.py --manifest data/manifest.json media
    ```
 
-   Ausgabe z. B.:
-   `neues-bild.webp -> https://stuv-heidenheim.de/wp-content/uploads/neues-bild.webp (id 123)`
+3. In der Seitendatei `src` (ohne Host, ab `/wp-content/`, damit Staging und Produktion funktionieren) und `alt` ändern, dann die Seite deployen.
 
-   Den Pfad aus der Ausgabe kopieren statt ihn zu raten. WordPress legt
-   Dateien ohne Monatsordner ab (die Einstellung „Meine Uploads in monats- und
-   jahresbasierten Ordnern organisieren" ist deaktiviert).
+Fotos mit `stuv-media` (Seitenkopf, Eventarten-Karten, Leiste „Mitmachen“) bekommen ihr Seitenverhältnis vom Block. Vorher zuschneiden: WebP, 1200 px breit im Seitenkopf, 960 px in Karten, 640 px in der Leiste, ohne Metadaten (`magick … -strip`, wegen GPS-Koordinaten). Erkennbare Personen nur mit deren Einverständnis.
 
-3. Bildreferenz in der Seitendatei suchen. Ein Bild-Block sieht so aus:
+## Nach einer Wahl
 
-   ```html
-   <!-- wp:image {"width":"80px","height":"80px","scale":"cover","className":"is-style-rounded"} -->
-   <figure class="wp-block-image is-resized is-style-rounded">
-     <img
-       src="/wp-content/uploads/altes-bild.jpg"
-       alt="Beschreibung"
-       style="object-fit: cover; width: 80px; height: 80px"
-     />
-   </figure>
-   <!-- /wp:image -->
-   ```
+Am besten mit dem alten Vorsitz in einem Durchgang abarbeiten.
 
-4. Die `src`-URL durch die neue ersetzen und den `alt`-Text aktualisieren (kurze
-   Bildbeschreibung). **Den Host weglassen**: aus der Ausgabe von Schritt 2 nur
-   den Teil ab `/wp-content/` übernehmen. Bild-URLs stehen im Repo
-   host-relativ, damit dieselben Blöcke auf der Staging- und auf der
-   Produktions-Domain funktionieren. Alles andere unverändert lassen; der
-   Deploy schreibt nichts automatisch um.
+- [ ] **Vorsitz** (`data/patterns/vorsitz.html`): Vorname, Foto, Zitat ersetzen; bei anderer Personenzahl eine ganze `stuv-card`-Gruppe kopieren oder löschen. Fotos 480 × 480 px, neuer Name (`vorsitz-2027-lena.jpg`, nie einen alten wiederverwenden), `alt` „Porträt von Lena“. Nur mit Einverständnis.
+- [ ] **Referate** (`data/pages/ueber-uns/02-referate.html`) ändern sich nur, wenn eines dazukommt oder wegfällt. Anker sind Linkziele (`#event`, `#sport`); `test_content.py` meldet tote Links. Neue oder weggefallene Kanäle in `CONTACTS` (`tools/test_content.py`) pflegen.
+- [ ] Prüfen ([testing.md](testing.md)), deployen (`changed` nimmt `media`, `pattern-vorsitz`, `ueber-uns`), Startseite und Über uns ansehen, auch auf dem Handy.
+- [ ] **Alte Fotos** bleiben unter ihrer URL abrufbar: aus `data/media/` löschen und committen, nach dem Deploy auch in wp-admin unter **Medien**. `tools/site_state.py` darf sie danach nicht mehr unter `media_not_in_repo` nennen.
+- [ ] WPForms-Empfänger von Kontakt und Kummer Karsten umstellen, frischen Export ablegen ([architecture.md](architecture.md)).
+- [ ] WordPress-Konten und Application Passwords der Ausgeschiedenen löschen (die der Actions bleiben); GitHub-Zugriff und Reviewer von `production` anpassen.
 
-5. Die Seite deployen (siehe Abschnitt Deploy).
+## Google-Kalender
 
-## Fotos im Seitenkopf, in Karten und als Leiste
+Die Kalender-ID (`c_05fa…@group.calendar.google.com`) steht fünfmal im Markup: in den beiden `<iframe data-stuv-src>` (Startseite `data/sections/02-was-wir-bieten.html`, kompakt mit `mode=AGENDA`, 380px; Events `data/pages/events/02-upcoming.html`, 600px), den beiden Fallback-Links und dem Abonnieren-Link (`calendar/render?cid=…`). Beim Wechsel alle fünf ersetzen.
 
-Fotos neben dem Seitentitel, oben in den Eventarten-Karten und in der Leiste
-unter „Mitmachen“ sind Bild-Blöcke mit der Klasse `stuv-media`; das
-Seitenverhältnis steht im Block (`"aspectRatio":"4/3","scale":"cover"`), den
-Rest regelt `component.css` (siehe `.stuv-media` in `docs/design-system.md`).
-Ein Foto tauschst du wie oben beschrieben, unter neuem Dateinamen. Vorher
-zuschneiden und verkleinern: WebP, 1200 px breit im Seitenkopf, 960 px in
-Karten, 640 px in der Leiste, und ohne Metadaten (`magick … -strip`), denn
-Kamera- und Drohnenfotos tragen oft GPS-Koordinaten. Erkennbare Personen nur
-mit deren Einverständnis.
+Parameter: `ctz=Europe%2FBerlin`, `wkst=2` (Montag), `hl=de`, `show…=0` (blendet Googles Bedienelemente aus), `bgcolor=%23fcfcfc&color=%23E2001A` (Hex-Werte, Google liest keine CSS-Variablen).
 
-## Nach einer Wahl: die Übergabe
+Die Iframes sind `wp:html`-Blöcke, weil der native Embed-Block immer ein `src` schreibt ([plugins.md](plugins.md), `stuv-dsgvo`). `scrolling="no"` fehlt absichtlich: Auf schmalen Bildschirmen braucht die Agenda Scrollen.
 
-Nach jeder Wahl wechselt der Vorsitz, oft auch Referate. Diese Liste in einem
-Durchgang abarbeiten, am besten zusammen mit dem alten Vorsitz.
+## Formulare (WPForms)
 
-**Vorsitz** (`data/patterns/vorsitz.html`, erscheint auf Startseite und Über
-uns):
-
-- [ ] Pro Person Vorname, Foto und Zitat ersetzen; das Markup einer Karte
-      bleibt, wie es ist. Bei mehr oder weniger Personen eine ganze Karte
-      (`stuv-card`-Gruppe) kopieren oder löschen.
-- [ ] Fotos quadratisch, 480 × 480 px, als JPG oder WebP, unter einem neuen
-      Namen wie `vorsitz-2027-lena.jpg` nach `data/media/` legen. Den Namen
-      eines alten Fotos nie wiederverwenden (siehe „Ein Bild ersetzen“), auch
-      nicht bei gleichem Vornamen. Als `alt`-Text „Porträt von Lena“.
-- [ ] Nur mit Einverständnis der Person: Foto, Name und Zitat sind öffentlich.
-
-**Referate** (`data/pages/ueber-uns/02-referate.html`): Die Karten nennen keine
-Namen, ändern sich also nur, wenn ein Referat dazukommt oder wegfällt.
-
-- [ ] Karte kopieren oder löschen. Der `anchor` der Karte (`#finanzen`) ist
-      ein Linkziel: `events/05-cta.html` verlinkt `#event`,
-      `studentenleben/08-sport.html` `#sport`. Fällt ein Referat mit Linkziel weg, schlägt `test_content.py`
-      fehl und nennt den Link.
-- [ ] Bekommt ein Referat einen eigenen Kanal (Instagram, Mail), die Adresse
-      in `CONTACTS` in `tools/test_content.py` eintragen, sonst schlägt der
-      Test fehl. Fällt ein Kanal weg, den Eintrag dort löschen.
-
-**Prüfen und deployen:**
-
-- [ ] Kurzdurchlauf und Block-Validierung aus `docs/testing.md`.
-- [ ] Deploy starten (Abschnitt Deploy): `media` für die neuen Fotos, dazu
-      `pattern-vorsitz` und bei geänderten Referaten `ueber-uns`. Mit `changed`
-      erledigt ein Lauf alles.
-- [ ] Startseite und Über uns ansehen, auch auf dem Handy.
-
-**Alte Fotos entfernen.** Ein Foto, auf das keine Seite mehr verweist, bleibt
-unter seiner URL abrufbar, bis es aus der Mediathek gelöscht ist, und das
-Foto eines ehemaligen Mitglieds soll nicht öffentlich bleiben.
-
-- [ ] Die alten Fotos aus `data/media/` löschen und committen.
-- [ ] In wp-admin unter **Medien** dieselben Dateien endgültig löschen, erst
-      nach dem Deploy, sonst zeigt die Seite bis dahin ein leeres Bild.
-- [ ] `python3 tools/site_state.py` muss danach „matches“ melden. Steht ein
-      altes Foto unter `media_not_in_repo`, liegt es noch in der Mediathek.
-
-**Außerhalb des Repos:**
-
-- [ ] WPForms: Empfänger der Benachrichtigungen von Kontakt und Kummer Karsten
-      auf die neuen Zuständigen umstellen, danach einen frischen Export ablegen
-      (`docs/architecture.md`).
-- [ ] WordPress-Konten und Application Passwords der Ausgeschiedenen löschen
-      oder herabstufen (wp-admin → Benutzer). Die Benutzer der beiden Actions
-      bleiben.
-- [ ] GitHub: Zugriff auf das Repo und die Reviewer des Environments
-      `production` an die neue Besetzung anpassen.
-
-## Google-Kalender ändern
-
-Der StuV-Google-Kalender erscheint an drei Stellen, alle mit derselben
-Kalender-ID (`c_05fa...@group.calendar.google.com`, URL-encodiert im
-Query-Parameter):
-
-| Stelle                                     | Datei                                  | Form                                                                   |
-| ------------------------------------------ | -------------------------------------- | ---------------------------------------------------------------------- |
-| Startseite, „Was wir bieten"               | `data/sections/02-was-wir-bieten.html` | kompaktes Embed, `mode=AGENDA`, 380px hoch, ohne Titel/Navigation/Tabs |
-| Events-Seite                               | `data/pages/events/02-upcoming.html`   | volles Embed, 600px hoch                                               |
-| Events-Seite, Button „Kalender abonnieren" | `data/pages/events/02-upcoming.html`   | Link auf `calendar.google.com/calendar/render?cid=...`                 |
-
-**Kalender wechseln:** Die Kalender-ID steht an fünf Stellen fest im Markup: in
-beiden `<iframe data-stuv-src>`, den beiden Fallback-Links darunter und im
-Abonnieren-Link. Ersetze alle fünf, sonst zeigen sie unterschiedliche Kalender.
-
-Die wichtigsten Embed-Parameter (die volle Liste steht in den
-Google-Kalender-Einstellungen unter „Kalender einbetten"):
-
-- `ctz=Europe%2FBerlin`: Zeitzone
-- `mode=AGENDA`: Listenansicht statt Monatsraster (nur im kompakten Embed)
-- `showTitle=0&showNav=0&showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0`:
-  blendet Googles eigene Bedienelemente aus, damit das Embed wie eine Komponente
-  der Seite aussieht und nicht wie ein eingebetteter Google-Kalender
-- `wkst=2`: Wochenstart Montag
-- `hl=de`: deutsche Sprache
-- `bgcolor=%23fcfcfc&color=%23E2001A`: Hintergrund- und Akzentfarbe. Google
-  Kalender liest keine CSS-Variablen des Elternfensters, die Werte hängen also
-  nicht an den `--stuv-*`-Tokens. Für eine andere Farbe die Hex-Werte direkt in
-  der URL ändern.
-
-Beide Iframes sind `wp:html`-Blöcke und keine nativen Gutenberg-Embeds. Der
-native Embed-Block schreibt immer ein echtes `src`-Attribut, und das darf hier
-nicht im Markup stehen: Der Kalender lädt erst auf Klick über `data-stuv-src`
-(siehe `stuv-dsgvo` in `docs/plugins.md`).
-
-`scrolling="no"` fehlt mit Absicht: Auf schmalen Viewports staucht Google die
-Agenda in höhere Zeilen, und ohne Scrollen käme man an den überlaufenden Inhalt
-nicht heran. Unterhalb von 639px setzt `component.css` zusätzlich eine
-`min-height`.
-
-## Formular ändern (WPForms)
-
-Kontakt und Kummer Karsten binden ihr Formular per Shortcode ein, verpackt in
-eine `.stuv-card.stuv-wpforms`-Gruppe:
+| Seite          | Datei                                    | Formular-ID |
+| -------------- | ---------------------------------------- | ----------- |
+| Kontakt        | `data/pages/kontakt/03-form.html`        | 129         |
+| Kummer Karsten | `data/pages/kummer-karsten/03-form.html` | 132         |
 
 ```html
 <!-- wp:group {"className":"stuv-card stuv-wpforms"} -->
@@ -280,88 +81,19 @@ eine `.stuv-card.stuv-wpforms`-Gruppe:
 <!-- /wp:group -->
 ```
 
-| Seite          | Datei                                    | Formular-ID |
-| -------------- | ---------------------------------------- | ----------- |
-| Kontakt        | `data/pages/kontakt/03-form.html`        | 129         |
-| Kummer Karsten | `data/pages/kummer-karsten/03-form.html` | 132         |
+Felder, Pflichtangaben, Bestätigungstext und Empfänger nur in wp-admin → WPForms; ins Repo gehören nur ID und Karte. Neues Formular: in wp-admin bauen, ID in dieses Muster. Das Aussehen steht in den `.stuv-wpforms`-Regeln (`global-styles`). WPForms' CSS lädt später, deshalb wiederholen die Regeln die volle Ahnenkette (`.stuv-wpforms .wpforms-container-full .wpforms-form …`) statt `!important`; greift eine Regel nicht, ist der Selektor meist zu kurz.
 
-WPForms ist ein Drittanbieter-Plugin auf dem Host. Anders als
-`stuv-mensa`/`stuv-theme`/`stuv-dsgvo` gehört es nicht zu `wp-plugin/` und ist
-nicht in diesem Repo versioniert. Daraus folgt:
+## Formatieren, prüfen, deployen
 
-- Felder, Pflichtangaben, Bestätigungstext und Benachrichtigungs-E-Mail
-  bearbeitest du ausschließlich in wp-admin → WPForms → Formular bearbeiten.
-  Nichts davon steht in diesem Repo: Für ein neues Feld speicherst du im
-  WPForms-Builder und deployst diese Seite nicht.
-- Das Aussehen (Card-Rahmen, Eingabefelder, Button) steht in den
-  `.stuv-wpforms`-Regeln in `data/styles/component.css` und geht wie jede
-  andere Komponentenklasse über `global-styles` raus.
-- In dieses Repo gehören nur die Formular-ID im Shortcode und die umgebende
-  Karte. Den Rest liefert das Plugin zur Laufzeit aus der Datenbank.
+`npx prettier --write .` und die Prüfungen aus [testing.md](testing.md). Ein Push startet nur die Prüfungen; live geht es über die Action **Deploy** (**Actions → Deploy → Run workflow**, dann **Review deployments → Approve**). Sie nimmt alles, was von der Live-Seite abweicht, und bricht bei wp-admin-Änderungen ab ([ai-workflow.md](ai-workflow.md)).
 
-**Styling-Eigenheit:** WPForms' eigenes `wpforms-full.min.css` lädt nach
-`component.css` und gewinnt bei gleicher Selektor-Spezifität. Die
-`.stuv-wpforms`-Regeln wiederholen deshalb die volle Ahnenkette
-(`.stuv-wpforms .wpforms-container-full .wpforms-form ...`), damit sie WPForms
-allein über die Spezifität schlagen, ohne `!important`. Greift eine neue Regel
-hier nicht, ist der Selektor meist zu kurz.
-
-**Neues Formular hinzufügen:** in wp-admin bauen, ID notieren und das Muster
-oben mit der neuen ID in die Zielseite einsetzen.
-
-## Formatieren
-
-Nach dem Bearbeiten alle Dateien mit Prettier formatieren:
-
-```bash
-npx prettier --write .
-```
-
-Das ist Repo-Konvention und vor jedem Commit Pflicht. Ein Format-Lauf ändert
-die Bytes aller Deploy-Ziele; das ist normal (`docs/testing.md`).
-
-## Blöcke validieren
-
-Gutenberg-Blöcke müssen dem Format entsprechen, das der Editor erwartet. Prüfe
-die geänderten Dateien mit dem Aufruf aus `docs/testing.md` unter
-„Block-Validierung“.
-
-## Deploy
-
-Ein Push auf `main` bringt nichts auf die Live-Seite, er startet nur die
-Prüfungen. Deployt wird mit der Action **Deploy**, die du unter **Actions →
-Deploy → Run workflow** von Hand startest. Sie wartet auf eine Freigabe: Ein
-Reviewer klickt im Lauf auf **Review deployments → Approve**. Dann deployt sie
-alle Ziele, die von der Live-Seite abweichen, also alles, was seit dem letzten
-Deploy auf `main` gelandet ist, und prüft danach das Ergebnis. Hat jemand ein Ziel in wp-admin
-geändert, bricht sie ab, statt die Änderung zu überschreiben. Was sie genau
-macht und wie es dann weitergeht, steht in `docs/ai-workflow.md`.
-
-### Lokal deployen
-
-Ohne die Action geht es mit dem Skill und der `.env` (Voraussetzungen oben).
-Vor jedem Deploy erst einen Trockenlauf machen (prüft lokal, ohne den Server zu
-kontaktieren):
+Lokal:
 
 ```bash
 source .env
 SKILL=.agents/skills/wordpress-default-editor
 python3 $SKILL/scripts/deploy.py --manifest data/manifest.json all --dry-run
+python3 $SKILL/scripts/deploy.py --manifest data/manifest.json changed   # oder Zielnamen
 ```
 
-Ausgabe prüfen. Wenn alles passt, deployen. `changed` nimmt wie die Action
-alles, was von der Live-Seite abweicht, dazu `media`:
-
-```bash
-python3 $SKILL/scripts/deploy.py --manifest data/manifest.json changed
-```
-
-Einzelne Ziele gehen auch, mehrere mit Leerzeichen getrennt (`deploy.py …
-homepage events`). Zielnamen aus `data/manifest.json`: `homepage`, `ueber-uns`,
-`events`, `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`, `header`,
-`footer`, `global-styles`, `media`, `pattern-vorsitz`. Ein in wp-admin
-geändertes Ziel schreibt `deploy.py` nur mit `--overwrite <zielname>`
-(`docs/ai-workflow.md`).
-
-Nach dem Deploy die Live-Seite aufrufen und die Änderung prüfen. Alle Prüfungen
-stehen in `docs/testing.md`.
+Ziele: `homepage`, `ueber-uns`, `events`, `studentenleben`, `kontakt`, `kummer-karsten`, `linktree`, `header`, `footer`, `global-styles`, `media`, `pattern-vorsitz`. Ein in wp-admin geändertes Ziel nur mit `--overwrite <ziel>`. Danach die Live-Seite ansehen.

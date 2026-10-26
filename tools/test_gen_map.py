@@ -1,16 +1,10 @@
-"""Unit tests for tools/gen_map.py. Stdlib only: no network, no Pillow.
-
-Run from the repo root:
-    python3 -m unittest discover -s tools -p "test_*.py" -v
-"""
+"""Unit tests for tools/gen_map.py. Stdlib only: no network, no Pillow."""
 
 import unittest
 
 import gen_map
 
-# The real map, not a copy of it: a hand-transcribed fixture drifts from
-# data/maps/campus.json silently, and then these tests assert against pins the
-# site does not use.
+# Uses the real map data, so the tests cannot drift from it.
 CAMPUS = gen_map.load_map("campus")
 CAMPUS_PINS = CAMPUS["pins"]
 SOUTH = min(p["lat"] for p in CAMPUS_PINS)
@@ -19,8 +13,7 @@ WEST = min(p["lon"] for p in CAMPUS_PINS)
 EAST = max(p["lon"] for p in CAMPUS_PINS)
 CAMPUS_BBOX = gen_map.bbox_from_pins(CAMPUS_PINS, CAMPUS["padding_m"])
 
-# Minimal fixture with an edge pin for testing edge-pin logic.
-# Two regular pins define the bbox; the third is far north with "edge": true.
+# Two regular pins define the bbox; the third is an edge pin far north.
 EDGE_FIXTURE = {
     "id": "test-edge",
     "zoom": 15,

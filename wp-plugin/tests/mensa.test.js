@@ -6,8 +6,7 @@ const {
   todayInBerlin,
 } = require("../stuv-mensa/assets/mensa.js");
 
-// Intl inserts a non-breaking space before the currency symbol; normalize it
-// so the assertion does not depend on the platform's ICU build.
+// Intl puts a non-breaking space before the currency symbol, depending on ICU.
 const norm = (s) => s.replace(/ /g, " ");
 
 test("formatPrice renders German currency", () => {
@@ -28,9 +27,7 @@ test("dropPastDays keeps today and everything after it", () => {
 });
 
 test("dropPastDays empties a fully expired stale payload", () => {
-  // api.dhbw.app down for a week: every day in the store is now in the past,
-  // so the widget must fall through to its "kein Speiseplan" state rather than
-  // label a past Monday "Nächster Speiseplan".
+  // Upstream down for a week: every stored day has passed, so no "Nächster Speiseplan".
   const days = [{ date: "2026-07-13" }, { date: "2026-07-14" }];
   assert.deepEqual(dropPastDays(days, "2026-07-20"), []);
 });
@@ -42,8 +39,7 @@ test("dropPastDays tolerates a missing or malformed day list", () => {
 });
 
 test("todayInBerlin is timezone-independent", () => {
-  // 00:30 Berlin time on the 14th, expressed as UTC. A visitor in Los Angeles
-  // must still be told it is the 14th in Berlin.
+  // 00:30 Berlin on the 14th as UTC; a visitor in Los Angeles still gets the 14th.
   const at = new Date("2026-07-13T22:30:00.000Z");
   assert.equal(todayInBerlin(at), "2026-07-14");
 });
