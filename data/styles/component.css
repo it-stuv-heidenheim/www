@@ -67,7 +67,6 @@
     transparent
   );
   --stuv-primary-wash: color-mix(in srgb, var(--stuv-primary) 5%, transparent);
-  --stuv-band-solid: color-mix(in srgb, black 3%, var(--stuv-background) 97%);
   --stuv-logo-text: #546371;
   --stuv-logo-rule: #c3cad1;
 }
@@ -104,7 +103,6 @@
     transparent
   );
   --stuv-primary-wash: color-mix(in srgb, var(--stuv-primary) 10%, transparent);
-  --stuv-band-solid: color-mix(in srgb, white 3%, var(--stuv-background) 97%);
   --stuv-logo-text: #d4d4d8;
   --stuv-logo-rule: #52525b;
 }
@@ -765,16 +763,16 @@ p.stuv-hero-subtitle {
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    color-mix(in srgb, var(--stuv-band-solid) 2.8%, transparent) 10%,
-    color-mix(in srgb, var(--stuv-band-solid) 10.4%, transparent) 20%,
-    color-mix(in srgb, var(--stuv-band-solid) 21.6%, transparent) 30%,
-    color-mix(in srgb, var(--stuv-band-solid) 35.2%, transparent) 40%,
-    color-mix(in srgb, var(--stuv-band-solid) 50%, transparent) 50%,
-    color-mix(in srgb, var(--stuv-band-solid) 64.8%, transparent) 60%,
-    color-mix(in srgb, var(--stuv-band-solid) 78.4%, transparent) 70%,
-    color-mix(in srgb, var(--stuv-band-solid) 89.6%, transparent) 80%,
-    color-mix(in srgb, var(--stuv-band-solid) 97.2%, transparent) 90%,
-    var(--stuv-band-solid) 100%
+    color-mix(in srgb, var(--stuv-background) 2.8%, transparent) 10%,
+    color-mix(in srgb, var(--stuv-background) 10.4%, transparent) 20%,
+    color-mix(in srgb, var(--stuv-background) 21.6%, transparent) 30%,
+    color-mix(in srgb, var(--stuv-background) 35.2%, transparent) 40%,
+    color-mix(in srgb, var(--stuv-background) 50%, transparent) 50%,
+    color-mix(in srgb, var(--stuv-background) 64.8%, transparent) 60%,
+    color-mix(in srgb, var(--stuv-background) 78.4%, transparent) 70%,
+    color-mix(in srgb, var(--stuv-background) 89.6%, transparent) 80%,
+    color-mix(in srgb, var(--stuv-background) 97.2%, transparent) 90%,
+    var(--stuv-background) 100%
   );
   pointer-events: none;
 }
