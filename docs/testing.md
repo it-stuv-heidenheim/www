@@ -85,10 +85,10 @@ Backups liegen unter `/tmp/wp_backup/<site-slug>/` (Bilder in `media/`); nach ei
 
 Die Action **Monitor** (`monitor.yml`, Environment `monitor`) liest nur; von Hand gestartet laufen alle Prüfungen.
 
-- Täglich `verify_deploy.py --history`: `EDITED` scheitert, `BEHIND` warnt (undeployte Commits).
+- Täglich `verify_deploy.py --history`: `EDITED` ist ein Befund, `BEHIND` nur eine Warnung im Lauf (undeployte Commits).
 - Täglich `tools/check_plugins.py`: jedes Plugin installiert, aktiv, gleiche Version.
 - Täglich `tools/site_state.py`: wp-admin-Stand gegen `data/site-state.json`. Gewollte Änderung: `tools/site_state.py --write` und committen; sonst in wp-admin zurücksetzen.
-- Montags `tools/check_links.py`: `BROKEN` scheitert, `WARN` und `MOVED` sind Hinweise.
+- Montags `tools/check_links.py`: `BROKEN` ist ein Befund, `WARN` und `MOVED` stehen nur im Log.
 
 ```bash
 source .env
@@ -99,4 +99,4 @@ python3 tools/site_state.py
 python3 tools/check_links.py
 ```
 
-Fehlschläge mailt GitHub an die Person, die den Zeitplan zuletzt geändert hat. Nach 60 Tagen ohne Commit schaltet GitHub geplante Workflows ab; unter **Actions → Monitor** wieder einschalten.
+Befunde landen in einem Issue je Job (Label `monitor`, „Monitor: live site“, „Monitor: external links“): beim ersten Befund geöffnet, kommentiert nur, wenn sich die Befunde ändern, geschlossen, sobald alles wieder passt. Ein bleibender Befund meldet sich so einmal statt täglich. Der Lauf selbst bleibt grün; scheitert er, ist der Monitor kaputt (etwa fehlende Secrets), und das mailt GitHub an die Person, die den Zeitplan zuletzt geändert hat. Nach 60 Tagen ohne Commit schaltet GitHub geplante Workflows ab; unter **Actions → Monitor** wieder einschalten.

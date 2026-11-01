@@ -1,6 +1,7 @@
 # Watches the live site, read-only: daily verify_deploy.py --history, check_plugins.py and
 # site_state.py, Mondays check_links.py. Environment `monitor` (main only, no reviewers) with
-# WP_USER, WP_APP_PASS of its own administrator and WP_SITE.
+# WP_USER, WP_APP_PASS of its own administrator and WP_SITE. Findings go into one issue per job
+# (label `monitor`), opened once and closed when clean; a failed run means the monitor itself broke.
 name: Monitor
 
 on:
@@ -11,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   live:
@@ -35,28 +37,51 @@ jobs:
             [ -n "${!v}" ] || { echo "::error::$v is not set in the monitor environment"; exit 1; }
           done
 
-      # EDITED fails (port the edit into data/); BEHIND only warns (undeployed pushes).
-      - name: Edits in wp-admin
+      # Each finding goes into $RUNNER_TEMP/findings.md; the Report step turns it into one issue,
+      # so a finding that stays notifies once, not daily. BEHIND only warns (undeployed pushes).
+      - name: Checks
         run: |
           set +e
+          findings="$RUNNER_TEMP/findings.md"
+          out="$RUNNER_TEMP/out.txt"
+          : > "$findings"
+          finding() { # heading, what to do; the output in $out
+            { printf '### %s\n\n%s\n\n```\n' "$1" "$2"; head -c 20000 "$out"; printf '\n```\n\n'; } >> "$findings"
+            echo "::warning::$1"
+          }
+
+          echo "::group::Edits in wp-admin"
           python3 .agents/skills/wordpress-default-editor/scripts/verify_deploy.py \
-            --manifest data/manifest.json --diff --history
-          rc=$?
-          set -e
+            --manifest data/manifest.json --diff --history 2>&1 | tee "$out"
+          rc=${PIPESTATUS[0]}
+          echo "::endgroup::"
           case $rc in
             0) ;;
             1) echo "::warning::The site serves an older commit: main has undeployed changes (Actions → Deploy → Run workflow)." ;;
-            3) echo "::error::Edited in wp-admin (EDITED above). Port the edit into data/ before the next deploy."; exit 1 ;;
-            *) echo "::error::Live site not readable (exit $rc)"; exit 1 ;;
+            3)
+              grep -v '^  OK ' "$out" > "$out.tmp"; mv "$out.tmp" "$out"
+              finding "Edited in wp-admin" "Port the edit into data/, then deploy with --overwrite (AGENTS.md)." ;;
+            *) finding "Live site not readable (verify_deploy.py exit $rc)" "Usually the host; closes with the next passing run." ;;
           esac
 
-      - name: Plugin versions
-        if: success() || failure()
-        run: python3 tools/check_plugins.py
+          echo "::group::Plugin versions"
+          python3 tools/check_plugins.py 2>&1 | tee "$out"
+          rc=${PIPESTATUS[0]}
+          echo "::endgroup::"
+          [ "$rc" = 0 ] || finding "Plugin versions (check_plugins.py exit $rc)" "Build the zip and upload it in wp-admin: docs/plugins.md."
 
-      - name: Site state
-        if: success() || failure()
-        run: python3 tools/site_state.py
+          echo "::group::Site state"
+          python3 tools/site_state.py 2>&1 | tee "$out"
+          rc=${PIPESTATUS[0]}
+          echo "::endgroup::"
+          [ "$rc" = 0 ] || finding "Site state (site_state.py exit $rc)" "Intended: tools/site_state.py --write, then commit. Not intended: set it back in wp-admin."
+          exit 0
+
+      - name: Report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          .github/scripts/monitor_issue.sh "Monitor: live site" "$RUNNER_TEMP/findings.md"
 
   links:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '37 4 * * 1'
@@ -64,5 +89,24 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Only BROKEN goes into the issue; WARN and MOVED come and go and stay in the log.
       - name: External links
-        run: python3 tools/check_links.py
+        run: |
+          set +e
+          python3 tools/check_links.py 2>&1 | tee "$RUNNER_TEMP/out.txt"
+          rc=${PIPESTATUS[0]}
+          : > "$RUNNER_TEMP/findings.md"
+          if [ "$rc" != 0 ]; then
+            {
+              printf '### Broken links (check_links.py exit %s)\n\nFix or remove them in data/, then deploy.\n\n```\n' "$rc"
+              grep -A1 '^BROKEN' "$RUNNER_TEMP/out.txt" || cat "$RUNNER_TEMP/out.txt"
+              printf '```\n'
+            } > "$RUNNER_TEMP/findings.md"
+          fi
+          exit 0
+
+      - name: Report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          .github/scripts/monitor_issue.sh "Monitor: external links" "$RUNNER_TEMP/findings.md"

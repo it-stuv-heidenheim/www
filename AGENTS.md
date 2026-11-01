@@ -31,6 +31,7 @@ instructs; `docs/*.md` (German, human-facing) explains, and `docs/testing.md` li
   `WP_REST_ROOT="?rest_route="`. WP-Optimize caches pages: add a query string when checking front-end CSS.
 - `.github/workflows/monitor.yml` (environment `monitor`, no reviewer, reads only) runs daily
   `verify_deploy.py --history`, `tools/check_plugins.py` and `tools/site_state.py`, Mondays `tools/check_links.py`.
+  Findings go into one issue per job (label `monitor`, `.github/scripts/monitor_issue.sh`), not a failed run.
 - `data/site-state.json` records what only wp-admin sets (settings, pages, plugins, media, SEO, form fields); it is
   never deployed. After a change in wp-admin: `tools/site_state.py --write`, commit. No e-mail addresses in it.
 
