@@ -261,6 +261,36 @@ a {
   display: flex;
   flex-direction: column;
 }
+/* Kontakt: on phones the four cards merge into one list, icon beside the text. */
+@media (max-width: 639px) {
+  .stuv-contact-grid {
+    gap: 0;
+    background: var(--stuv-card);
+    border: 1px solid var(--stuv-card-border);
+    border-radius: var(--stuv-radius-lg);
+  }
+  .stuv-contact-grid > .stuv-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-0_5) var(--space-4);
+    align-content: start;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    padding: var(--space-4) var(--space-5);
+  }
+  .stuv-contact-grid > .stuv-card + .stuv-card {
+    border-top: 1px solid var(--stuv-card-border);
+  }
+  .stuv-contact-grid > .stuv-card > * {
+    grid-column: 2;
+    margin: 0 !important;
+  }
+  .stuv-contact-grid > .stuv-card > .stuv-icon-box {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+  }
+}
 .stuv-col-span-full {
   grid-column: 1 / -1;
 }
