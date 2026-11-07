@@ -1,0 +1,343 @@
+<!doctype html>
+<!--
+  iPhone frame around light.png / dark.png (page screenshots: 402x812 viewport, 3x, scrolled 75px).
+  Render from this directory, with m=light or m=dark:
+  /Applications/Chromium.app/Contents/MacOS/Chromium --headless --disable-gpu --hide-scrollbars
+    --force-device-scale-factor=3 --window-size=546,1018 --default-background-color=00000000
+    --allow-file-access-from-files --virtual-time-budget=3000
+    --screenshot="$PWD/iphone-$m.png" "file://$PWD/frame.html?$m"
+-->
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        width: 546px;
+        height: 1018px;
+        background: transparent;
+        overflow: hidden;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      :root {
+        --fg: #000;
+        --status-bg: #fff;
+        --glass: rgba(255, 255, 255, 0.66);
+        --glass-line: rgba(255, 255, 255, 0.75);
+        --glass-shadow: rgba(0, 0, 0, 0.16);
+      }
+      :root.dark {
+        --fg: #fff;
+        --status-bg: #09090b;
+        --glass: rgba(44, 44, 48, 0.62);
+        --glass-line: rgba(255, 255, 255, 0.14);
+        --glass-shadow: rgba(0, 0, 0, 0.5);
+      }
+
+      /* Body: 402x874 screen + 9pt bezel + 3pt titanium band */
+      .phone {
+        position: relative;
+        width: 426px;
+        height: 898px;
+        border-radius: 74px;
+        background: linear-gradient(
+          135deg,
+          #5d5c59 0%,
+          #34332f 22%,
+          #2a2926 50%,
+          #3a3936 78%,
+          #63625e 100%
+        );
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+          inset 0 0 2px 1.5px rgba(0, 0, 0, 0.55),
+          0 34px 54px -14px rgba(0, 0, 0, 0.42),
+          0 10px 20px -6px rgba(0, 0, 0, 0.26);
+      }
+      .bezel {
+        position: absolute;
+        inset: 3px;
+        border-radius: 71px;
+        background: #030303;
+        box-shadow: inset 0 0 1px 1px rgba(255, 255, 255, 0.06);
+      }
+      .screen {
+        position: absolute;
+        inset: 12px;
+        border-radius: 62px;
+        overflow: hidden;
+        background: var(--status-bg);
+        isolation: isolate;
+      }
+
+      .page {
+        position: absolute;
+        top: 62px;
+        left: 0;
+        width: 402px;
+        height: 812px;
+        display: block;
+      }
+
+      /* Side buttons */
+      .btn {
+        position: absolute;
+        width: 3.5px;
+        background: linear-gradient(90deg, #5a5956, #2f2e2b);
+      }
+      .btn.l {
+        left: -3px;
+        border-radius: 2px 0 0 2px;
+      }
+      .btn.r {
+        right: -3px;
+        border-radius: 0 2px 2px 0;
+        transform: scaleX(-1);
+      }
+      .action {
+        top: 172px;
+        height: 34px;
+      }
+      .vol-up {
+        top: 232px;
+        height: 64px;
+      }
+      .vol-down {
+        top: 310px;
+        height: 64px;
+      }
+      .power {
+        top: 262px;
+        height: 102px;
+      }
+      .camera {
+        top: 590px;
+        height: 62px;
+        width: 2px;
+        right: -1.5px;
+      }
+
+      /* Status bar */
+      .island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        width: 126px;
+        height: 37px;
+        margin-left: -63px;
+        border-radius: 20px;
+        background: #000;
+        z-index: 3;
+      }
+      .island::after {
+        content: "";
+        position: absolute;
+        right: 11px;
+        top: 11.5px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 42% 42%,
+          #1b2233 0 22%,
+          #0a0c12 45%,
+          #050507 100%
+        );
+      }
+      .time {
+        position: absolute;
+        top: 19px;
+        left: 0;
+        width: 138px;
+        text-align: center;
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+        color: var(--fg);
+        z-index: 2;
+      }
+      .icons {
+        position: absolute;
+        top: 23px;
+        right: 28px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--fg);
+        z-index: 2;
+      }
+
+      /* Scroll-edge fade behind the toolbar */
+      .edge {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 86px;
+        z-index: 1;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          var(--status-bg) 38%
+        );
+      }
+
+      /* Safari, floating bottom bar */
+      .bar {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 26px;
+        display: flex;
+        gap: 8px;
+        z-index: 2;
+        color: var(--fg);
+      }
+      .glass {
+        height: 50px;
+        border-radius: 25px;
+        background: var(--glass);
+        backdrop-filter: blur(16px) saturate(170%);
+        -webkit-backdrop-filter: blur(16px) saturate(170%);
+        box-shadow:
+          inset 0 0 0 0.75px var(--glass-line),
+          0 6px 20px var(--glass-shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .round {
+        width: 50px;
+        flex: none;
+      }
+      .url {
+        flex: 1;
+        font-size: 15.5px;
+        font-weight: 500;
+        letter-spacing: -0.2px;
+        gap: 6px;
+      }
+      .home {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        width: 139px;
+        height: 5px;
+        margin-left: -69.5px;
+        border-radius: 3px;
+        background: var(--fg);
+        z-index: 2;
+      }
+    </style>
+    <script>
+      if (location.search.includes("dark"))
+        document.documentElement.classList.add("dark");
+    </script>
+  </head>
+  <body>
+    <div class="phone">
+      <i class="btn l action"></i><i class="btn l vol-up"></i
+      ><i class="btn l vol-down"></i> <i class="btn r power"></i
+      ><i class="btn r camera"></i>
+      <div class="bezel"></div>
+      <div class="screen">
+        <img class="page" id="page" alt="" />
+        <div class="time">9:41</div>
+        <div class="island"></div>
+        <div class="icons">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
+            <rect x="0" y="8" width="3" height="4" rx=".8" />
+            <rect x="5" y="5.5" width="3" height="6.5" rx=".8" />
+            <rect x="10" y="3" width="3" height="9" rx=".8" />
+            <rect x="15" y="0" width="3" height="12" rx=".8" />
+          </svg>
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor">
+            <path
+              d="M8.5 2.3c2.4 0 4.6.9 6.3 2.5.1.1.3.1.4 0l1.2-1.2c.1-.1.1-.3 0-.5C14.3 1 11.5 0 8.5 0S2.700 1 .6 3.100c-.1.1-.1.3 0 .5l1.2 1.200c.1.1.3.1.4 0C3.900 3.200 6.100 2.300 8.500 2.300z"
+            />
+            <path
+              d="M8.500 6.200c1.300 0 2.600.5 3.600 1.400.1.100.3.100.4 0l1.200-1.200c.1-.100.1-.3 0-.5-1.400-1.300-3.200-2-5.200-2s-3.800.7-5.200 2c-.1.200-.1.400 0 .5l1.200 1.200c.1.100.3.100.4 0 1-.9 2.300-1.400 3.600-1.400z"
+            />
+            <path
+              d="M11.100 8.700c.1-.100.1-.3 0-.5-.7-.6-1.600-1-2.600-1s-1.900.4-2.600 1c-.1.200-.1.400 0 .5l2.400 2.300c.1.100.3.100.4 0z"
+            />
+          </svg>
+          <svg width="27" height="13" viewBox="0 0 27 13" fill="none">
+            <rect
+              x=".5"
+              y=".5"
+              width="23"
+              height="12"
+              rx="3.6"
+              stroke="currentColor"
+              stroke-opacity=".4"
+            />
+            <rect
+              x="2"
+              y="2"
+              width="20"
+              height="9"
+              rx="2.300"
+              fill="currentColor"
+            />
+            <path
+              d="M25 4.500v4c.8-.3 1.400-1.100 1.400-2s-.6-1.700-1.400-2z"
+              fill="currentColor"
+              fill-opacity=".45"
+            />
+          </svg>
+        </div>
+
+        <div class="edge"></div>
+        <div class="bar">
+          <div class="glass round">
+            <svg
+              width="11"
+              height="19"
+              viewBox="0 0 11 19"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.200"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9.300 1.700 1.800 9.500l7.500 7.800" />
+            </svg>
+          </div>
+          <div class="glass url">
+            <svg width="11" height="14" viewBox="0 0 11 14" fill="currentColor">
+              <path
+                d="M2 6V4a3.500 3.500 0 0 1 7 0v2h.3c.9 0 1.700.8 1.700 1.700v4.600c0 .9-.8 1.700-1.700 1.700H1.700C.8 14 0 13.200 0 12.300V7.700C0 6.800.8 6 1.700 6zm1.500 0h4V4a2 2 0 0 0-4 0z"
+              />
+            </svg>
+            stuv-heidenheim.de
+          </div>
+          <div class="glass round">
+            <svg width="21" height="5" viewBox="0 0 21 5" fill="currentColor">
+              <circle cx="2.500" cy="2.500" r="2.200" />
+              <circle cx="10.500" cy="2.500" r="2.200" />
+              <circle cx="18.500" cy="2.500" r="2.200" />
+            </svg>
+          </div>
+        </div>
+        <div class="home"></div>
+      </div>
+    </div>
+    <script>
+      document.getElementById("page").src = location.search.includes("dark")
+        ? "dark.png"
+        : "light.png";
+    </script>
+  </body>
+</html>
